@@ -65,19 +65,17 @@ class Layer:
         """
         Get activation function by name.
         
-        Activation functions introduce non-linearity, enabling the network
-        to approximate complex functions beyond linear combinations.
-        
-        Mathematical Functions:
-        - ReLU: max(0, x) - Most common, good gradient flow
-        - Sigmoid: 1/(1 + e^(-x)) - Smooth, outputs [0,1]
-        - Tanh: (e^x - e^(-x))/(e^x + e^(-x)) - Smooth, outputs [-1,1]
-        - Linear: x - No activation, pure linear transformation
+        Updated to include all available activations for digit recognition.
         """
         activations = {
             'relu': lambda x: anp.maximum(0, x),
-            'sigmoid': lambda x: 1 / (1 + anp.exp(-anp.clip(x, -500, 500))),  # Clipped for stability
+            'leaky_relu': lambda x: anp.maximum(0.01 * x, x),
+            'elu': lambda x: anp.where(x > 0, x, anp.exp(x) - 1),
+            'sigmoid': lambda x: 1 / (1 + anp.exp(-anp.clip(x, -500, 500))),
             'tanh': lambda x: anp.tanh(x),
+            'swish': lambda x: x * (1 / (1 + anp.exp(-anp.clip(x, -500, 500)))),
+            'gelu': lambda x: 0.5 * x * (1 + anp.tanh(anp.sqrt(2 / anp.pi) * (x + 0.044715 * x**3))),
+            'softmax': lambda x: anp.exp(x - anp.max(x, axis=-1, keepdims=True)) / anp.sum(anp.exp(x - anp.max(x, axis=-1, keepdims=True)), axis=-1, keepdims=True),
             'linear': lambda x: x
         }
         

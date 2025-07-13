@@ -472,6 +472,11 @@ class DataSplitter:
             random_state=self.random_state,
             stratify=stratify_y
         )
+
+        # --- short-circuit when test_size == 0 -----------------
+        if test_size == 0:
+            return (X_train, y_train), (X_temp, y_temp), (None, None)
+        # ------------------------------------------------------------
         
         # Second split: val vs test
         val_ratio = val_size / (val_size + test_size)
