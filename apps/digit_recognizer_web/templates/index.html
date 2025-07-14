@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NeuralEngine • Digit Recognizer</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <!-- Header -->
+      <header class="header">
+        <h1 class="title">🧠 NeuralEngine</h1>
+        <p class="subtitle">Neural Network Digit Recognition</p>
+      </header>
+
+      <!-- Main Content -->
+      <main class="main-content">
+        <!-- Drawing Section -->
+        <section class="drawing-section">
+          <div class="card glass-card">
+            <h2>✏️ Draw a Digit</h2>
+            <div class="canvas-container">
+              <canvas id="drawingCanvas" width="280" height="280"></canvas>
+              <div class="canvas-overlay">
+                <div class="instructions">Draw a digit (0-9)</div>
+              </div>
+            </div>
+            <div class="controls">
+              <div class="brush-control">
+                <label for="brushSize">Brush Size:</label>
+                <input
+                  type="range"
+                  id="brushSize"
+                  min="5"
+                  max="30"
+                  value="15"
+                />
+                <span id="brushValue">15</span>
+              </div>
+              <button id="clearBtn" class="btn btn-secondary">🗑️ Clear</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Prediction Section -->
+        <section class="prediction-section">
+          <div class="card glass-card">
+            <h2>🎯 Prediction</h2>
+
+            <!-- Top Prediction -->
+            <div class="top-prediction">
+              <div class="predicted-digit" id="predictedDigit">?</div>
+              <div class="confidence" id="confidence">Confidence: --%</div>
+              <div class="prediction-time" id="predictionTime">--ms</div>
+            </div>
+
+            <!-- Confidence Bars -->
+            <div class="confidence-bars">
+              <h3>Confidence Levels</h3>
+              <div id="confidenceBars"></div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <!-- Model Info -->
+      <footer class="model-info">
+        <div class="card glass-card">
+          <h3>🤖 Model Information</h3>
+          <div class="model-stats">
+            <div class="stat">
+              <span class="label">Architecture:</span>
+              <span class="value"
+                >{{ model_info.architecture | join(' → ') }}</span
+              >
+            </div>
+            <div class="stat">
+              <span class="label">Parameters:</span>
+              <span class="value"
+                >{{ "{:,}".format(model_info.parameters) }}</span
+              >
+            </div>
+            <div class="stat">
+              <span class="label">Accuracy:</span>
+              <span class="value"
+                >{{ "%.2f" | format(model_info.accuracy) }}%</span
+              >
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  </body>
+</html>
