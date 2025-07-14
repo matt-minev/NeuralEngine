@@ -115,12 +115,12 @@ data/
 datasets/
 
 # Model files
-*.pkl
-*.pickle
-*.h5
-*.hdf5
-models/
-checkpoints/
+# *.pkl
+# *.pickle
+# *.h5
+# *.hdf5
+# models/
+# checkpoints/
 
 # Logs and outputs
 logs/
