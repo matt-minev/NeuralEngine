@@ -1,0 +1,50 @@
+================================================================================
+UNIVERSAL CHARACTER RECOGNITION - COMPREHENSIVE TEST REPORT
+================================================================================
+
+MODEL INFORMATION:
+----------------------------------------
+Architecture: [784, 512, 256, 128, 62]
+Total Parameters: 574,142
+Training Accuracy: 79.12%
+Training Time: 70.0 minutes
+Classes: 62 (0-9, A-Z, a-z)
+
+TEST PERFORMANCE SUMMARY:
+----------------------------------------
+Test Accuracy: 79.11%
+Test Loss: 0.6796
+Average Confidence: 76.0%
+Random Baseline: 1.61%
+Improvement over Random: 49.1x
+
+CHARACTER TYPE PERFORMANCE:
+----------------------------------------
+Digits (0-9): 91.7% accuracy, 83.3% confidence
+Uppercase (A-Z): 70.7% accuracy, 66.1% confidence
+Lowercase (a-z): 61.8% accuracy, 72.0% confidence
+
+WORST 20 PERFORMING CHARACTERS:
+----------------------------------------
+Char | Type      | Accuracy | Samples | Confidence
+--------------------------------------------------
+ 'o' | Lowercase |    0.0% |     466 |     59.8%
+ 's' | Lowercase |    0.0% |     437 |     68.5%
+ 'c' | Lowercase |    2.1% |     432 |     63.4%
+ 'u' | Lowercase |    5.4% |     482 |     62.2%
+ 'f' | Lowercase |    6.5% |     400 |     58.7%
+ 'm' | Lowercase |    6.9% |     464 |     67.2%
+ 'y' | Lowercase |   12.1% |     381 |     54.1%
+ 'l' | Lowercase |   13.6% |    2535 |     56.5%
+ 'q' | Lowercase |   14.9% |     505 |     64.5%
+ 'g' | Lowercase |   17.7% |     589 |     57.5%
+ 'i' | Lowercase |   19.9% |     427 |     47.7%
+ 'p' | Lowercase |   21.5% |     368 |     57.2%
+ 'v' | Lowercase |   30.3% |     468 |     51.1%
+ 'k' | Lowercase |   35.2% |     466 |     49.3%
+ 'z' | Lowercase |   37.9% |     451 |     59.6%
+ 'Z' | Uppercase |   38.4% |     464 |     59.5%
+ 'I' | Uppercase |   39.6% |    2048 |     55.9%
+ 'x' | Lowercase |   48.7% |     470 |     51.0%
+ 'j' | Lowercase |   52.4% |     317 |     49.8%
+ 'O' | Uppercase |   53.2% |    4156 |     64.2%
