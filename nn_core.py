@@ -357,6 +357,47 @@ def mean_absolute_error(y_true: anp.ndarray, y_pred: anp.ndarray) -> anp.ndarray
     """
     return anp.mean(anp.abs(y_true - y_pred))
 
+def cross_entropy_loss(y_true: anp.ndarray, y_pred: anp.ndarray) -> anp.ndarray:
+    """
+    Cross-entropy loss for classification problems.
+    
+    This is the correct loss function for digit recognition!
+    
+    Mathematical Formula:
+    CE = -Σ(y_true * log(y_pred + ε))
+    
+    Args:
+        y_true: One-hot encoded true labels (batch_size, num_classes)
+        y_pred: Predicted probabilities from softmax (batch_size, num_classes)
+    
+    Returns:
+        Scalar loss value
+    """
+    # Add small epsilon to prevent log(0)
+    epsilon = 1e-15
+    y_pred_clipped = anp.clip(y_pred, epsilon, 1 - epsilon)
+    
+    # Calculate cross-entropy loss
+    loss = -anp.sum(y_true * anp.log(y_pred_clipped)) / y_true.shape[0]
+    
+    return loss
+
+
+def categorical_accuracy(y_true: anp.ndarray, y_pred: anp.ndarray) -> float:
+    """
+    Calculate classification accuracy.
+    
+    Args:
+        y_true: One-hot encoded true labels
+        y_pred: Predicted probabilities
+    
+    Returns:
+        Accuracy as percentage
+    """
+    predicted_classes = anp.argmax(y_pred, axis=1)
+    true_classes = anp.argmax(y_true, axis=1)
+    accuracy = anp.mean(predicted_classes == true_classes) * 100
+    return float(accuracy)
 
 # Utility function for testing
 def create_sample_data(n_samples: int = 100) -> Tuple[anp.ndarray, anp.ndarray]:

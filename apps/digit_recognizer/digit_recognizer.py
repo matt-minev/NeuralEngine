@@ -166,7 +166,7 @@ class DigitRecognizerApp:
     
     def _load_or_create_model(self):
         """Load existing model or create a demo model."""
-        model_path = os.path.join(os.path.dirname(__file__), 'models', 'digit_model.pkl')
+        model_path = os.path.join(os.path.dirname(__file__), 'models', 'digit_model_optimized.pkl')
         
         if os.path.exists(model_path):
             self._load_model(model_path)
