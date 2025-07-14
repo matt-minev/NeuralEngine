@@ -133,6 +133,30 @@ class Layer:
         self.weights = weights
         self.biases = biases
     
+    def __getstate__(self):
+        """
+        Prepare layer for pickling by removing unpicklable objects.
+        
+        The activation function (lambda) cannot be pickled, so we remove it
+        and recreate it during unpickling using the stored activation_name.
+        """
+        state = self.__dict__.copy()
+        # Remove the unpicklable activation function
+        if 'activation' in state:
+            del state['activation']
+        return state
+    
+    def __setstate__(self, state):
+        """
+        Restore layer after unpickling by recreating activation function.
+        
+        This recreates the activation function from the stored activation_name
+        after the object is unpickled.
+        """
+        self.__dict__.update(state)
+        # Recreate the activation function from the stored name
+        self.activation = self._get_activation_function(self.activation_name)
+    
     def __repr__(self) -> str:
         """String representation for debugging."""
         return f"Layer({self.input_size} → {self.output_size}, {self.activation_name})"
@@ -268,6 +292,29 @@ class NeuralNetwork:
             biases = params[param_idx + 1]
             layer.set_parameters(weights, biases)
             param_idx += 2
+    
+    def __getstate__(self):
+        """
+        Prepare neural network for pickling.
+        
+        All layers handle their own pickling via __getstate__,
+        so we just need to preserve the network structure.
+        """
+        state = self.__dict__.copy()
+        return state
+    
+    def __setstate__(self, state):
+        """
+        Restore neural network after unpickling.
+        
+        The layers will restore their own activation functions,
+        so we just need to restore the network structure.
+        """
+        self.__dict__.update(state)
+        # Ensure all layers have their activation functions restored
+        for layer in self.layers:
+            if not hasattr(layer, 'activation'):
+                layer.activation = layer._get_activation_function(layer.activation_name)
     
     def __repr__(self) -> str:
         """String representation for debugging."""
