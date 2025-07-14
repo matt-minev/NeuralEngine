@@ -156,10 +156,10 @@ Thumbs.db
 *.prof
 
 # Performance monitoring outputs
-*.png
-*.jpg
-*.jpeg
-*.gif
+# *.png
+# *.jpg
+# *.jpeg
+# *.gif
 plots/
 figures/
 

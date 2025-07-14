@@ -98,6 +98,41 @@ def prepare_data_splits():
     
     return (X_train_split, y_train_split), (X_val, y_val), (X_test, y_test)
 
+def load_test_data():
+    """
+    Load and preprocess the MNIST test data only.
+    
+    This function loads just the test data for evaluation purposes,
+    separate from the training pipeline.
+    
+    Returns:
+        Tuple of (X_test, y_test) where:
+        - X_test: Normalized test features (samples, 784)
+        - y_test: One-hot encoded test labels (samples, 10)
+    """
+    print("📁 Loading MNIST test data...")
+    
+    # Initialize NeuralEngine components
+    loader = DataLoader()
+    preprocessor = DataPreprocessor()
+    
+    # Load test data from CSV
+    X_test, y_test = loader.load_csv(
+        'data/mnist_test.csv',
+        target_column='label'
+    )
+    
+    # Normalize features to [0, 1] range
+    X_test = preprocessor.normalize_features(X_test, method='minmax', fit_scaler=False)
+    
+    # Convert labels to one-hot encoding
+    y_test_onehot = np.zeros((y_test.shape[0], 10))
+    for i in range(y_test.shape[0]):
+        y_test_onehot[i, int(y_test[i, 0])] = 1
+    
+    print(f"✅ Test data loaded: {X_test.shape[0]:,} samples")
+    
+    return X_test, y_test_onehot
 
 if __name__ == "__main__":
     """Test the data loading pipeline."""
