@@ -32,7 +32,7 @@ def load_model():
     """Load the trained Neural Engine model."""
     global neural_network, model_accuracy, model_info
     
-    model_path = os.path.join('..', 'digit_recognizer', 'models', 'digit_model_bulletproof.pkl')
+    model_path = os.path.join('static', 'models', 'enhanced_digit_model.pkl')
     
     try:
         with open(model_path, 'rb') as f:
