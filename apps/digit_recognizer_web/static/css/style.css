@@ -340,3 +340,123 @@ body {
     transform: translateY(0);
   }
 }
+
+/* Pi Easter Egg Styles */
+.pi-symbol {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  z-index: 1000;
+  opacity: 0;
+  transition: all 0.5s ease;
+  pointer-events: none;
+}
+
+.pi-symbol.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+  animation: piPulse 4s ease-in-out;
+}
+
+.pi-content {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 40px;
+  border-radius: 20px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.pi-icon {
+  font-size: 6rem;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+  margin-bottom: 20px;
+  animation: piGlow 2s ease-in-out infinite alternate;
+}
+
+.pi-text {
+  font-size: 2rem;
+  color: #fff;
+  font-weight: 600;
+  margin-bottom: 10px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.pi-subtext {
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-family: "Courier New", monospace;
+}
+
+@keyframes piPulse {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+
+@keyframes piGlow {
+  0% {
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+  }
+  100% {
+    text-shadow: 0 0 30px rgba(255, 255, 255, 0.8),
+      0 0 40px rgba(102, 126, 234, 0.6);
+  }
+}
+
+/* Confetti Styles */
+#confettiContainer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 999;
+}
+
+.confetti {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: #ff6b6b;
+  top: -10px;
+  animation: confettiFall linear infinite;
+}
+
+@keyframes confettiFall {
+  0% {
+    transform: translateY(-100vh) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.confetti:nth-child(odd) {
+  width: 8px;
+  height: 8px;
+  animation-duration: 3s;
+}
+
+.confetti:nth-child(even) {
+  width: 12px;
+  height: 12px;
+  animation-duration: 2.5s;
+}
+
+.confetti:nth-child(3n) {
+  width: 6px;
+  height: 6px;
+  animation-duration: 4s;
+}

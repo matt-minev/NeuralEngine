@@ -25,7 +25,7 @@
             <h2>✏️ Draw a Digit</h2>
             <div class="canvas-container">
               <canvas id="drawingCanvas" width="280" height="280"></canvas>
-              <div class="canvas-overlay">
+              <div class="canvas-overlay show">
                 <div class="instructions">Draw a digit (0-9)</div>
               </div>
             </div>
@@ -93,8 +93,18 @@
           </div>
         </div>
       </footer>
-    </div>
+      <!-- Pi Easter Egg -->
+      <div id="piSymbol" class="pi-symbol">
+        <div class="pi-content">
+          <div class="pi-icon">π</div>
+          <div class="pi-text">Pi! 🐣</div>
+          <div class="pi-subtext">3.14159...</div>
+        </div>
+      </div>
 
+      <!-- Confetti Container -->
+      <div id="confettiContainer"></div>
+    </div>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   </body>
 </html>

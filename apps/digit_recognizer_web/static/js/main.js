@@ -10,6 +10,8 @@ class DigitRecognizer {
     this.setupEventListeners();
     this.setupPredictionDisplay();
     this.lastPredictionTime = 0;
+    this.sequenceTracker = []; // Track digit sequence for easter egg
+    this.targetSequence = [3, 1, 4]; // Pi digits sequence
 
     console.log("🧠 NeuralEngine Web App initialized");
   }
@@ -207,6 +209,9 @@ class DigitRecognizer {
     confidenceEl.textContent = `Confidence: ${confidence.toFixed(1)}%`;
     predictionTimeEl.textContent = `${prediction_time.toFixed(1)}ms`;
 
+    // Easter egg: Check for Pi sequence (3-1-4)
+    this.checkPiSequence(predicted_digit);
+
     // Update confidence bars
     predictions.forEach((prob, digit) => {
       const barFill = document.getElementById(`bar-${digit}`);
@@ -254,6 +259,100 @@ class DigitRecognizer {
     document.querySelector(".canvas-overlay").classList.add("show");
 
     console.log("Canvas cleared");
+  }
+
+  checkPiSequence(digit) {
+    console.log(`🔍 Checking digit: ${digit} (type: ${typeof digit})`);
+
+    // Only add the digit if it's different from the last one in our sequence
+    // This prevents duplicates from multiple prediction calls
+    if (
+      this.sequenceTracker.length === 0 ||
+      this.sequenceTracker[this.sequenceTracker.length - 1] !== digit
+    ) {
+      this.sequenceTracker.push(digit);
+      console.log(`✅ Added digit ${digit} to sequence`);
+    } else {
+      console.log(`⏭️ Skipping duplicate digit ${digit}`);
+    }
+
+    console.log(`📝 Current sequence: [${this.sequenceTracker.join(", ")}]`);
+
+    // Keep only the last 3 digits
+    if (this.sequenceTracker.length > 3) {
+      this.sequenceTracker.shift();
+    }
+
+    console.log(`📝 After trimming: [${this.sequenceTracker.join(", ")}]`);
+
+    // Check if we have the Pi sequence (3-1-4)
+    if (
+      this.sequenceTracker.length === 3 &&
+      this.sequenceTracker[0] === 3 &&
+      this.sequenceTracker[1] === 1 &&
+      this.sequenceTracker[2] === 4
+    ) {
+      console.log("🎉 Pi sequence detected! Triggering easter egg...");
+      this.triggerPiAnimation();
+      this.sequenceTracker = []; // Reset sequence after triggering
+    } else {
+      console.log(
+        `❌ Not Pi sequence. Need [3, 1, 4], got [${this.sequenceTracker.join(
+          ", "
+        )}]`
+      );
+    }
+  }
+
+  triggerPiAnimation() {
+    // Show the Pi symbol
+    const piSymbol = document.getElementById("piSymbol");
+    piSymbol.classList.add("show");
+
+    // Generate confetti
+    this.generateConfetti();
+
+    // Hide the Pi symbol after animation
+    setTimeout(() => {
+      piSymbol.classList.remove("show");
+    }, 4000);
+  }
+
+  generateConfetti() {
+    const confettiContainer = document.getElementById("confettiContainer");
+
+    // Create multiple confetti pieces
+    for (let i = 0; i < 50; i++) {
+      const confetti = document.createElement("div");
+      confetti.className = "confetti";
+      confetti.style.left = Math.random() * 100 + "%";
+      confetti.style.backgroundColor = this.getRandomColor();
+      confetti.style.animationDelay = Math.random() * 2 + "s";
+      confetti.style.animationDuration = Math.random() * 3 + 2 + "s";
+
+      confettiContainer.appendChild(confetti);
+
+      // Remove confetti after animation
+      setTimeout(() => {
+        if (confetti.parentNode) {
+          confetti.parentNode.removeChild(confetti);
+        }
+      }, 5000);
+    }
+  }
+
+  getRandomColor() {
+    const colors = [
+      "#ff6b6b",
+      "#4ecdc4",
+      "#45b7d1",
+      "#f9ca24",
+      "#f0932b",
+      "#eb4d4b",
+      "#6c5ce7",
+      "#a29bfe",
+    ];
+    return colors[Math.floor(Math.random() * colors.length)];
   }
 }
 
