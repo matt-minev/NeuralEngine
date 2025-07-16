@@ -9,6 +9,7 @@ class DigitRecognizer {
     this.setupCanvas();
     this.setupEventListeners();
     this.setupPredictionDisplay();
+    this.setupModelSelector();
     this.lastPredictionTime = 0;
     this.sequenceTracker = []; // Track digit sequence for easter egg
     this.targetSequence = [3, 1, 4]; // Pi digits sequence
@@ -353,6 +354,72 @@ class DigitRecognizer {
       "#a29bfe",
     ];
     return colors[Math.floor(Math.random() * colors.length)];
+  }
+
+  setupModelSelector() {
+    const modelSelect = document.getElementById("modelSelect");
+    const modelSelector = document.querySelector(".model-selector");
+
+    modelSelect.addEventListener("change", async (e) => {
+      const selectedModel = e.target.value;
+      console.log(`🔄 Switching to model: ${selectedModel}`);
+
+      // Show loading state
+      modelSelector.classList.add("loading");
+
+      try {
+        // Send model switch request
+        const response = await fetch("/switch_model", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ model_name: selectedModel }),
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log("✅ Model switched successfully:", result);
+
+          // Update model info display
+          this.updateModelInfo(result.model_info);
+
+          // Clear canvas and reset predictions
+          this.clearCanvas();
+
+          // Reset sequence tracker
+          this.sequenceTracker = [];
+        } else {
+          console.error("❌ Model switch failed:", response.statusText);
+          alert("Failed to switch model. Please try again.");
+        }
+      } catch (error) {
+        console.error("❌ Model switch error:", error);
+        alert("Error switching model. Please try again.");
+      } finally {
+        // Remove loading state
+        modelSelector.classList.remove("loading");
+      }
+    });
+  }
+
+  updateModelInfo(modelInfo) {
+    // Update the model info display
+    const elements = {
+      architecture: document.querySelector(".stat .value"),
+      parameters: document.querySelectorAll(".stat .value")[1],
+      accuracy: document.querySelectorAll(".stat .value")[2],
+    };
+
+    if (elements.architecture) {
+      elements.architecture.textContent = modelInfo.architecture.join(" → ");
+    }
+    if (elements.parameters) {
+      elements.parameters.textContent = modelInfo.parameters.toLocaleString();
+    }
+    if (elements.accuracy) {
+      elements.accuracy.textContent = `${modelInfo.accuracy.toFixed(2)}%`;
+    }
   }
 }
 

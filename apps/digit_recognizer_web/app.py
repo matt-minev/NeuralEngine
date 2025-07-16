@@ -28,11 +28,11 @@ neural_network = None
 model_accuracy = 0.0
 model_info = {}
 
-def load_model():
+def load_model(model_name='enhanced_digit_model.pkl'):
     """Load the trained Neural Engine model."""
     global neural_network, model_accuracy, model_info
     
-    model_path = os.path.join('static', 'models', 'enhanced_digit_model.pkl')
+    model_path = os.path.join('static', 'models', model_name)
     
     try:
         with open(model_path, 'rb') as f:
@@ -48,6 +48,7 @@ def load_model():
         }
         
         print(f"✅ Neural Engine model loaded successfully!")
+        print(f"   Model: {model_name}")
         print(f"   Architecture: {model_info['architecture']}")
         print(f"   Parameters: {model_info['parameters']:,}")
         print(f"   Accuracy: {model_info['accuracy']:.2f}%")
@@ -155,6 +156,52 @@ def health_check():
         'model_loaded': neural_network is not None,
         'model_accuracy': model_accuracy
     })
+
+@app.route('/switch_model', methods=['POST'])
+def switch_model():
+    """Handle model switching requests."""
+    try:
+        data = request.get_json()
+        model_name = data.get('model_name')
+        
+        if not model_name:
+            return jsonify({'error': 'No model name provided'}), 400
+        
+        # Update the model path
+        model_path = os.path.join('static', 'models', model_name)
+        
+        if not os.path.exists(model_path):
+            return jsonify({'error': f'Model {model_name} not found'}), 404
+        
+        # Load the new model
+        global neural_network, model_accuracy, model_info
+        
+        with open(model_path, 'rb') as f:
+            model_data = pickle.load(f)
+        
+        neural_network = model_data['model']
+        model_accuracy = model_data.get('accuracy', 0.0)
+        model_info = {
+            'architecture': neural_network.layer_sizes,
+            'parameters': neural_network.count_parameters(),
+            'accuracy': model_accuracy,
+            'activations': [layer.activation_name for layer in neural_network.layers]
+        }
+        
+        print(f"✅ Switched to model: {model_name}")
+        print(f"   Architecture: {model_info['architecture']}")
+        print(f"   Parameters: {model_info['parameters']:,}")
+        print(f"   Accuracy: {model_info['accuracy']:.2f}%")
+        
+        return jsonify({
+            'success': True,
+            'model_name': model_name,
+            'model_info': model_info
+        })
+        
+    except Exception as e:
+        print(f"❌ Model switch error: {e}")
+        return jsonify({'error': f'Failed to switch model: {str(e)}'}), 500
 
 if __name__ == '__main__':
     print("🚀 Starting NeuralEngine Web Application")
