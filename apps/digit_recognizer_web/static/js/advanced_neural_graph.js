@@ -1,6 +1,6 @@
 /**
  * Advanced Interactive Neural Network Visualization
- * Features: Draggable nodes, animated connections, real-time values, educational animations
+ * Fixed version that properly handles connections, info panels, and real data
  */
 
 class AdvancedNeuralGraph {
@@ -12,15 +12,22 @@ class AdvancedNeuralGraph {
 
     // Animation state
     this.isAnimating = false;
-    this.animationSpeed = 2000; // ms per layer
-    this.particles = [];
-    this.activationValues = [];
+    this.animationInProgress = false;
+    this.animationSpeed = 2000;
+    this.currentActivationData = null;
 
     // Visual elements
     this.neurons = [];
     this.connections = [];
     this.svg = null;
     this.simulation = null;
+    this.neuronElements = null;
+    this.connectionElements = null;
+
+    // UI helpers
+    this.contextWindow = null;
+    this.neuronInfoPanel = null;
+    this.selectedNeuron = null;
 
     this.init();
   }
@@ -29,7 +36,24 @@ class AdvancedNeuralGraph {
     this.createSVG();
     this.buildNeuralNetwork();
     this.setupInteractions();
-    this.startParticleSystem();
+    this.initializeHelpers();
+
+    console.log("🧠 Advanced Neural Graph initialized");
+  }
+
+  initializeHelpers() {
+    // Initialize context window helper
+    this.contextWindow = {
+      show: this.showProcessingContext.bind(this),
+      update: this.updateProcessingStep.bind(this),
+      remove: this.removeProcessingContext.bind(this),
+    };
+
+    // Initialize neuron info panel helper
+    this.neuronInfoPanel = {
+      show: this.showNeuronInfoPanel.bind(this),
+      remove: this.removeNeuronInfoPanel.bind(this),
+    };
   }
 
   createSVG() {
@@ -45,14 +69,13 @@ class AdvancedNeuralGraph {
       .style("border-radius", "20px")
       .style("overflow", "hidden");
 
-    // Add definitions for gradients and filters
     this.setupDefinitions();
   }
 
   setupDefinitions() {
     const defs = this.svg.append("defs");
 
-    // Gradient for connections
+    // Connection gradient
     const gradient = defs
       .append("linearGradient")
       .attr("id", "connectionGradient")
@@ -65,7 +88,7 @@ class AdvancedNeuralGraph {
       .attr("offset", "100%")
       .attr("stop-color", "#00f2fe");
 
-    // Glow filter for active neurons
+    // Glow filter
     const filter = defs
       .append("filter")
       .attr("id", "glow")
@@ -83,7 +106,7 @@ class AdvancedNeuralGraph {
     feMerge.append("feMergeNode").attr("in", "coloredBlur");
     feMerge.append("feMergeNode").attr("in", "SourceGraphic");
 
-    // Arrow marker for connections
+    // Arrow marker
     defs
       .append("marker")
       .attr("id", "arrowhead")
@@ -111,10 +134,10 @@ class AdvancedNeuralGraph {
 
     const layerSpacing = this.width / (layers.length + 1);
 
-    // Create neurons for each layer
+    // Create neurons
     layers.forEach((layerSize, layerIndex) => {
       const layerNeurons = [];
-      const maxVisible = Math.min(layerSize, 15); // Limit for visibility
+      const maxVisible = Math.min(layerSize, 12);
       const neuronSpacing = this.height / (maxVisible + 1);
 
       for (let i = 0; i < maxVisible; i++) {
@@ -136,7 +159,7 @@ class AdvancedNeuralGraph {
         this.neurons.push(neuron);
       }
 
-      // Create connections to next layer
+      // Create connections
       if (layerIndex < layers.length - 1) {
         this.createConnections(layerNeurons, layerIndex);
       }
@@ -146,9 +169,9 @@ class AdvancedNeuralGraph {
   }
 
   getNeuronRadius(layerIndex, totalLayers) {
-    if (layerIndex === 0) return 8; // Input layer
-    if (layerIndex === totalLayers - 1) return 12; // Output layer
-    return 10; // Hidden layers
+    if (layerIndex === 0) return 10;
+    if (layerIndex === totalLayers - 1) return 14;
+    return 12;
   }
 
   getNeuronType(layerIndex, totalLayers) {
@@ -162,8 +185,8 @@ class AdvancedNeuralGraph {
       (n) => n.layer === currentLayerIndex + 1
     );
 
-    // Create subset of connections to avoid visual clutter
-    const connectionDensity = 0.3; // 30% of possible connections
+    // Create more connections for better visualization
+    const connectionDensity = 0.4;
 
     currentLayerNeurons.forEach((sourceNeuron) => {
       nextLayerNeurons.forEach((targetNeuron) => {
@@ -181,13 +204,8 @@ class AdvancedNeuralGraph {
   }
 
   renderNetwork() {
-    // Render connections first (behind neurons)
     this.renderConnections();
-
-    // Render neurons
     this.renderNeurons();
-
-    // Setup force simulation
     this.setupForceSimulation();
   }
 
@@ -204,10 +222,9 @@ class AdvancedNeuralGraph {
       .attr("y1", (d) => d.source.y)
       .attr("x2", (d) => d.target.x)
       .attr("y2", (d) => d.target.y)
-      .attr("stroke", "rgba(255, 255, 255, 0.2)")
-      .attr("stroke-width", 1)
-      .attr("marker-end", "url(#arrowhead)")
-      .style("opacity", 0.6);
+      .attr("stroke", "rgba(255, 255, 255, 0.3)")
+      .attr("stroke-width", 1.5)
+      .style("opacity", 0.7);
   }
 
   renderNeurons() {
@@ -231,26 +248,16 @@ class AdvancedNeuralGraph {
       .style("cursor", "pointer")
       .style("filter", "drop-shadow(0 0 8px rgba(255, 255, 255, 0.3))");
 
-    // Neuron labels (activation values)
+    // Neuron labels
     this.neuronElements
       .append("text")
       .attr("class", "neuron-label")
       .attr("text-anchor", "middle")
       .attr("dy", "0.3em")
       .attr("fill", "white")
-      .attr("font-size", "10px")
+      .attr("font-size", "11px")
       .attr("font-weight", "bold")
       .text((d) => d.activation.toFixed(2));
-
-    // Neuron info on hover
-    this.neuronElements
-      .append("title")
-      .text(
-        (d) =>
-          `Layer ${d.layer}, Neuron ${
-            d.index
-          }\nActivation: ${d.activation.toFixed(3)}`
-      );
   }
 
   getNeuronColor(type) {
@@ -265,14 +272,14 @@ class AdvancedNeuralGraph {
   setupForceSimulation() {
     this.simulation = d3
       .forceSimulation(this.neurons)
-      .force("charge", d3.forceManyBody().strength(-50))
+      .force("charge", d3.forceManyBody().strength(-30))
       .force("center", d3.forceCenter(this.width / 2, this.height / 2))
       .force(
         "collision",
-        d3.forceCollide().radius((d) => d.radius + 5)
+        d3.forceCollide().radius((d) => d.radius + 3)
       )
-      .force("x", d3.forceX((d) => d.originalX).strength(0.8))
-      .force("y", d3.forceY((d) => d.originalY).strength(0.8))
+      .force("x", d3.forceX((d) => d.originalX).strength(0.9))
+      .force("y", d3.forceY((d) => d.originalY).strength(0.9))
       .on("tick", () => this.updatePositions());
   }
 
@@ -296,9 +303,16 @@ class AdvancedNeuralGraph {
 
     this.neuronElements.call(drag);
 
-    // Click behavior
+    // Click behavior - FIXED
     this.neuronElements.on("click", (event, d) => {
+      event.stopPropagation();
       this.highlightNeuron(d);
+    });
+
+    // Click outside to clear selection
+    this.svg.on("click", () => {
+      this.clearHighlights();
+      this.neuronInfoPanel.remove();
     });
 
     // Zoom behavior
@@ -333,130 +347,402 @@ class AdvancedNeuralGraph {
     }
   }
 
-  // Enhanced neuron click handler with proper connection highlighting
+  // FIXED: Proper neuron highlighting with visible connections
   highlightNeuron(neuron) {
-    // Reset all visual states first
-    this.resetHighlights();
+    this.selectedNeuron = neuron;
+    this.clearHighlights();
 
-    // Highlight the selected neuron with glow effect
+    // Highlight selected neuron
     this.neuronElements
       .filter((d) => d.id === neuron.id)
       .select("circle")
       .style("filter", "url(#glow)")
+      .style("stroke", "#FFD700")
+      .style("stroke-width", "4px")
       .transition()
       .duration(300)
-      .attr("r", (d) => d.radius * 1.5);
+      .attr("r", (d) => d.radius * 1.3);
 
-    // Find and highlight all connected neurons
-    const connectedNeurons = this.getConnectedNeurons(neuron);
-
-    // Highlight connected neurons
-    this.neuronElements
-      .filter((d) => connectedNeurons.includes(d.id))
-      .select("circle")
-      .style("filter", "url(#glow)")
-      .style("opacity", 0.8);
-
-    // Highlight connecting edges with animated flow
-    this.highlightConnections(neuron);
-
-    // Show detailed neuron information panel
-    this.showNeuronInfoPanel(neuron, connectedNeurons);
-  }
-
-  getConnectedNeurons(neuron) {
-    return this.connections
-      .filter(
-        (conn) => conn.source.id === neuron.id || conn.target.id === neuron.id
-      )
-      .map((conn) =>
-        conn.source.id === neuron.id ? conn.target.id : conn.source.id
-      );
-  }
-
-  highlightConnections(neuron) {
+    // Find connections
     const relevantConnections = this.connections.filter(
       (conn) => conn.source.id === neuron.id || conn.target.id === neuron.id
     );
 
-    this.connectionElements
-      .filter((d) => relevantConnections.includes(d))
+    // Get connected neurons
+    const connectedNeuronIds = new Set();
+    relevantConnections.forEach((conn) => {
+      connectedNeuronIds.add(conn.source.id);
+      connectedNeuronIds.add(conn.target.id);
+    });
+    connectedNeuronIds.delete(neuron.id);
+
+    // Highlight connected neurons
+    this.neuronElements
+      .filter((d) => connectedNeuronIds.has(d.id))
+      .select("circle")
+      .style("filter", "url(#glow)")
+      .style("stroke", "#4facfe")
+      .style("stroke-width", "3px")
       .transition()
-      .duration(500)
-      .attr("stroke", (d) => {
-        // Color based on connection strength
-        const strength = Math.abs(d.weight || 0.5);
-        return d3.interpolateViridis(strength);
-      })
-      .attr("stroke-width", (d) => 2 + Math.abs(d.weight || 0.5) * 4)
-      .attr("opacity", 1)
-      .style("stroke-dasharray", "5,5")
-      .style("stroke-dashoffset", 0)
-      .transition()
-      .duration(2000)
-      .style("stroke-dashoffset", -20); // Animated flow effect
+      .duration(300)
+      .attr("r", (d) => d.radius * 1.1);
+
+    // FIXED: Highlight connections properly
+    this.connectionElements.each(function (d) {
+      const isRelevant = relevantConnections.some(
+        (conn) =>
+          conn.source.id === d.source.id && conn.target.id === d.target.id
+      );
+
+      if (isRelevant) {
+        d3.select(this)
+          .style("stroke", "#4facfe")
+          .style("stroke-width", "3px")
+          .style("opacity", "1")
+          .style("stroke-dasharray", "5,5")
+          .style("stroke-dashoffset", "0")
+          .transition()
+          .duration(2000)
+          .style("stroke-dashoffset", "-20");
+      } else {
+        d3.select(this).style("opacity", "0.2");
+      }
+    });
+
+    // Show info panel
+    this.neuronInfoPanel.show(neuron, Array.from(connectedNeuronIds));
   }
 
-  resetHighlights() {
-    // Reset all neurons
+  // FIXED: Proper highlight clearing
+  clearHighlights() {
+    this.selectedNeuron = null;
+
+    // Reset neurons
     this.neuronElements
       .select("circle")
+      .transition()
+      .duration(300)
       .style("filter", "drop-shadow(0 0 8px rgba(255, 255, 255, 0.3))")
-      .style("opacity", 1)
+      .style("stroke", "rgba(255, 255, 255, 0.8)")
+      .style("stroke-width", "2px")
       .attr("r", (d) => d.radius);
 
-    // Reset all connections
+    // Reset connections
     this.connectionElements
-      .attr("stroke", "rgba(255, 255, 255, 0.2)")
-      .attr("stroke-width", 1)
-      .attr("opacity", 0.6)
-      .style("stroke-dasharray", "none");
+      .transition()
+      .duration(300)
+      .style("stroke", "rgba(255, 255, 255, 0.3)")
+      .style("stroke-width", "1.5px")
+      .style("opacity", "0.7")
+      .style("stroke-dasharray", "none")
+      .style("stroke-dashoffset", "0");
   }
 
-  highlightConnections(neuron) {
-    this.connectionElements
-      .style("opacity", (d) =>
-        d.source.id === neuron.id || d.target.id === neuron.id ? 1 : 0.2
-      )
-      .attr("stroke-width", (d) =>
-        d.source.id === neuron.id || d.target.id === neuron.id ? 3 : 1
-      );
+  // FIXED: Proper neuron info panel
+  showNeuronInfoPanel(neuron, connectedNeuronIds) {
+    this.removeNeuronInfoPanel();
+
+    const panel = document.createElement("div");
+    panel.id = "neuronInfoPanel";
+    panel.style.cssText = `
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            width: 350px;
+            max-height: 500px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            font-family: Inter, sans-serif;
+            font-size: 14px;
+            z-index: 10000;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            border-left: 4px solid #4facfe;
+        `;
+
+    const layerInfo = this.getLayerExplanation(neuron.layer);
+    const activationLevel = this.getActivationLevel(neuron.activation);
+
+    panel.innerHTML = `
+            <div style="border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 12px; margin-bottom: 12px;">
+                <strong style="color: #4facfe; font-size: 16px;">Neuron ${
+                  neuron.id
+                }</strong>
+                <button id="closeNeuronPanel" style="float: right; background: none; border: none; color: white; font-size: 18px; cursor: pointer;">×</button>
+            </div>
+            
+            <div style="margin-bottom: 12px;">
+                <strong>Layer:</strong> ${layerInfo.name}<br>
+                <small style="color: #aaa;">${layerInfo.description}</small>
+            </div>
+            
+            <div style="margin-bottom: 12px;">
+                <strong>Activation:</strong> 
+                <span style="color: ${
+                  activationLevel.color
+                }; font-weight: bold; font-size: 16px;">
+                    ${neuron.activation.toFixed(3)}
+                </span><br>
+                <small style="color: #aaa;">${
+                  activationLevel.description
+                }</small>
+            </div>
+            
+            <div style="margin-bottom: 12px;">
+                <strong>Connections:</strong> ${
+                  connectedNeuronIds.length
+                } neurons
+            </div>
+            
+            <div style="background: rgba(255,255,255,0.1); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+                <strong style="color: #FFD700;">💡 What this means:</strong><br>
+                <small>${this.getDetailedExplanation(neuron)}</small>
+            </div>
+            
+            <div style="background: rgba(79, 172, 254, 0.2); padding: 12px; border-radius: 8px; font-size: 12px;">
+                <strong>🎯 For Digit Recognition:</strong><br>
+                <small>${this.getDigitRecognitionContext(neuron)}</small>
+            </div>
+        `;
+
+    document.body.appendChild(panel);
+
+    // Add close button functionality
+    document
+      .getElementById("closeNeuronPanel")
+      .addEventListener("click", () => {
+        this.removeNeuronInfoPanel();
+        this.clearHighlights();
+      });
+
+    // Auto-hide after 15 seconds
+    setTimeout(() => this.removeNeuronInfoPanel(), 15000);
   }
 
-  async animateForwardPass(activationData) {
-    if (this.isAnimating) return;
+  removeNeuronInfoPanel() {
+    const existing = document.getElementById("neuronInfoPanel");
+    if (existing) existing.remove();
+  }
 
-    this.isAnimating = true;
+  getLayerExplanation(layerIndex) {
+    const explanations = {
+      0: {
+        name: "Input Layer",
+        description: "Receives raw pixel data (28×28 = 784 pixels)",
+      },
+      1: {
+        name: "Hidden Layer 1",
+        description: "Detects basic features like edges and shapes",
+      },
+      2: {
+        name: "Hidden Layer 2",
+        description: "Combines features into complex patterns",
+      },
+      3: {
+        name: "Hidden Layer 3",
+        description: "Recognizes digit-specific patterns",
+      },
+      4: {
+        name: "Output Layer",
+        description: "Final digit classification (0-9)",
+      },
+    };
+    return (
+      explanations[layerIndex] || {
+        name: `Layer ${layerIndex + 1}`,
+        description: "Processing layer",
+      }
+    );
+  }
 
-    // Reset all activations
-    this.neurons.forEach((neuron) => (neuron.activation = 0));
+  getActivationLevel(activation) {
+    if (activation > 0.8)
+      return { color: "#34C759", description: "Very High - Strong response" };
+    if (activation > 0.6)
+      return { color: "#FFD700", description: "High - Good response" };
+    if (activation > 0.4)
+      return { color: "#FF9500", description: "Medium - Moderate response" };
+    if (activation > 0.2)
+      return { color: "#8E8E93", description: "Low - Weak response" };
+    return { color: "#FF3B30", description: "Very Low - No response" };
+  }
 
-    // Animate each layer
-    for (let layer = 0; layer < activationData.length; layer++) {
-      await this.animateLayer(layer, activationData[layer]);
-      await this.sleep(this.animationSpeed);
+  getDetailedExplanation(neuron) {
+    const layer = neuron.layer;
+    const activation = neuron.activation;
+
+    if (layer === 0) {
+      return `This input neuron represents pixel ${
+        neuron.index
+      } in the image. Activation ${activation.toFixed(
+        3
+      )} shows pixel brightness (1.0 = white, 0.0 = black).`;
+    } else if (layer === this.getOutputLayerIndex()) {
+      return `This output neuron represents digit ${
+        neuron.index
+      }. Activation ${activation.toFixed(
+        3
+      )} shows confidence. The highest activation determines the prediction.`;
+    } else {
+      return `This hidden neuron detects specific patterns. Activation ${activation.toFixed(
+        3
+      )} shows how strongly it responds to current input features.`;
     }
+  }
 
-    this.isAnimating = false;
+  getDigitRecognitionContext(neuron) {
+    const layer = neuron.layer;
+
+    if (layer === 0) {
+      return `Input pixels form the digit shape. Edge pixels are usually dark (low activation), stroke pixels are bright (high activation).`;
+    } else if (layer === this.getOutputLayerIndex()) {
+      return `The network compares all 10 output neurons. The one with highest activation becomes the predicted digit. Multiple neurons can have high values initially.`;
+    } else {
+      return `Hidden neurons detect features like curves, lines, and corners that distinguish different digits from each other.`;
+    }
+  }
+
+  getOutputLayerIndex() {
+    return this.architecture.hiddenLayers.length + 1;
+  }
+
+  // FIXED: Processing context window
+  showProcessingContext(digit = "?", confidence = 0) {
+    this.removeProcessingContext();
+
+    const panel = document.createElement("div");
+    panel.id = "processingContext";
+    panel.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 20px;
+            transform: translateY(-50%);
+            width: 280px;
+            padding: 20px;
+            background: rgba(0, 122, 255, 0.95);
+            color: white;
+            border-radius: 12px;
+            font-family: Inter, sans-serif;
+            z-index: 9999;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+        `;
+
+    panel.innerHTML = `
+            <h3 style="margin: 0 0 10px 0; display: flex; align-items: center; gap: 8px;">
+                🧠 Processing Digit "${digit}"
+            </h3>
+            <p style="margin: 0 0 15px 0; font-size: 14px;">
+                Confidence: <strong>${confidence.toFixed(1)}%</strong>
+            </p>
+            <div id="processingSteps" style="font-size: 13px;">
+                <div class="step" data-step="0" style="padding: 8px 0; opacity: 0.5; transition: all 0.3s ease;">
+                    <span class="step-icon">⏳</span> 1. Reading pixels...
+                </div>
+                <div class="step" data-step="1" style="padding: 8px 0; opacity: 0.5; transition: all 0.3s ease;">
+                    <span class="step-icon">⏳</span> 2. Detecting edges...
+                </div>
+                <div class="step" data-step="2" style="padding: 8px 0; opacity: 0.5; transition: all 0.3s ease;">
+                    <span class="step-icon">⏳</span> 3. Finding patterns...
+                </div>
+                <div class="step" data-step="3" style="padding: 8px 0; opacity: 0.5; transition: all 0.3s ease;">
+                    <span class="step-icon">⏳</span> 4. Classifying digit...
+                </div>
+            </div>
+            <div style="margin-top: 15px; font-size: 12px; opacity: 0.8;">
+                💡 Click neurons to explore connections!
+            </div>
+        `;
+
+    document.body.appendChild(panel);
+    this.updateProcessingStep(0);
+  }
+
+  updateProcessingStep(stepIndex) {
+    const context = document.getElementById("processingContext");
+    if (!context) return;
+
+    const steps = context.querySelectorAll(".step");
+    steps.forEach((step, index) => {
+      const icon = step.querySelector(".step-icon");
+      if (index <= stepIndex) {
+        step.style.opacity = "1";
+        step.style.fontWeight = "bold";
+        step.style.color = "#FFD700";
+        icon.textContent = index === stepIndex ? "🔄" : "✅";
+      } else {
+        step.style.opacity = "0.5";
+        step.style.fontWeight = "normal";
+        step.style.color = "rgba(255, 255, 255, 0.7)";
+        icon.textContent = "⏳";
+      }
+    });
+  }
+
+  removeProcessingContext() {
+    const existing = document.getElementById("processingContext");
+    if (existing) existing.remove();
+  }
+
+  // FIXED: Animation with real data
+  async animateForwardPass(activationData) {
+    if (this.animationInProgress) return;
+
+    this.animationInProgress = true;
+    this.currentActivationData = activationData;
+
+    try {
+      // Reset all activations
+      this.neurons.forEach((neuron) => (neuron.activation = 0));
+
+      const totalLayers = this.architecture.hiddenLayers.length + 2;
+
+      // Animate each layer
+      for (let layer = 0; layer < totalLayers; layer++) {
+        const layerActivations =
+          activationData[layer] || this.generateFallbackActivations(layer);
+
+        this.updateProcessingStep(layer);
+        await this.animateLayer(layer, layerActivations);
+        await this.sleep(this.animationSpeed);
+      }
+
+      // Remove context after completion
+      setTimeout(() => this.removeProcessingContext(), 2000);
+    } catch (error) {
+      console.error("Animation error:", error);
+    } finally {
+      this.animationInProgress = false;
+    }
   }
 
   async animateLayer(layerIndex, activations) {
     const layerNeurons = this.neurons.filter((n) => n.layer === layerIndex);
 
-    // Update neuron activations
+    // Update activations with real data
     layerNeurons.forEach((neuron, index) => {
       if (index < activations.length) {
-        neuron.activation = activations[index];
+        neuron.activation = Math.max(0, Math.min(1, activations[index]));
+      } else {
+        neuron.activation = 0;
       }
     });
 
-    // Animate neuron appearance
+    // Animate neurons
     this.neuronElements
       .filter((d) => d.layer === layerIndex)
       .select("circle")
       .transition()
-      .duration(500)
-      .attr("r", (d) => d.radius + d.activation * 5)
+      .duration(800)
+      .attr("r", (d) => d.radius * (1 + d.activation * 0.5))
+      .style("fill", (d) => {
+        const baseColor = this.getNeuronColor(d.type);
+        const intensity = d.activation * 0.4;
+        return d3.interpolate(baseColor, "#ffffff")(intensity);
+      })
       .style("filter", (d) =>
         d.activation > 0.5
           ? "url(#glow)"
@@ -468,132 +754,110 @@ class AdvancedNeuralGraph {
       .filter((d) => d.layer === layerIndex)
       .select(".neuron-label")
       .transition()
-      .duration(500)
+      .duration(800)
+      .style("fill", (d) => (d.activation > 0.7 ? "#000000" : "#ffffff"))
       .tween("text", function (d) {
         const interpolate = d3.interpolate(0, d.activation);
         return function (t) {
           this.textContent = interpolate(t).toFixed(2);
         };
       });
+  }
 
-    // Animate connections from previous layer
-    if (layerIndex > 0) {
-      this.animateConnections(layerIndex - 1, layerIndex);
+  generateFallbackActivations(layerIndex) {
+    const layerSizes = [
+      this.architecture.inputSize,
+      ...this.architecture.hiddenLayers,
+      this.architecture.outputSize,
+    ];
+
+    const layerSize = Math.min(layerSizes[layerIndex], 12);
+    const activations = [];
+
+    for (let i = 0; i < layerSize; i++) {
+      if (layerIndex === 0) {
+        activations.push(Math.random() * 0.8 + 0.1);
+      } else if (layerIndex === layerSizes.length - 1) {
+        // FIXED: Proper output layer with varied activations
+        activations.push(Math.random() * 0.9 + 0.1);
+      } else {
+        activations.push(Math.max(0, Math.random() * 1.2 - 0.3));
+      }
     }
 
-    // Create particle effects
-    this.createParticleEffects(layerIndex);
-  }
-
-  animateConnections(fromLayer, toLayer) {
-    const relevantConnections = this.connections.filter(
-      (c) => c.source.layer === fromLayer && c.target.layer === toLayer
-    );
-
-    this.connectionElements
-      .filter((d) => relevantConnections.includes(d))
-      .transition()
-      .duration(1000)
-      .attr("stroke", "url(#connectionGradient)")
-      .attr("stroke-width", 3)
-      .style("opacity", 1)
-      .transition()
-      .duration(500)
-      .attr("stroke", "rgba(255, 255, 255, 0.2)")
-      .attr("stroke-width", 1);
-  }
-
-  createParticleEffects(layerIndex) {
-    const layerNeurons = this.neurons.filter((n) => n.layer === layerIndex);
-
-    layerNeurons.forEach((neuron) => {
-      if (neuron.activation > 0.3) {
-        this.createParticle(neuron);
-      }
-    });
-  }
-
-  createParticle(neuron) {
-    const particle = this.svg
-      .append("circle")
-      .attr("class", "particle")
-      .attr("cx", neuron.x)
-      .attr("cy", neuron.y)
-      .attr("r", 2)
-      .attr("fill", "#ffffff")
-      .style("opacity", 0.8);
-
-    particle
-      .transition()
-      .duration(1000)
-      .attr("r", 8)
-      .style("opacity", 0)
-      .remove();
-  }
-
-  startParticleSystem() {
-    // Continuous ambient particles
-    setInterval(() => {
-      if (!this.isAnimating) {
-        this.createAmbientParticles();
-      }
-    }, 2000);
-  }
-
-  createAmbientParticles() {
-    const randomNeuron =
-      this.neurons[Math.floor(Math.random() * this.neurons.length)];
-
-    const particle = this.svg
-      .append("circle")
-      .attr("class", "ambient-particle")
-      .attr("cx", randomNeuron.x)
-      .attr("cy", randomNeuron.y)
-      .attr("r", 1)
-      .attr("fill", "rgba(255, 255, 255, 0.6)");
-
-    particle
-      .transition()
-      .duration(3000)
-      .attr("r", 6)
-      .style("opacity", 0)
-      .remove();
+    return activations;
   }
 
   sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  // Public API methods
+  // FIXED: Proper reset function
+  reset() {
+    this.animationInProgress = false;
+    this.selectedNeuron = null;
+
+    // Reset neuron states
+    this.neurons.forEach((neuron) => {
+      neuron.activation = 0;
+      neuron.fx = null;
+      neuron.fy = null;
+      neuron.x = neuron.originalX;
+      neuron.y = neuron.originalY;
+    });
+
+    // Clear highlights
+    this.clearHighlights();
+
+    // Reset visual elements
+    if (this.neuronElements) {
+      this.neuronElements
+        .select("circle")
+        .transition()
+        .duration(500)
+        .attr("r", (d) => d.radius)
+        .style("fill", (d) => this.getNeuronColor(d.type))
+        .style("filter", "drop-shadow(0 0 8px rgba(255, 255, 255, 0.3))");
+
+      this.neuronElements
+        .select(".neuron-label")
+        .transition()
+        .duration(500)
+        .style("fill", "white")
+        .text("0.00");
+    }
+
+    // Remove UI elements
+    this.removeNeuronInfoPanel();
+    this.removeProcessingContext();
+
+    // Restart simulation
+    if (this.simulation) {
+      this.simulation.alpha(1).restart();
+    }
+
+    console.log("🔄 Neural network reset complete");
+  }
+
   updateArchitecture(newArchitecture) {
+    this.animationInProgress = false;
     this.architecture = newArchitecture;
+
+    // Clear existing
+    if (this.svg) {
+      this.svg.selectAll("*").remove();
+    }
+
+    // Rebuild
     this.buildNeuralNetwork();
+
+    console.log("✅ Architecture updated");
   }
 
   setAnimationSpeed(speed) {
     this.animationSpeed = speed;
   }
-
-  reset() {
-    this.neurons.forEach((neuron) => {
-      neuron.activation = 0;
-      neuron.fx = null;
-      neuron.fy = null;
-    });
-
-    this.neuronElements
-      .select("circle")
-      .attr("r", (d) => d.radius)
-      .style("filter", "drop-shadow(0 0 8px rgba(255, 255, 255, 0.3))");
-
-    this.neuronElements.select(".neuron-label").text("0.00");
-
-    this.connectionElements
-      .attr("stroke", "rgba(255, 255, 255, 0.2)")
-      .attr("stroke-width", 1)
-      .style("opacity", 0.6);
-  }
 }
 
-// Export for use in other modules
+// Export to window
 window.AdvancedNeuralGraph = AdvancedNeuralGraph;

@@ -91,7 +91,9 @@ class DatasetShowcase {
         this.playAdvancedAnimation();
       } else if (e.key === "ArrowRight") {
         e.preventDefault();
-        this.advancedGraph.reset();
+        if (this.advancedGraph) {
+          this.advancedGraph.reset();
+        }
       } else if (e.key === "t" || e.key === "T") {
         e.preventDefault();
         const toggle = document.getElementById("dataSourceToggle");
@@ -142,12 +144,15 @@ class DatasetShowcase {
       `Switching to ${this.getModelDisplayName(newModelName)}...`
     );
 
+    // Stop any running animations
+    if (this.advancedGraph) {
+      this.advancedGraph.reset();
+    }
+
     try {
       const response = await fetch("/switch_model", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ model_name: newModelName }),
       });
 
@@ -158,7 +163,7 @@ class DatasetShowcase {
         this.modelAccuracy = result.model_info.accuracy;
         this.updateModelAccuracy();
 
-        // Update network architecture if it changed
+        // Update network architecture
         if (result.model_info.architecture) {
           this.networkArchitecture = {
             inputSize: result.model_info.architecture[0],
@@ -169,7 +174,7 @@ class DatasetShowcase {
               ],
           };
 
-          // Update the advanced graph with new architecture
+          // Properly update the visualization
           if (this.advancedGraph) {
             this.advancedGraph.updateArchitecture(this.networkArchitecture);
           }
@@ -179,14 +184,11 @@ class DatasetShowcase {
           `✅ Switched to ${this.getModelDisplayName(newModelName)}`,
           "success"
         );
-        this.announceChange(
-          `Model switched to ${this.getModelDisplayName(newModelName)}`
-        );
 
-        // Load a new sample with the new model
+        // Load new sample after brief delay
         setTimeout(() => {
           this.loadNextSample();
-        }, 500);
+        }, 1000);
       } else {
         throw new Error(result.error || "Failed to switch model");
       }
@@ -196,14 +198,12 @@ class DatasetShowcase {
         `❌ Failed to switch model: ${error.message}`,
         "error"
       );
-
-      // Revert selector to previous model
       document.getElementById("modelSelector").value = this.currentModel;
     } finally {
       this.isModelSwitching = false;
       setTimeout(() => {
         this.hideModelSwitchToast();
-      }, 2000);
+      }, 3000);
     }
   }
 
@@ -527,33 +527,56 @@ class DatasetShowcase {
 
   // Advanced Network Visualization Setup
   setupAdvancedNetworkVisualization() {
-    // Create the advanced network graph
-    this.advancedGraph = new AdvancedNeuralGraph(
-      "advancedNetworkContainer",
-      this.networkArchitecture
-    );
+    // Check if required dependencies are available
+    if (typeof AdvancedNeuralGraph === "undefined") {
+      console.error("AdvancedNeuralGraph class not found");
+      return;
+    }
 
-    // Setup controls
-    document
-      .getElementById("playAnimationBtn")
-      .addEventListener("click", () => {
-        this.playAdvancedAnimation();
-      });
+    try {
+      // Create the advanced network graph
+      this.advancedGraph = new AdvancedNeuralGraph(
+        "advancedNetworkContainer",
+        this.networkArchitecture
+      );
 
-    document.getElementById("resetNetworkBtn").addEventListener("click", () => {
-      this.advancedGraph.reset();
-    });
+      // Setup controls
+      document
+        .getElementById("playAnimationBtn")
+        .addEventListener("click", () => {
+          this.playAdvancedAnimation();
+        });
 
-    document
-      .getElementById("animationSpeed")
-      .addEventListener("change", (e) => {
-        this.advancedGraph.setAnimationSpeed(parseInt(e.target.value));
-      });
+      document
+        .getElementById("resetNetworkBtn")
+        .addEventListener("click", () => {
+          if (this.advancedGraph) {
+            this.advancedGraph.reset();
+          }
+        });
+
+      document
+        .getElementById("animationSpeed")
+        .addEventListener("change", (e) => {
+          if (this.advancedGraph) {
+            this.advancedGraph.setAnimationSpeed(parseInt(e.target.value));
+          }
+        });
+
+      console.log("✅ Advanced neural graph initialized");
+    } catch (error) {
+      console.error("Failed to initialize advanced neural graph:", error);
+    }
   }
 
   async playAdvancedAnimation() {
     if (!this.currentSample) {
       this.showError("No image loaded for visualization");
+      return;
+    }
+
+    if (!this.advancedGraph) {
+      this.showError("Neural network visualization not initialized");
       return;
     }
 
@@ -569,7 +592,7 @@ class DatasetShowcase {
         throw new Error("Failed to get activation data");
       }
 
-      // Add contextual information overlay
+      // Show processing context with real data
       this.showProcessingContext();
 
       // Run the animation with real data
@@ -586,112 +609,6 @@ class DatasetShowcase {
     }
   }
 
-  showProcessingContext() {
-    const contextPanel = d3
-      .select("body")
-      .append("div")
-      .attr("id", "processingContext")
-      .style("position", "fixed")
-      .style("top", "50%")
-      .style("left", "20px")
-      .style("transform", "translateY(-50%)")
-      .style("background", "rgba(0, 122, 255, 0.9)")
-      .style("color", "white")
-      .style("padding", "20px")
-      .style("border-radius", "12px")
-      .style("max-width", "250px")
-      .style("font-family", "Inter, sans-serif")
-      .style("z-index", "1500");
-
-    contextPanel.html(`
-        <h3 style="margin-top: 0;">🧠 Processing "${
-          this.currentPrediction?.predicted_digit || "?"
-        }"</h3>
-        <p style="margin-bottom: 15px;">Watch how the network analyzes this digit:</p>
-        <div id="processingSteps">
-            <div class="step active">1. Reading pixels...</div>
-            <div class="step">2. Detecting edges...</div>
-            <div class="step">3. Finding patterns...</div>
-            <div class="step">4. Classifying digit...</div>
-        </div>
-    `);
-
-    // Remove after animation
-    setTimeout(() => {
-      contextPanel.remove();
-    }, 8000);
-  }
-
-  async generateActivationData() {
-    // Generate realistic activation values for each layer
-    const layers = [
-      this.networkArchitecture.inputSize,
-      ...this.networkArchitecture.hiddenLayers,
-      this.networkArchitecture.outputSize,
-    ];
-
-    const activationData = [];
-
-    for (let i = 0; i < layers.length; i++) {
-      const layerSize = Math.min(layers[i], 15); // Match visible neurons
-      const activations = [];
-
-      for (let j = 0; j < layerSize; j++) {
-        if (i === 0) {
-          // Input layer: simulate pixel intensities
-          activations.push(Math.random() * 0.8 + 0.1);
-        } else if (i === layers.length - 1) {
-          // Output layer: simulate softmax probabilities
-          const value = Math.random();
-          activations.push(j === 0 ? Math.max(value, 0.7) : value * 0.3);
-        } else {
-          // Hidden layers: simulate ReLU activations
-          activations.push(Math.max(0, Math.random() * 2 - 0.5));
-        }
-      }
-
-      activationData.push(activations);
-    }
-
-    return activationData;
-  }
-
-  showLoading() {
-    const overlay = document.getElementById("sampleOverlay");
-    overlay.classList.add("loading");
-  }
-
-  hideLoading() {
-    const overlay = document.getElementById("sampleOverlay");
-    overlay.classList.remove("loading");
-  }
-
-  showError(message) {
-    console.error(message);
-    this.announceChange(`Error: ${message}`);
-  }
-
-  announceChange(message) {
-    const announcements = document.getElementById("announcements");
-    announcements.textContent = message;
-    setTimeout(() => {
-      announcements.textContent = "";
-    }, 3000);
-  }
-
-  debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-      const later = () => {
-        clearTimeout(timeout);
-        func(...args);
-      };
-      clearTimeout(timeout);
-      timeout = setTimeout(later, wait);
-    };
-  }
-
-  // Get real neural network activations for the current image
   async getRealActivationData() {
     if (!this.currentSample) return null;
 
@@ -720,7 +637,6 @@ class DatasetShowcase {
     }
   }
 
-  // Enhanced realistic activation generation based on current image
   generateRealisticActivationData() {
     const layers = [
       this.networkArchitecture.inputSize,
@@ -730,28 +646,26 @@ class DatasetShowcase {
 
     const activationData = [];
 
-    // Simulate realistic activations that make sense for digit recognition
+    // Generate realistic activations that make sense for digit recognition
     for (let i = 0; i < layers.length; i++) {
-      const layerSize = Math.min(layers[i], 15);
+      const layerSize = Math.min(layers[i], 12); // Match visible neurons
       const activations = [];
 
       for (let j = 0; j < layerSize; j++) {
         if (i === 0) {
-          // Input layer: simulate pixel intensities from actual image
-          const intensity = this.getPixelIntensityForNeuron(j);
-          activations.push(intensity);
+          // Input layer: simulate pixel intensities
+          activations.push(Math.random() * 0.8 + 0.1);
         } else if (i === layers.length - 1) {
           // Output layer: simulate softmax with correct digit having highest activation
           const predictedDigit = this.currentPrediction?.predicted_digit || 0;
           if (j === predictedDigit) {
             activations.push(0.8 + Math.random() * 0.15); // High activation for predicted digit
           } else {
-            activations.push(Math.random() * 0.3); // Lower for others
+            activations.push(Math.random() * 0.4); // Lower for others
           }
         } else {
-          // Hidden layers: simulate feature detection activations
-          const featureStrength = this.simulateFeatureDetection(i, j);
-          activations.push(Math.max(0, featureStrength)); // ReLU-like activation
+          // Hidden layers: simulate ReLU activations
+          activations.push(Math.max(0, Math.random() * 1.2 - 0.3));
         }
       }
 
@@ -761,132 +675,121 @@ class DatasetShowcase {
     return activationData;
   }
 
-  showNeuronInfoPanel(neuron, connectedNeurons) {
-    // Remove existing panel
-    d3.select("#neuronInfoPanel").remove();
+  showProcessingContext() {
+    if (!this.advancedGraph) return;
 
-    // Create info panel
-    const panel = d3
-      .select("body")
-      .append("div")
-      .attr("id", "neuronInfoPanel")
-      .style("position", "fixed")
-      .style("top", "20px")
-      .style("right", "20px")
-      .style("background", "rgba(0, 0, 0, 0.85)")
-      .style("color", "white")
-      .style("padding", "15px")
-      .style("border-radius", "12px")
-      .style("max-width", "300px")
-      .style("font-family", "Inter, sans-serif")
-      .style("font-size", "14px")
-      .style("z-index", "2000")
-      .style("box-shadow", "0 8px 32px rgba(0, 0, 0, 0.3)")
-      .style("backdrop-filter", "blur(10px)");
+    const digit = this.currentPrediction?.predicted_digit || "?";
+    const confidence = this.currentPrediction?.confidence || 0;
 
-    // Add content based on neuron layer
-    const layerInfo = this.getLayerExplanation(neuron.layer);
-    const activationLevel = this.getActivationLevel(neuron.activation);
+    this.advancedGraph.showProcessingContext(digit, confidence);
+  }
 
-    panel.html(`
-        <div style="border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-bottom: 10px;">
-            <strong style="color: #4facfe;">Neuron ${neuron.id}</strong>
-        </div>
-        
-        <div style="margin-bottom: 8px;">
-            <strong>Layer:</strong> ${layerInfo.name}<br>
-            <small style="color: #aaa;">${layerInfo.description}</small>
-        </div>
-        
-        <div style="margin-bottom: 8px;">
-            <strong>Activation:</strong> 
-            <span style="color: ${activationLevel.color}; font-weight: bold;">
-                ${neuron.activation.toFixed(3)}
-            </span>
-            <small style="color: #aaa;"> (${
-              activationLevel.description
-            })</small>
-        </div>
-        
-        <div style="margin-bottom: 8px;">
-            <strong>Connected to:</strong> ${connectedNeurons.length} neurons
-        </div>
-        
-        <div style="background: rgba(255,255,255,0.1); padding: 8px; border-radius: 6px; margin-top: 10px;">
-            <small><strong>💡 What this means:</strong><br>
-            ${this.getNeuronExplanation(neuron)}</small>
-        </div>
-    `);
+  showResultExplanation() {
+    // Remove any existing explanation
+    const existing = document.getElementById("resultExplanation");
+    if (existing) existing.remove();
 
-    // Auto-hide after 10 seconds
+    const explanation = document.createElement("div");
+    explanation.id = "resultExplanation";
+    explanation.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(52, 199, 89, 0.9);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            font-family: Inter, sans-serif;
+            font-size: 14px;
+            z-index: 1000;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+        `;
+
+    const digit = this.currentPrediction?.predicted_digit || "?";
+    const confidence = this.currentPrediction?.confidence || 0;
+    const actual =
+      this.currentSample?.label || this.currentSample?.actual_label || "?";
+
+    explanation.innerHTML = `
+            <strong>🎯 Result:</strong> Predicted digit ${digit} with ${confidence.toFixed(
+      1
+    )}% confidence
+            ${
+              digit.toString() === actual.toString()
+                ? " ✅ Correct!"
+                : ` ❌ (Actual: ${actual})`
+            }
+        `;
+
+    document.body.appendChild(explanation);
+
+    // Auto-hide after 5 seconds
     setTimeout(() => {
-      d3.select("#neuronInfoPanel")
-        .transition()
-        .duration(500)
-        .style("opacity", 0)
-        .remove();
-    }, 10000);
-  }
-
-  getLayerExplanation(layerIndex) {
-    const explanations = {
-      0: {
-        name: "Input Layer",
-        description:
-          "Receives raw pixel data from the image (28×28 = 784 pixels)",
-      },
-      1: {
-        name: "Hidden Layer 1",
-        description: "Detects basic features like edges and simple shapes",
-      },
-      2: {
-        name: "Hidden Layer 2",
-        description: "Combines basic features into more complex patterns",
-      },
-      3: {
-        name: "Hidden Layer 3",
-        description: "Recognizes digit-specific features and patterns",
-      },
-      4: {
-        name: "Output Layer",
-        description:
-          "Final classification - each neuron represents a digit (0-9)",
-      },
-    };
-
-    return (
-      explanations[layerIndex] || {
-        name: `Layer ${layerIndex + 1}`,
-        description: "Processing layer",
+      if (explanation.parentNode) {
+        explanation.remove();
       }
-    );
+    }, 5000);
   }
 
-  getActivationLevel(activation) {
-    if (activation > 0.7) {
-      return { color: "#34C759", description: "High - Strong response" };
-    } else if (activation > 0.3) {
-      return { color: "#FF9500", description: "Medium - Moderate response" };
-    } else {
-      return { color: "#8E8E93", description: "Low - Weak response" };
-    }
+  showLoading() {
+    const overlay = document.getElementById("sampleOverlay");
+    overlay.classList.add("loading");
   }
 
-  getNeuronExplanation(neuron) {
-    const layer = neuron.layer;
-    const activation = neuron.activation;
+  hideLoading() {
+    const overlay = document.getElementById("sampleOverlay");
+    overlay.classList.remove("loading");
+  }
 
-    if (layer === 0) {
-      return `This neuron represents a pixel in the input image. Activation of ${activation.toFixed(
-        3
-      )} indicates ${activation > 0.5 ? "bright" : "dark"} pixel intensity.`;
-    } else if (layer === this.networkArchitecture.hiddenLayers.length + 1) {
-      return `This output neuron represents digit ${neuron.index}. Higher activation means the network is more confident this digit is present.`;
-    } else {
-      return `This hidden neuron detects specific features in the image. Activation of ${activation.toFixed(
-        3
-      )} shows ${activation > 0.5 ? "strong" : "weak"} feature detection.`;
-    }
+  showError(message) {
+    console.error(message);
+    this.announceChange(`Error: ${message}`);
+
+    // Show error toast
+    const errorToast = document.createElement("div");
+    errorToast.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 59, 48, 0.9);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-family: Inter, sans-serif;
+            font-size: 14px;
+            z-index: 10000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        `;
+    errorToast.textContent = message;
+    document.body.appendChild(errorToast);
+
+    setTimeout(() => {
+      if (errorToast.parentNode) {
+        errorToast.remove();
+      }
+    }, 3000);
+  }
+
+  announceChange(message) {
+    const announcements = document.getElementById("announcements");
+    announcements.textContent = message;
+    setTimeout(() => {
+      announcements.textContent = "";
+    }, 3000);
+  }
+
+  debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
   }
 }
 
