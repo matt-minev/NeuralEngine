@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dataset Showcase - NeuralEngine</title>
+    <link rel="stylesheet" href="static/css/showcase.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="animated-background">
+      <div class="floating-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+        <div class="shape shape-4"></div>
+        <div class="shape shape-5"></div>
+      </div>
+    </div>
+
+    <div class="showcase-container">
+      <!-- Header -->
+      <header class="showcase-header">
+        <div class="header-content">
+          <h1 class="showcase-title">NeuralEngine Dataset Showcase</h1>
+          <p class="showcase-subtitle">
+            Explore real-time neural network predictions on dataset samples
+          </p>
+        </div>
+        <div class="header-controls">
+          <div class="data-source-toggle">
+            <label class="toggle-label">
+              <span class="toggle-text">Real Data</span>
+              <div class="toggle-switch">
+                <input
+                  type="checkbox"
+                  id="dataSourceToggle"
+                  aria-label="Toggle between real and synthetic data"
+                />
+                <span class="slider"></span>
+              </div>
+              <span class="toggle-text">Synthetic</span>
+            </label>
+          </div>
+          <button
+            id="backToDrawBtn"
+            class="btn btn-secondary"
+            aria-label="Back to drawing mode"
+          >
+            <span class="btn-icon">✏️</span>
+            Drawing Mode
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Content -->
+      <main class="showcase-main">
+        <!-- Sample Display Section -->
+        <section class="sample-section">
+          <div class="sample-container">
+            <div class="sample-image-wrapper">
+              <canvas
+                id="sampleCanvas"
+                width="280"
+                height="280"
+                aria-label="Dataset sample digit"
+                title="Click to load next sample"
+              ></canvas>
+              <div class="sample-overlay loading" id="sampleOverlay">
+                <div class="loading-spinner"></div>
+                <p>Loading sample...</p>
+              </div>
+              <div class="click-hint" id="clickHint">
+                <span>Click to load next sample</span>
+              </div>
+            </div>
+
+            <div class="prediction-display">
+              <div
+                class="predicted-digit"
+                id="predictedDigit"
+                aria-live="polite"
+              >
+                -
+              </div>
+              <div class="prediction-details">
+                <div class="confidence-display">
+                  <span class="confidence-label">Confidence</span>
+                  <span class="confidence-value" id="confidenceValue">--%</span>
+                </div>
+                <div class="actual-label-display">
+                  <span class="actual-label">Actual</span>
+                  <span class="actual-value" id="actualValue">-</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Sample Controls Section (Moved up from footer) -->
+        <section class="sample-controls-section">
+          <div class="controls-container">
+            <button
+              id="nextSampleBtn"
+              class="btn btn-primary btn-large"
+              aria-label="Load next sample"
+            >
+              <span class="btn-icon">🔄</span>
+              Next Sample
+            </button>
+
+            <div class="sample-stats">
+              <div class="sample-counter">
+                <span class="counter-label">Sample</span>
+                <span class="counter-value" id="sampleCounter">1</span>
+              </div>
+
+              <div class="accuracy-display">
+                <span class="accuracy-label">Model Accuracy</span>
+                <span class="accuracy-value" id="modelAccuracy">--%</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Neural Network Visualization Section -->
+        <section class="network-section">
+          <div class="network-container">
+            <div class="network-header">
+              <h2>Neural Network Architecture</h2>
+              <div class="network-controls">
+                <button
+                  id="playAnimationBtn"
+                  class="btn btn-primary"
+                  aria-label="Play animation"
+                >
+                  <span class="btn-icon">▶️</span>
+                  Play Animation
+                </button>
+                <button
+                  id="stepThroughBtn"
+                  class="btn btn-secondary"
+                  aria-label="Step through layers"
+                >
+                  <span class="btn-icon">⏩</span>
+                  Step Through
+                </button>
+              </div>
+            </div>
+
+            <div class="network-visualization">
+              <svg
+                id="networkSvg"
+                viewBox="0 0 1000 600"
+                aria-label="Neural network architecture visualization"
+              >
+                <!-- Network layers will be dynamically generated -->
+              </svg>
+
+              <div class="layer-info" id="layerInfo">
+                <div class="layer-name" id="layerName">Input Layer</div>
+                <div class="layer-details" id="layerDetails">
+                  784 neurons (28×28 pixels)
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <!-- Floating 3D Footer -->
+      <footer class="floating-footer">
+        <div class="footer-content">
+          <div class="footer-brand">
+            <span class="brand-icon">🧠</span>
+            <span class="brand-text">NeuralEngine</span>
+          </div>
+          <div class="footer-info">
+            <span class="info-text">Powered by advanced neural networks</span>
+            <span class="version-text">v2.0</span>
+          </div>
+        </div>
+        <div class="footer-glow"></div>
+      </footer>
+
+      <!-- Model Info Modal -->
+      <div class="modal-overlay" id="modelInfoModal" aria-hidden="true">
+        <div class="modal-content" role="dialog" aria-labelledby="modalTitle">
+          <div class="modal-header">
+            <h3 id="modalTitle">Model Information</h3>
+            <button
+              class="modal-close"
+              id="closeModalBtn"
+              aria-label="Close modal"
+            >
+              ×
+            </button>
+          </div>
+          <div class="modal-body" id="modelInfoContent">
+            <!-- Model info will be populated dynamically -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Animation Progress Indicator -->
+      <div class="progress-indicator" id="progressIndicator">
+        <div class="progress-bar" id="progressBar"></div>
+        <span class="progress-text" id="progressText">Preparing...</span>
+      </div>
+
+      <!-- Accessibility announcements -->
+      <div class="sr-only" aria-live="polite" id="announcements"></div>
+    </div>
+
+    <script src="static/js/showcase.js"></script>
+  </body>
+</html>
