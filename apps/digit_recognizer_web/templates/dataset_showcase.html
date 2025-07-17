@@ -11,7 +11,11 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
+
+    <!-- D3.js Library - REQUIRED for advanced neural graph -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
   </head>
+
   <body>
     <div class="animated-background">
       <div class="floating-shapes">
@@ -102,7 +106,7 @@
           </div>
         </section>
 
-        <!-- Sample Controls Section (Moved up from footer) -->
+        <!-- Sample Controls Section (Updated with Model Dropdown) -->
         <section class="sample-controls-section">
           <div class="controls-container">
             <button
@@ -124,6 +128,40 @@
                 <span class="accuracy-label">Model Accuracy</span>
                 <span class="accuracy-value" id="modelAccuracy">--%</span>
               </div>
+
+              <!-- Model Selector Dropdown -->
+              <div class="model-selector-container">
+                <label class="model-selector-label">Neural Model</label>
+                <div class="model-selector-wrapper">
+                  <select
+                    id="modelSelector"
+                    class="model-selector"
+                    aria-label="Select neural network model"
+                  >
+                    <option value="enhanced_digit_model.pkl">
+                      Enhanced Model
+                    </option>
+                    <option value="digit_model.pkl">Basic Model</option>
+                    <option value="digit_model_optimized.pkl">
+                      Optimized Model
+                    </option>
+                    <option value="digit_model_bullterproof.pkl">
+                      Advanced Model
+                    </option>
+                  </select>
+                  <div class="model-selector-icon">
+                    <svg width="12" height="8" viewBox="0 0 12 8" fill="none">
+                      <path
+                        d="M1 1L6 6L11 1"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -132,7 +170,7 @@
         <section class="network-section">
           <div class="network-container">
             <div class="network-header">
-              <h2>Neural Network Architecture</h2>
+              <h2>Advanced Neural Network Visualization</h2>
               <div class="network-controls">
                 <button
                   id="playAnimationBtn"
@@ -143,30 +181,41 @@
                   Play Animation
                 </button>
                 <button
-                  id="stepThroughBtn"
+                  id="resetNetworkBtn"
                   class="btn btn-secondary"
-                  aria-label="Step through layers"
+                  aria-label="Reset network"
                 >
-                  <span class="btn-icon">⏩</span>
-                  Step Through
+                  <span class="btn-icon">🔄</span>
+                  Reset
                 </button>
+                <div class="speed-control">
+                  <label for="animationSpeed">Speed:</label>
+                  <select id="animationSpeed">
+                    <option value="3000">Slow</option>
+                    <option value="2000" selected>Normal</option>
+                    <option value="1000">Fast</option>
+                    <option value="500">Very Fast</option>
+                  </select>
+                </div>
               </div>
             </div>
 
-            <div class="network-visualization">
-              <svg
-                id="networkSvg"
-                viewBox="0 0 1000 600"
-                aria-label="Neural network architecture visualization"
-              >
-                <!-- Network layers will be dynamically generated -->
-              </svg>
+            <div class="network-visualization" id="advancedNetworkContainer">
+              <!-- Advanced network will be rendered here -->
+            </div>
 
-              <div class="layer-info" id="layerInfo">
-                <div class="layer-name" id="layerName">Input Layer</div>
-                <div class="layer-details" id="layerDetails">
-                  784 neurons (28×28 pixels)
-                </div>
+            <div class="network-info-panel">
+              <div class="info-item">
+                <span class="info-label">Click neurons</span>
+                <span class="info-value">to explore connections</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Drag neurons</span>
+                <span class="info-value">to reposition</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Scroll</span>
+                <span class="info-value">to zoom in/out</span>
               </div>
             </div>
           </div>
@@ -178,10 +227,10 @@
         <div class="footer-content">
           <div class="footer-brand">
             <span class="brand-icon">🧠</span>
-            <span class="brand-text">NeuralEngine</span>
+            <span class="brand-text">Digit Recognizer</span>
           </div>
           <div class="footer-info">
-            <span class="info-text">Powered by advanced neural networks</span>
+            <span class="info-text">Powered by Neural Engine.</span>
             <span class="version-text">v2.0</span>
           </div>
         </div>
@@ -213,10 +262,21 @@
         <span class="progress-text" id="progressText">Preparing...</span>
       </div>
 
+      <!-- Model Switch Toast -->
+      <div class="model-switch-toast" id="modelSwitchToast">
+        <div class="toast-content">
+          <span class="toast-icon">🔄</span>
+          <span class="toast-message" id="toastMessage"
+            >Switching model...</span
+          >
+        </div>
+      </div>
+
       <!-- Accessibility announcements -->
       <div class="sr-only" aria-live="polite" id="announcements"></div>
     </div>
 
+    <script src="static/js/advanced_neural_graph.js"></script>
     <script src="static/js/showcase.js"></script>
   </body>
 </html>

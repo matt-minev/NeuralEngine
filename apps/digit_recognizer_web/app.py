@@ -501,6 +501,52 @@ def predict():
         print(f"Prediction error: {e}")
         return jsonify({'error': f'Prediction failed: {str(e)}'}), 500
 
+@app.route('/api/neural/activations', methods=['POST'])
+def get_neural_activations():
+    """Get layer-by-layer activations for a specific image."""
+    try:
+        data = request.get_json()
+        image_data = data.get('image_data')
+        model_name = data.get('model_name', 'enhanced_digit_model.pkl')
+        
+        if not image_data:
+            return jsonify({'error': 'No image data provided'}), 400
+        
+        # Preprocess image
+        processed_image = preprocess_image(image_data)
+        if processed_image is None:
+            return jsonify({'error': 'Failed to process image'}), 400
+        
+        if neural_network is None:
+            return jsonify({'error': 'Model not loaded'}), 500
+        
+        # Get activations from each layer
+        layer_activations = []
+        current_input = processed_image
+        
+        for i, layer in enumerate(neural_network.layers):
+            # Forward pass through this layer
+            layer_output = layer.forward(current_input)
+            
+            # Store activations (limit to first 15 for visualization)
+            activations = layer_output.flatten()[:15].tolist()
+            layer_activations.append(activations)
+            
+            current_input = layer_output
+        
+        return jsonify({
+            'layer_activations': layer_activations,
+            'final_prediction': int(np.argmax(current_input)),
+            'layer_info': [
+                {'name': f'Layer {i+1}', 'size': len(acts)} 
+                for i, acts in enumerate(layer_activations)
+            ]
+        })
+        
+    except Exception as e:
+        print(f"Neural activations error: {e}")
+        return jsonify({'error': f'Failed to get activations: {str(e)}'}), 500
+
 @app.route('/model_info')
 def get_model_info():
     """Get information about the loaded model."""

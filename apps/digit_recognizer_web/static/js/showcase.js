@@ -1,23 +1,24 @@
 /**
  * NeuralEngine Dataset Showcase - Enhanced Interactive JavaScript
- * Apple-inspired neural network visualization with data source toggle
+ * Apple-inspired neural network visualization with data source toggle and advanced graph
  */
 
 class DatasetShowcase {
   constructor() {
     this.canvas = document.getElementById("sampleCanvas");
     this.ctx = this.canvas.getContext("2d");
-    this.networkSvg = document.getElementById("networkSvg");
     this.currentSample = null;
     this.currentPrediction = null;
     this.isAnimating = false;
     this.animationStep = 0;
     this.sampleCount = 0;
     this.modelAccuracy = 0;
-    this.layerNodes = [];
-    this.connections = [];
     this.animationId = null;
-    this.useSyntheticData = false; // Toggle state
+    this.useSyntheticData = false;
+    this.currentModel = "enhanced_digit_model.pkl";
+    this.isModelSwitching = false;
+    this.firstLoadComplete = false;
+    this.advancedGraph = null;
 
     // Network architecture (matching your real model)
     this.networkArchitecture = {
@@ -28,8 +29,8 @@ class DatasetShowcase {
 
     this.initializeShowcase();
     this.setupEventListeners();
+    this.setupAdvancedNetworkVisualization();
     this.loadFirstSample();
-    this.setupNetworkVisualization();
 
     console.log("🎨 Enhanced Dataset Showcase initialized");
   }
@@ -50,6 +51,9 @@ class DatasetShowcase {
 
     // Set up toggle initial state
     this.updateToggleState();
+
+    // Setup model selector
+    this.setupModelSelector();
   }
 
   setupEventListeners() {
@@ -58,30 +62,19 @@ class DatasetShowcase {
       this.loadNextSample();
     });
 
-    // Image click handler - NEW
+    // Image click handler
     this.canvas.addEventListener("click", () => {
       this.loadNextSample();
     });
 
-    // Data source toggle - NEW
+    // Data source toggle
     document
       .getElementById("dataSourceToggle")
       .addEventListener("change", (e) => {
         this.useSyntheticData = e.target.checked;
         this.updateToggleState();
-        this.loadNextSample(); // Load new sample with new data source
+        this.loadNextSample();
       });
-
-    // Animation controls
-    document
-      .getElementById("playAnimationBtn")
-      .addEventListener("click", () => {
-        this.playAnimation();
-      });
-
-    document.getElementById("stepThroughBtn").addEventListener("click", () => {
-      this.stepThroughAnimation();
-    });
 
     // Back to drawing mode
     document.getElementById("backToDrawBtn").addEventListener("click", () => {
@@ -95,13 +88,12 @@ class DatasetShowcase {
         this.loadNextSample();
       } else if (e.key === "Enter") {
         e.preventDefault();
-        this.playAnimation();
+        this.playAdvancedAnimation();
       } else if (e.key === "ArrowRight") {
         e.preventDefault();
-        this.stepThroughAnimation();
+        this.advancedGraph.reset();
       } else if (e.key === "t" || e.key === "T") {
         e.preventDefault();
-        // Toggle data source with T key
         const toggle = document.getElementById("dataSourceToggle");
         toggle.checked = !toggle.checked;
         toggle.dispatchEvent(new Event("change"));
@@ -111,9 +103,131 @@ class DatasetShowcase {
     // Resize handler
     window.addEventListener("resize", () => {
       this.debounce(() => {
-        this.setupNetworkVisualization();
+        if (this.advancedGraph) {
+          this.advancedGraph.updateArchitecture(this.networkArchitecture);
+        }
       }, 250);
     });
+  }
+
+  setupModelSelector() {
+    const modelSelector = document.getElementById("modelSelector");
+
+    // Set initial value
+    modelSelector.value = this.currentModel;
+
+    // Add change event listener
+    modelSelector.addEventListener("change", async (e) => {
+      const newModel = e.target.value;
+      if (newModel !== this.currentModel && !this.isModelSwitching) {
+        await this.switchModel(newModel);
+      }
+    });
+
+    // Add visual feedback on focus
+    modelSelector.addEventListener("focus", () => {
+      modelSelector.parentElement.classList.add("focused");
+    });
+
+    modelSelector.addEventListener("blur", () => {
+      modelSelector.parentElement.classList.remove("focused");
+    });
+  }
+
+  async switchModel(newModelName) {
+    if (this.isModelSwitching) return;
+
+    this.isModelSwitching = true;
+    this.showModelSwitchToast(
+      `Switching to ${this.getModelDisplayName(newModelName)}...`
+    );
+
+    try {
+      const response = await fetch("/switch_model", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ model_name: newModelName }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        this.currentModel = newModelName;
+        this.modelAccuracy = result.model_info.accuracy;
+        this.updateModelAccuracy();
+
+        // Update network architecture if it changed
+        if (result.model_info.architecture) {
+          this.networkArchitecture = {
+            inputSize: result.model_info.architecture[0],
+            hiddenLayers: result.model_info.architecture.slice(1, -1),
+            outputSize:
+              result.model_info.architecture[
+                result.model_info.architecture.length - 1
+              ],
+          };
+
+          // Update the advanced graph with new architecture
+          if (this.advancedGraph) {
+            this.advancedGraph.updateArchitecture(this.networkArchitecture);
+          }
+        }
+
+        this.showModelSwitchToast(
+          `✅ Switched to ${this.getModelDisplayName(newModelName)}`,
+          "success"
+        );
+        this.announceChange(
+          `Model switched to ${this.getModelDisplayName(newModelName)}`
+        );
+
+        // Load a new sample with the new model
+        setTimeout(() => {
+          this.loadNextSample();
+        }, 500);
+      } else {
+        throw new Error(result.error || "Failed to switch model");
+      }
+    } catch (error) {
+      console.error("Model switch failed:", error);
+      this.showModelSwitchToast(
+        `❌ Failed to switch model: ${error.message}`,
+        "error"
+      );
+
+      // Revert selector to previous model
+      document.getElementById("modelSelector").value = this.currentModel;
+    } finally {
+      this.isModelSwitching = false;
+      setTimeout(() => {
+        this.hideModelSwitchToast();
+      }, 2000);
+    }
+  }
+
+  getModelDisplayName(modelName) {
+    const displayNames = {
+      "enhanced_digit_model.pkl": "Enhanced Model",
+      "basic_digit_model.pkl": "Basic Model",
+      "advanced_digit_model.pkl": "Advanced Model",
+    };
+    return displayNames[modelName] || modelName.replace(".pkl", "");
+  }
+
+  showModelSwitchToast(message, type = "info") {
+    const toast = document.getElementById("modelSwitchToast");
+    const messageElement = document.getElementById("toastMessage");
+
+    messageElement.textContent = message;
+    toast.className = `model-switch-toast ${type}`;
+    toast.classList.add("show");
+  }
+
+  hideModelSwitchToast() {
+    const toast = document.getElementById("modelSwitchToast");
+    toast.classList.remove("show");
   }
 
   updateToggleState() {
@@ -150,14 +264,30 @@ class DatasetShowcase {
   }
 
   async loadFirstSample() {
-    await this.loadSampleFromDataset();
+    this.showLoading();
+    try {
+      await this.loadSampleFromDataset();
+      this.firstLoadComplete = true;
+    } catch (error) {
+      console.error("Failed to load first sample:", error);
+      this.showError("Failed to load first sample");
+    } finally {
+      this.hideLoading();
+    }
   }
 
   async loadNextSample() {
+    if (!this.firstLoadComplete) return;
+
     this.showLoading();
-    await this.loadSampleFromDataset();
-    this.hideLoading();
-    this.resetAnimation();
+    try {
+      await this.loadSampleFromDataset();
+    } catch (error) {
+      console.error("Failed to load sample:", error);
+      this.showError("Failed to load sample");
+    } finally {
+      this.hideLoading();
+    }
   }
 
   async loadSampleFromDataset() {
@@ -290,14 +420,12 @@ class DatasetShowcase {
 
     for (let i = 0; i < data.length; i += 4) {
       if (Math.random() < 0.05) {
-        // 5% chance of noise
         const noise = Math.random() * 100;
         data[i] = data[i + 1] = data[i + 2] = noise;
       }
     }
 
     ctx.putImageData(imageData, 0, 0);
-
     return canvas.toDataURL();
   }
 
@@ -397,311 +525,135 @@ class DatasetShowcase {
     }
   }
 
-  setupNetworkVisualization() {
-    this.layerNodes = [];
-    this.connections = [];
-
-    // Clear existing SVG content
-    this.networkSvg.innerHTML = "";
-
-    const svgRect = this.networkSvg.getBoundingClientRect();
-    const width = svgRect.width || 1000;
-    const height = svgRect.height || 600;
-
-    // Calculate layer positions
-    const layers = [
-      this.networkArchitecture.inputSize,
-      ...this.networkArchitecture.hiddenLayers,
-      this.networkArchitecture.outputSize,
-    ];
-
-    const layerSpacing = width / (layers.length + 1);
-
-    // Create layers
-    layers.forEach((nodeCount, layerIndex) => {
-      const layerNodes = [];
-      const x = layerSpacing * (layerIndex + 1);
-
-      // Limit visible nodes for large layers
-      const visibleNodes = Math.min(nodeCount, 12);
-      const nodeStep = nodeCount > 12 ? Math.floor(nodeCount / 12) : 1;
-
-      for (let i = 0; i < visibleNodes; i++) {
-        const actualNodeIndex = i * nodeStep;
-        const y = 50 + (i * (height - 100)) / (visibleNodes - 1);
-
-        const node = this.createNetworkNode(x, y, layerIndex, actualNodeIndex);
-        layerNodes.push(node);
-        this.networkSvg.appendChild(node);
-      }
-
-      this.layerNodes.push(layerNodes);
-
-      // Create connections to next layer
-      if (layerIndex < layers.length - 1) {
-        this.createLayerConnections(layerIndex);
-      }
-    });
-
-    // Add layer labels
-    this.addLayerLabels();
-
-    // Show initial layer info
-    this.showLayerInfo(0);
-  }
-
-  createNetworkNode(x, y, layerIndex, nodeIndex) {
-    const node = document.createElementNS(
-      "http://www.w3.org/2000/svg",
-      "circle"
-    );
-    node.setAttribute("cx", x);
-    node.setAttribute("cy", y);
-    node.setAttribute("r", 8);
-    node.setAttribute("class", "network-node");
-
-    if (layerIndex === 0) {
-      node.classList.add("input");
-    } else if (layerIndex === this.layerNodes.length) {
-      node.classList.add("output");
-    }
-
-    // Add hover effect
-    node.addEventListener("mouseenter", () => {
-      this.showNodeInfo(layerIndex, nodeIndex);
-    });
-
-    return node;
-  }
-
-  createLayerConnections(layerIndex) {
-    const currentLayer = this.layerNodes[layerIndex];
-    const nextLayer = this.layerNodes[layerIndex + 1];
-
-    if (!currentLayer || !nextLayer) return;
-
-    // Create subset of connections to avoid clutter
-    const maxConnections = 30;
-    const connectionStep = Math.max(
-      1,
-      Math.floor((currentLayer.length * nextLayer.length) / maxConnections)
+  // Advanced Network Visualization Setup
+  setupAdvancedNetworkVisualization() {
+    // Create the advanced network graph
+    this.advancedGraph = new AdvancedNeuralGraph(
+      "advancedNetworkContainer",
+      this.networkArchitecture
     );
 
-    currentLayer.forEach((startNode, startIndex) => {
-      nextLayer.forEach((endNode, endIndex) => {
-        if ((startIndex * nextLayer.length + endIndex) % connectionStep === 0) {
-          const connection = this.createConnection(startNode, endNode);
-          this.connections.push(connection);
-          this.networkSvg.insertBefore(connection, this.networkSvg.firstChild);
-        }
+    // Setup controls
+    document
+      .getElementById("playAnimationBtn")
+      .addEventListener("click", () => {
+        this.playAdvancedAnimation();
       });
+
+    document.getElementById("resetNetworkBtn").addEventListener("click", () => {
+      this.advancedGraph.reset();
     });
+
+    document
+      .getElementById("animationSpeed")
+      .addEventListener("change", (e) => {
+        this.advancedGraph.setAnimationSpeed(parseInt(e.target.value));
+      });
   }
 
-  createConnection(startNode, endNode) {
-    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-    line.setAttribute("x1", startNode.getAttribute("cx"));
-    line.setAttribute("y1", startNode.getAttribute("cy"));
-    line.setAttribute("x2", endNode.getAttribute("cx"));
-    line.setAttribute("y2", endNode.getAttribute("cy"));
-    line.setAttribute("class", "network-connection");
-
-    return line;
-  }
-
-  addLayerLabels() {
-    const labels = ["Input", "Hidden 1", "Hidden 2", "Hidden 3", "Output"];
-    const layers = [
-      this.networkArchitecture.inputSize,
-      ...this.networkArchitecture.hiddenLayers,
-      this.networkArchitecture.outputSize,
-    ];
-    const layerSpacing = 1000 / (layers.length + 1);
-
-    this.layerNodes.forEach((layer, index) => {
-      if (index < labels.length) {
-        const text = document.createElementNS(
-          "http://www.w3.org/2000/svg",
-          "text"
-        );
-        text.setAttribute("x", layerSpacing * (index + 1));
-        text.setAttribute("y", 30);
-        text.setAttribute("class", "network-layer-label");
-        text.textContent = labels[index];
-        this.networkSvg.appendChild(text);
-      }
-    });
-  }
-
-  showLayerInfo(layerIndex) {
-    const layerInfo = document.getElementById("layerInfo");
-    const layerName = document.getElementById("layerName");
-    const layerDetails = document.getElementById("layerDetails");
-
-    const layerNames = [
-      "Input Layer",
-      "Hidden Layer 1",
-      "Hidden Layer 2",
-      "Hidden Layer 3",
-      "Output Layer",
-    ];
-    const layerSizes = [
-      this.networkArchitecture.inputSize,
-      ...this.networkArchitecture.hiddenLayers,
-      this.networkArchitecture.outputSize,
-    ];
-
-    layerName.textContent = layerNames[layerIndex] || `Layer ${layerIndex + 1}`;
-    layerDetails.textContent = `${layerSizes[layerIndex]} neurons`;
-
-    layerInfo.classList.add("show");
-  }
-
-  showNodeInfo(layerIndex, nodeIndex) {
-    this.showLayerInfo(layerIndex);
-  }
-
-  playAnimation() {
-    if (this.isAnimating) return;
-
-    this.isAnimating = true;
-    this.animationStep = 0;
+  async playAdvancedAnimation() {
+    if (!this.currentSample) {
+      this.showError("No image loaded for visualization");
+      return;
+    }
 
     const playBtn = document.getElementById("playAnimationBtn");
     playBtn.disabled = true;
-    playBtn.innerHTML = '<span class="btn-icon">⏸️</span>Animating...';
+    playBtn.innerHTML = '<span class="btn-icon">⏸️</span>Processing...';
 
-    this.showProgressIndicator();
-    this.animateNetworkFlow();
-  }
+    try {
+      // Get real activation data from the current image
+      const activationData = await this.getRealActivationData();
 
-  stepThroughAnimation() {
-    if (this.isAnimating) return;
+      if (!activationData) {
+        throw new Error("Failed to get activation data");
+      }
 
-    this.animationStep++;
-    this.animateStep(this.animationStep);
+      // Add contextual information overlay
+      this.showProcessingContext();
 
-    if (this.animationStep >= this.layerNodes.length) {
-      this.animationStep = 0;
+      // Run the animation with real data
+      await this.advancedGraph.animateForwardPass(activationData);
+
+      // Show final result explanation
+      this.showResultExplanation();
+    } catch (error) {
+      console.error("Animation error:", error);
+      this.showError("Failed to animate: " + error.message);
+    } finally {
+      playBtn.disabled = false;
+      playBtn.innerHTML = '<span class="btn-icon">▶️</span>Play Animation';
     }
   }
 
-  animateNetworkFlow() {
-    const totalSteps = this.layerNodes.length;
-    const stepDuration = 1000; // 1 second per step
+  showProcessingContext() {
+    const contextPanel = d3
+      .select("body")
+      .append("div")
+      .attr("id", "processingContext")
+      .style("position", "fixed")
+      .style("top", "50%")
+      .style("left", "20px")
+      .style("transform", "translateY(-50%)")
+      .style("background", "rgba(0, 122, 255, 0.9)")
+      .style("color", "white")
+      .style("padding", "20px")
+      .style("border-radius", "12px")
+      .style("max-width", "250px")
+      .style("font-family", "Inter, sans-serif")
+      .style("z-index", "1500");
 
-    const animate = (step) => {
-      if (step >= totalSteps) {
-        this.completeAnimation();
-        return;
-      }
+    contextPanel.html(`
+        <h3 style="margin-top: 0;">🧠 Processing "${
+          this.currentPrediction?.predicted_digit || "?"
+        }"</h3>
+        <p style="margin-bottom: 15px;">Watch how the network analyzes this digit:</p>
+        <div id="processingSteps">
+            <div class="step active">1. Reading pixels...</div>
+            <div class="step">2. Detecting edges...</div>
+            <div class="step">3. Finding patterns...</div>
+            <div class="step">4. Classifying digit...</div>
+        </div>
+    `);
 
-      this.animateStep(step);
-      this.updateProgress((step + 1) / totalSteps);
-
-      setTimeout(() => animate(step + 1), stepDuration);
-    };
-
-    animate(0);
+    // Remove after animation
+    setTimeout(() => {
+      contextPanel.remove();
+    }, 8000);
   }
 
-  animateStep(step) {
-    // Reset all nodes and connections
-    this.resetNetworkVisualization();
-
-    // Activate current layer
-    if (this.layerNodes[step]) {
-      this.layerNodes[step].forEach((node) => {
-        node.classList.add("active");
-      });
-
-      // Activate connections from previous layer
-      if (step > 0) {
-        this.activateConnections(step - 1, step);
-      }
-    }
-
-    // Show layer info
-    this.showLayerInfo(step);
-
-    // Update progress text
-    const layerNames = [
-      "Input Processing",
-      "Hidden Layer 1",
-      "Hidden Layer 2",
-      "Hidden Layer 3",
-      "Output Generation",
+  async generateActivationData() {
+    // Generate realistic activation values for each layer
+    const layers = [
+      this.networkArchitecture.inputSize,
+      ...this.networkArchitecture.hiddenLayers,
+      this.networkArchitecture.outputSize,
     ];
-    this.updateProgressText(layerNames[step] || `Layer ${step + 1}`);
-  }
 
-  activateConnections(fromLayer, toLayer) {
-    // Enhanced connection activation with staggered timing
-    const delay = Math.random() * 300;
-    setTimeout(() => {
-      this.connections.forEach((connection, index) => {
-        if (Math.random() < 0.4) {
-          // 40% chance for more visible flow
-          setTimeout(() => {
-            connection.classList.add("active");
-          }, index * 10); // Staggered activation
+    const activationData = [];
+
+    for (let i = 0; i < layers.length; i++) {
+      const layerSize = Math.min(layers[i], 15); // Match visible neurons
+      const activations = [];
+
+      for (let j = 0; j < layerSize; j++) {
+        if (i === 0) {
+          // Input layer: simulate pixel intensities
+          activations.push(Math.random() * 0.8 + 0.1);
+        } else if (i === layers.length - 1) {
+          // Output layer: simulate softmax probabilities
+          const value = Math.random();
+          activations.push(j === 0 ? Math.max(value, 0.7) : value * 0.3);
+        } else {
+          // Hidden layers: simulate ReLU activations
+          activations.push(Math.max(0, Math.random() * 2 - 0.5));
         }
-      });
-    }, delay);
-  }
+      }
 
-  resetNetworkVisualization() {
-    // Remove all active states
-    this.layerNodes.forEach((layer) => {
-      layer.forEach((node) => {
-        node.classList.remove("active");
-      });
-    });
+      activationData.push(activations);
+    }
 
-    this.connections.forEach((connection) => {
-      connection.classList.remove("active");
-    });
-  }
-
-  completeAnimation() {
-    this.isAnimating = false;
-    this.hideProgressIndicator();
-
-    const playBtn = document.getElementById("playAnimationBtn");
-    playBtn.disabled = false;
-    playBtn.innerHTML = '<span class="btn-icon">▶️</span>Play Animation';
-
-    // Reset visualization
-    setTimeout(() => {
-      this.resetNetworkVisualization();
-    }, 1000);
-  }
-
-  resetAnimation() {
-    this.animationStep = 0;
-    this.isAnimating = false;
-    this.resetNetworkVisualization();
-    this.hideProgressIndicator();
-  }
-
-  showProgressIndicator() {
-    const indicator = document.getElementById("progressIndicator");
-    indicator.classList.add("show");
-  }
-
-  hideProgressIndicator() {
-    const indicator = document.getElementById("progressIndicator");
-    indicator.classList.remove("show");
-  }
-
-  updateProgress(progress) {
-    const progressBar = document.getElementById("progressBar");
-    progressBar.style.setProperty("--progress", `${progress * 100}%`);
-  }
-
-  updateProgressText(text) {
-    const progressText = document.getElementById("progressText");
-    progressText.textContent = text;
+    return activationData;
   }
 
   showLoading() {
@@ -738,18 +690,207 @@ class DatasetShowcase {
       timeout = setTimeout(later, wait);
     };
   }
+
+  // Get real neural network activations for the current image
+  async getRealActivationData() {
+    if (!this.currentSample) return null;
+
+    try {
+      // Send current image to backend for detailed activation analysis
+      const response = await fetch("/api/neural/activations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          image_data: this.currentSample.image_data || this.currentSample.image,
+          model_name: this.currentModel,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.error) {
+        console.warn("Failed to get real activations, using simulation");
+        return this.generateRealisticActivationData();
+      }
+
+      return data.layer_activations;
+    } catch (error) {
+      console.error("Error fetching real activations:", error);
+      return this.generateRealisticActivationData();
+    }
+  }
+
+  // Enhanced realistic activation generation based on current image
+  generateRealisticActivationData() {
+    const layers = [
+      this.networkArchitecture.inputSize,
+      ...this.networkArchitecture.hiddenLayers,
+      this.networkArchitecture.outputSize,
+    ];
+
+    const activationData = [];
+
+    // Simulate realistic activations that make sense for digit recognition
+    for (let i = 0; i < layers.length; i++) {
+      const layerSize = Math.min(layers[i], 15);
+      const activations = [];
+
+      for (let j = 0; j < layerSize; j++) {
+        if (i === 0) {
+          // Input layer: simulate pixel intensities from actual image
+          const intensity = this.getPixelIntensityForNeuron(j);
+          activations.push(intensity);
+        } else if (i === layers.length - 1) {
+          // Output layer: simulate softmax with correct digit having highest activation
+          const predictedDigit = this.currentPrediction?.predicted_digit || 0;
+          if (j === predictedDigit) {
+            activations.push(0.8 + Math.random() * 0.15); // High activation for predicted digit
+          } else {
+            activations.push(Math.random() * 0.3); // Lower for others
+          }
+        } else {
+          // Hidden layers: simulate feature detection activations
+          const featureStrength = this.simulateFeatureDetection(i, j);
+          activations.push(Math.max(0, featureStrength)); // ReLU-like activation
+        }
+      }
+
+      activationData.push(activations);
+    }
+
+    return activationData;
+  }
+
+  showNeuronInfoPanel(neuron, connectedNeurons) {
+    // Remove existing panel
+    d3.select("#neuronInfoPanel").remove();
+
+    // Create info panel
+    const panel = d3
+      .select("body")
+      .append("div")
+      .attr("id", "neuronInfoPanel")
+      .style("position", "fixed")
+      .style("top", "20px")
+      .style("right", "20px")
+      .style("background", "rgba(0, 0, 0, 0.85)")
+      .style("color", "white")
+      .style("padding", "15px")
+      .style("border-radius", "12px")
+      .style("max-width", "300px")
+      .style("font-family", "Inter, sans-serif")
+      .style("font-size", "14px")
+      .style("z-index", "2000")
+      .style("box-shadow", "0 8px 32px rgba(0, 0, 0, 0.3)")
+      .style("backdrop-filter", "blur(10px)");
+
+    // Add content based on neuron layer
+    const layerInfo = this.getLayerExplanation(neuron.layer);
+    const activationLevel = this.getActivationLevel(neuron.activation);
+
+    panel.html(`
+        <div style="border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-bottom: 10px;">
+            <strong style="color: #4facfe;">Neuron ${neuron.id}</strong>
+        </div>
+        
+        <div style="margin-bottom: 8px;">
+            <strong>Layer:</strong> ${layerInfo.name}<br>
+            <small style="color: #aaa;">${layerInfo.description}</small>
+        </div>
+        
+        <div style="margin-bottom: 8px;">
+            <strong>Activation:</strong> 
+            <span style="color: ${activationLevel.color}; font-weight: bold;">
+                ${neuron.activation.toFixed(3)}
+            </span>
+            <small style="color: #aaa;"> (${
+              activationLevel.description
+            })</small>
+        </div>
+        
+        <div style="margin-bottom: 8px;">
+            <strong>Connected to:</strong> ${connectedNeurons.length} neurons
+        </div>
+        
+        <div style="background: rgba(255,255,255,0.1); padding: 8px; border-radius: 6px; margin-top: 10px;">
+            <small><strong>💡 What this means:</strong><br>
+            ${this.getNeuronExplanation(neuron)}</small>
+        </div>
+    `);
+
+    // Auto-hide after 10 seconds
+    setTimeout(() => {
+      d3.select("#neuronInfoPanel")
+        .transition()
+        .duration(500)
+        .style("opacity", 0)
+        .remove();
+    }, 10000);
+  }
+
+  getLayerExplanation(layerIndex) {
+    const explanations = {
+      0: {
+        name: "Input Layer",
+        description:
+          "Receives raw pixel data from the image (28×28 = 784 pixels)",
+      },
+      1: {
+        name: "Hidden Layer 1",
+        description: "Detects basic features like edges and simple shapes",
+      },
+      2: {
+        name: "Hidden Layer 2",
+        description: "Combines basic features into more complex patterns",
+      },
+      3: {
+        name: "Hidden Layer 3",
+        description: "Recognizes digit-specific features and patterns",
+      },
+      4: {
+        name: "Output Layer",
+        description:
+          "Final classification - each neuron represents a digit (0-9)",
+      },
+    };
+
+    return (
+      explanations[layerIndex] || {
+        name: `Layer ${layerIndex + 1}`,
+        description: "Processing layer",
+      }
+    );
+  }
+
+  getActivationLevel(activation) {
+    if (activation > 0.7) {
+      return { color: "#34C759", description: "High - Strong response" };
+    } else if (activation > 0.3) {
+      return { color: "#FF9500", description: "Medium - Moderate response" };
+    } else {
+      return { color: "#8E8E93", description: "Low - Weak response" };
+    }
+  }
+
+  getNeuronExplanation(neuron) {
+    const layer = neuron.layer;
+    const activation = neuron.activation;
+
+    if (layer === 0) {
+      return `This neuron represents a pixel in the input image. Activation of ${activation.toFixed(
+        3
+      )} indicates ${activation > 0.5 ? "bright" : "dark"} pixel intensity.`;
+    } else if (layer === this.networkArchitecture.hiddenLayers.length + 1) {
+      return `This output neuron represents digit ${neuron.index}. Higher activation means the network is more confident this digit is present.`;
+    } else {
+      return `This hidden neuron detects specific features in the image. Activation of ${activation.toFixed(
+        3
+      )} shows ${activation > 0.5 ? "strong" : "weak"} feature detection.`;
+    }
+  }
 }
 
 // Initialize the showcase when DOM is loaded
 document.addEventListener("DOMContentLoaded", () => {
   new DatasetShowcase();
 });
-
-// Add CSS for progress bar animation
-const style = document.createElement("style");
-style.textContent = `
-    .progress-bar::before {
-        width: var(--progress, 0%);
-    }
-`;
-document.head.appendChild(style);

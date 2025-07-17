@@ -656,6 +656,173 @@ input:checked ~ .toggle-text:last-child {
   color: var(--success-color);
 }
 
+/* Model Selector Dropdown Styles */
+.model-selector-container {
+  text-align: center;
+  padding: 12px 20px;
+  background: rgba(242, 242, 247, 0.8);
+  backdrop-filter: blur(10px);
+  border-radius: var(--border-radius);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  transition: all var(--animation-duration) var(--animation-ease);
+  position: relative;
+}
+
+.model-selector-container:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.model-selector-label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.model-selector-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.model-selector {
+  appearance: none;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  padding-right: 24px;
+  text-align: center;
+  min-width: 120px;
+}
+
+.model-selector:focus {
+  color: var(--primary-color);
+}
+
+.model-selector-wrapper.focused {
+  color: var(--primary-color);
+}
+
+.model-selector-icon {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  pointer-events: none;
+  transition: all var(--animation-duration) var(--animation-ease);
+}
+
+.model-selector:focus + .model-selector-icon {
+  color: var(--primary-color);
+  transform: translateY(-50%) rotate(180deg);
+}
+
+.model-selector-wrapper.focused .model-selector-icon {
+  color: var(--primary-color);
+  transform: translateY(-50%) rotate(180deg);
+}
+
+/* Model Switch Toast */
+.model-switch-toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: var(--border-radius);
+  padding: 12px 20px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  z-index: 1100;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(100%);
+  transition: all var(--animation-duration) var(--animation-ease);
+  max-width: 300px;
+}
+
+.model-switch-toast.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(0);
+}
+
+.model-switch-toast.success {
+  border-left: 4px solid var(--success-color);
+}
+
+.model-switch-toast.error {
+  border-left: 4px solid var(--error-color);
+}
+
+.model-switch-toast.info {
+  border-left: 4px solid var(--primary-color);
+}
+
+.toast-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.toast-icon {
+  font-size: 1.1rem;
+  animation: spin 1s linear infinite;
+}
+
+.model-switch-toast.success .toast-icon {
+  animation: none;
+}
+
+.model-switch-toast.error .toast-icon {
+  animation: none;
+}
+
+.toast-message {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+/* Responsive adjustments for model selector */
+@media (max-width: 768px) {
+  .sample-stats {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .model-selector-container {
+    padding: 10px 16px;
+  }
+
+  .model-selector {
+    font-size: 1rem;
+    min-width: 100px;
+  }
+}
+
+@media (max-width: 480px) {
+  .model-switch-toast {
+    right: 10px;
+    left: 10px;
+    max-width: none;
+  }
+
+  .toast-content {
+    flex-direction: column;
+    gap: 5px;
+    text-align: center;
+  }
+}
+
 /* Network Section */
 .network-section {
   background: rgba(255, 255, 255, 0.9);
@@ -1258,5 +1425,123 @@ input:checked ~ .toggle-text:last-child {
 
   .floating-shapes {
     display: none;
+  }
+}
+
+/* Advanced Network Visualization Styles */
+.network-info-panel {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 20px;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  backdrop-filter: blur(10px);
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.info-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.info-value {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.speed-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.speed-control label {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.speed-control select {
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: var(--background-secondary);
+}
+
+#advancedNetworkContainer {
+  width: 100%;
+  height: 500px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Particle animations */
+.particle,
+.ambient-particle {
+  pointer-events: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .network-info-panel {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  #advancedNetworkContainer {
+    height: 400px;
+  }
+}
+
+/* Educational tooltip styles */
+#neuronInfoPanel {
+  animation: slideInRight 0.3s ease-out;
+  border-left: 4px solid #4facfe;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Processing context panel */
+#processingContext .step {
+  padding: 5px 0;
+  opacity: 0.5;
+  transition: all 0.3s ease;
+}
+
+#processingContext .step.active {
+  opacity: 1;
+  font-weight: bold;
+  color: #ffd700;
+}
+
+/* Enhanced neuron glow effects */
+.neuron-glow {
+  filter: drop-shadow(0 0 15px rgba(79, 172, 254, 0.8));
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+@keyframes pulseGlow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 15px rgba(79, 172, 254, 0.8));
+  }
+  50% {
+    filter: drop-shadow(0 0 25px rgba(79, 172, 254, 1));
   }
 }
