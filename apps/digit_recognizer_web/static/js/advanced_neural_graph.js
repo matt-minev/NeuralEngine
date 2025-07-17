@@ -575,21 +575,27 @@ class AdvancedNeuralGraph {
     const activation = neuron.activation;
 
     if (layer === 0) {
-      return `This input neuron represents pixel ${
-        neuron.index
-      } in the image. Activation ${activation.toFixed(
-        3
-      )} shows pixel brightness (1.0 = white, 0.0 = black).`;
+      // Input layer description
+      return `This input neuron represents a subset of the 784 input pixels (28×28 image). 
+                Since we show only 12 visible neurons, each represents a sample of pixel intensities.
+                Activation ${activation.toFixed(
+                  3
+                )} shows the average brightness in this region.`;
     } else if (layer === this.getOutputLayerIndex()) {
-      return `This output neuron represents digit ${
-        neuron.index
-      }. Activation ${activation.toFixed(
-        3
-      )} shows confidence. The highest activation determines the prediction.`;
+      // FIXED: Parse digit index correctly from neuron ID
+      const digitIndex = parseInt(neuron.id.split("_")[1].substring(1));
+      return `This output neuron represents digit ${digitIndex}.
+                Activation ${activation.toFixed(
+                  3
+                )} shows the network's confidence that the input is digit ${digitIndex}.
+                The neuron with highest activation determines the final prediction.`;
     } else {
-      return `This hidden neuron detects specific patterns. Activation ${activation.toFixed(
-        3
-      )} shows how strongly it responds to current input features.`;
+      const layerNum = layer;
+      return `This hidden layer ${layerNum} neuron detects specific features and patterns.
+                Activation ${activation.toFixed(
+                  3
+                )} shows how strongly this neuron responds to the detected features.
+                Multiple neurons work together to recognize digit characteristics.`;
     }
   }
 
@@ -597,11 +603,23 @@ class AdvancedNeuralGraph {
     const layer = neuron.layer;
 
     if (layer === 0) {
-      return `Input pixels form the digit shape. Edge pixels are usually dark (low activation), stroke pixels are bright (high activation).`;
+      return `Input neurons represent pixel regions from the 28×28 image. Each of the 12 visible neurons 
+                shows a sample of the 784 total pixels. Higher activation means brighter pixels in that region.`;
     } else if (layer === this.getOutputLayerIndex()) {
-      return `The network compares all 10 output neurons. The one with highest activation becomes the predicted digit. Multiple neurons can have high values initially.`;
+      // FIXED: Parse digit index correctly from neuron ID
+      const digitIndex = parseInt(neuron.id.split("_")[1].substring(1));
+      return `This is output neuron ${digitIndex}, representing digit ${digitIndex}. 
+                The network compares all 10 output neurons (0-9) and chooses the one with highest activation.
+                For correct predictions, this neuron should have the highest value when the input is digit ${digitIndex}.`;
     } else {
-      return `Hidden neurons detect features like curves, lines, and corners that distinguish different digits from each other.`;
+      const features = [
+        "basic edges and corners",
+        "curves and shapes",
+        "complex digit patterns",
+      ];
+      const feature = features[Math.min(layer - 1, 2)];
+      return `This hidden layer detects ${feature} that help distinguish between different digits 0-9.
+                Multiple neurons work together to build up the final digit classification.`;
     }
   }
 
@@ -776,16 +794,35 @@ class AdvancedNeuralGraph {
 
     for (let i = 0; i < layerSize; i++) {
       if (layerIndex === 0) {
+        // Input layer - pixel intensities
         activations.push(Math.random() * 0.8 + 0.1);
       } else if (layerIndex === layerSizes.length - 1) {
-        // FIXED: Proper output layer with varied activations
-        activations.push(Math.random() * 0.9 + 0.1);
+        // Output layer - FIXED: Ensure correct digit has highest activation
+        const predictedDigit = this.getPredictedDigitFromShowcase();
+
+        if (i === predictedDigit) {
+          // Predicted digit gets highest activation
+          activations.push(0.85 + Math.random() * 0.1); // 85-95%
+        } else {
+          // Other digits get lower activations
+          activations.push(Math.random() * 0.4 + 0.1); // 10-50%
+        }
       } else {
+        // Hidden layers - ReLU activations
         activations.push(Math.max(0, Math.random() * 1.2 - 0.3));
       }
     }
 
     return activations;
+  }
+
+  // Add this helper method to get the predicted digit
+  getPredictedDigitFromShowcase() {
+    // Try to get the predicted digit from the showcase instance
+    if (window.datasetShowcase && window.datasetShowcase.currentPrediction) {
+      return window.datasetShowcase.currentPrediction.predicted_digit;
+    }
+    return 0; // Default fallback
   }
 
   sleep(ms) {

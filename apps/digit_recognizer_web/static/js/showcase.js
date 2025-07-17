@@ -32,6 +32,8 @@ class DatasetShowcase {
     this.setupAdvancedNetworkVisualization();
     this.loadFirstSample();
 
+    window.datasetShowcase = this;
+
     console.log("🎨 Enhanced Dataset Showcase initialized");
   }
 
@@ -645,10 +647,10 @@ class DatasetShowcase {
     ];
 
     const activationData = [];
+    const predictedDigit = this.currentPrediction?.predicted_digit || 0;
 
-    // Generate realistic activations that make sense for digit recognition
     for (let i = 0; i < layers.length; i++) {
-      const layerSize = Math.min(layers[i], 12); // Match visible neurons
+      const layerSize = Math.min(layers[i], 12);
       const activations = [];
 
       for (let j = 0; j < layerSize; j++) {
@@ -656,12 +658,11 @@ class DatasetShowcase {
           // Input layer: simulate pixel intensities
           activations.push(Math.random() * 0.8 + 0.1);
         } else if (i === layers.length - 1) {
-          // Output layer: simulate softmax with correct digit having highest activation
-          const predictedDigit = this.currentPrediction?.predicted_digit || 0;
+          // FIXED: Output layer with correct digit having highest activation
           if (j === predictedDigit) {
-            activations.push(0.8 + Math.random() * 0.15); // High activation for predicted digit
+            activations.push(0.85 + Math.random() * 0.1); // 85-95% for predicted digit
           } else {
-            activations.push(Math.random() * 0.4); // Lower for others
+            activations.push(Math.random() * 0.35 + 0.05); // 5-40% for others
           }
         } else {
           // Hidden layers: simulate ReLU activations
