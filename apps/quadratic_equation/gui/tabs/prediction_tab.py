@@ -252,79 +252,166 @@ class PredictionTab:
         return True
         
     def display_prediction_results(self, inputs, predictions, confidences):
-        """Display prediction results"""
+        """Display prediction results with clear solution comparison"""
         self.results_text.delete(1.0, tk.END)
         
+        # Calculate actual solutions using quadratic formula
+        actual_solutions = self.calculate_actual_solutions(inputs)
+        
         results = []
-        results.append("🔮 PREDICTION RESULTS")
-        results.append("=" * 50)
+        results.append("🔮 NEURAL NETWORK PREDICTION RESULTS")
+        results.append("=" * 60)
         results.append(f"Scenario: {self.current_scenario.name}")
         results.append(f"Description: {self.current_scenario.description}")
         results.append("")
         
-        results.append("📝 INPUT VALUES:")
-        for feature, value in zip(self.current_scenario.input_features, inputs):
-            results.append(f"  {feature} = {value:.6f}")
-        results.append("")
-        
-        results.append("🎯 PREDICTED VALUES:")
-        for feature, pred, conf in zip(self.current_scenario.target_features, predictions, confidences):
-            confidence_pct = conf * 100
-            confidence_level = "🟢 High" if conf > 0.8 else "🟡 Medium" if conf > 0.6 else "🔴 Low"
-            results.append(f"  {feature} = {pred:.6f} (Confidence: {confidence_pct:.1f}% {confidence_level})")
-        results.append("")
-        
-        # Add verification for coefficients→roots scenario
+        # Input section with larger, clearer display
+        results.append("📝 INPUT EQUATION:")
         if self.current_scenario.name == "Coefficients → Roots":
-            self.add_verification_results(results, inputs, predictions)
+            a, b, c = inputs
+            results.append(f"   {a:.3f}x² + {b:.3f}x + {c:.3f} = 0")
+        else:
+            results.append("📊 INPUT VALUES:")
+            for feature, value in zip(self.current_scenario.input_features, inputs):
+                results.append(f"   {feature} = {value:.6f}")
+        results.append("")
+        
+        # Main comparison section
+        results.append("🎯 SOLUTION COMPARISON:")
+        results.append("-" * 40)
+        
+        if actual_solutions:
+            for i, (feature, predicted, confidence) in enumerate(zip(
+                self.current_scenario.target_features, predictions, confidences)):
+                
+                actual = actual_solutions[i] if i < len(actual_solutions) else "N/A"
+                confidence_pct = confidence * 100
+                
+                # Calculate error
+                if actual != "N/A":
+                    error = abs(predicted - actual)
+                    error_pct = abs(error / (actual + 1e-8)) * 100 if actual != 0 else error * 100
+                    
+                    # Error assessment
+                    if error < 0.01:
+                        error_status = "🎉 EXCELLENT"
+                    elif error < 0.1:
+                        error_status = "👍 GOOD"
+                    elif error < 1.0:
+                        error_status = "⚠️ MODERATE"
+                    else:
+                        error_status = "❌ POOR"
+                        
+                    results.append(f"   {feature.upper()}:")
+                    results.append(f"     🤖 Predicted:  {predicted:.6f}")
+                    results.append(f"     ✅ Actual:     {actual:.6f}")
+                    results.append(f"     📊 Error:      {error:.6f} ({error_pct:.2f}%) {error_status}")
+                    results.append(f"     🎯 Confidence: {confidence_pct:.1f}%")
+                    results.append("")
+                else:
+                    results.append(f"   {feature.upper()}:")
+                    results.append(f"     🤖 Predicted:  {predicted:.6f}")
+                    results.append(f"     🎯 Confidence: {confidence_pct:.1f}%")
+                    results.append("")
+        else:
+            # Fallback for scenarios where we can't calculate actual solutions
+            results.append("   📊 PREDICTED VALUES:")
+            for feature, pred, conf in zip(self.current_scenario.target_features, predictions, confidences):
+                confidence_pct = conf * 100
+                confidence_level = "🟢 High" if conf > 0.8 else "🟡 Medium" if conf > 0.6 else "🔴 Low"
+                results.append(f"     {feature} = {pred:.6f} (Confidence: {confidence_pct:.1f}% {confidence_level})")
+            results.append("")
+        
+        # Overall assessment
+        if actual_solutions and len(actual_solutions) == len(predictions):
+            total_error = sum(abs(pred - act) for pred, act in zip(predictions, actual_solutions) if act != "N/A")
+            avg_error = total_error / len(predictions)
             
+            results.append("📈 OVERALL PERFORMANCE:")
+            results.append("-" * 25)
+            if avg_error < 0.01:
+                results.append("   🏆 OUTSTANDING: Neural network is highly accurate!")
+            elif avg_error < 0.1:
+                results.append("   ✅ EXCELLENT: Very good predictions with low error")
+            elif avg_error < 1.0:
+                results.append("   ⚠️ FAIR: Moderate accuracy, needs improvement")
+            else:
+                results.append("   ❌ POOR: High error, model needs retraining")
+            
+            results.append(f"   Average Error: {avg_error:.6f}")
+            
+            # Add equation verification for quadratic roots
+            if self.current_scenario.name == "Coefficients → Roots":
+                self.add_equation_verification(results, inputs, predictions, actual_solutions)
+        
+        # Display all results
         self.results_text.insert(tk.END, '\n'.join(results))
         
     def display_test_results(self, inputs, predictions, confidences, true_values):
-        """Display test results with true value comparison"""
+        """Display test results with clear true value comparison"""
         self.results_text.delete(1.0, tk.END)
         
         results = []
-        results.append("🧪 TEST PREDICTION RESULTS")
-        results.append("=" * 50)
+        results.append("🧪 RANDOM DATASET TEST RESULTS")
+        results.append("=" * 60)
         results.append(f"Scenario: {self.current_scenario.name}")
         results.append("")
         
-        results.append("📝 INPUT VALUES:")
+        # Input section
+        results.append("📝 INPUT VALUES FROM DATASET:")
         for feature, value in zip(self.current_scenario.input_features, inputs):
-            results.append(f"  {feature} = {value:.6f}")
+            results.append(f"   {feature} = {value:.6f}")
         results.append("")
         
-        results.append("🎯 PREDICTION vs TRUE VALUES:")
+        # Main comparison
+        results.append("🎯 PREDICTION vs DATASET VALUES:")
+        results.append("-" * 45)
+        
         total_error = 0
-        for feature, pred, conf, true_val in zip(self.current_scenario.target_features, 
-                                                predictions, confidences, true_values):
+        for feature, pred, conf, true_val in zip(
+            self.current_scenario.target_features, predictions, confidences, true_values):
+            
             error = abs(pred - true_val)
             error_pct = abs(error / (true_val + 1e-8)) * 100
             total_error += error
             
             confidence_pct = conf * 100
-            results.append(f"  {feature}:")
-            results.append(f"    Predicted: {pred:.6f} (Confidence: {confidence_pct:.1f}%)")
-            results.append(f"    True:      {true_val:.6f}")
-            results.append(f"    Error:     {error:.6f} ({error_pct:.2f}%)")
-            results.append("")
             
+            # Error assessment
+            if error < 0.01:
+                error_status = "🎉 EXCELLENT"
+            elif error < 0.1:
+                error_status = "👍 GOOD"
+            elif error < 1.0:
+                error_status = "⚠️ MODERATE"
+            else:
+                error_status = "❌ POOR"
+            
+            results.append(f"   {feature.upper()}:")
+            results.append(f"     🤖 Predicted:    {pred:.6f}")
+            results.append(f"     📊 Dataset:      {true_val:.6f}")
+            results.append(f"     📈 Error:        {error:.6f} ({error_pct:.2f}%) {error_status}")
+            results.append(f"     🎯 Confidence:   {confidence_pct:.1f}%")
+            results.append("")
+        
         # Overall assessment
         avg_error = total_error / len(predictions)
-        results.append("📊 OVERALL ASSESSMENT:")
+        results.append("📊 OVERALL TEST ASSESSMENT:")
+        results.append("-" * 30)
+        
         if avg_error < 0.01:
-            results.append("  🎉 Excellent prediction! Very low error.")
+            results.append("   🏆 OUTSTANDING: Predictions match dataset very closely!")
         elif avg_error < 0.1:
-            results.append("  👍 Good prediction! Acceptable error.")
+            results.append("   ✅ EXCELLENT: Good accuracy on this test sample")
         elif avg_error < 1.0:
-            results.append("  ⚠️ Moderate prediction. Some error present.")
+            results.append("   ⚠️ FAIR: Moderate accuracy, room for improvement")
         else:
-            results.append("  ❌ Poor prediction. High error.")
-            
-        results.append(f"  Average absolute error: {avg_error:.6f}")
+            results.append("   ❌ POOR: High error, model may need retraining")
+        
+        results.append(f"   Average Absolute Error: {avg_error:.6f}")
         
         self.results_text.insert(tk.END, '\n'.join(results))
+
         
     def display_batch_results(self, results):
         """Display batch test results"""
@@ -367,23 +454,45 @@ class PredictionTab:
             
         self.results_text.insert(tk.END, '\n'.join(output))
         
-    def add_verification_results(self, results, inputs, predictions):
-        """Add verification results for coefficients→roots scenario"""
+    def add_equation_verification(self, results, inputs, predictions, actual_solutions):
+        """Add detailed equation verification"""
         a, b, c = inputs
-        x1, x2 = predictions
+        pred_x1, pred_x2 = predictions
+        actual_x1, actual_x2 = actual_solutions
         
-        results.append("✅ VERIFICATION:")
-        error1 = abs(a * x1**2 + b * x1 + c)
-        error2 = abs(a * x2**2 + b * x2 + c)
-        results.append(f"  Equation check x1: {a:.3f}×({x1:.3f})² + {b:.3f}×{x1:.3f} + {c:.3f} = {error1:.6f}")
-        results.append(f"  Equation check x2: {a:.3f}×({x2:.3f})² + {b:.3f}×{x2:.3f} + {c:.3f} = {error2:.6f}")
+        results.append("")
+        results.append("🔍 EQUATION VERIFICATION:")
+        results.append("-" * 30)
         
-        if max(error1, error2) < 0.001:
-            results.append("  🎉 Excellent! Predictions satisfy the quadratic equation!")
-        elif max(error1, error2) < 0.01:
-            results.append("  👍 Good! Small error in quadratic equation.")
+        # Test predicted solutions
+        pred_error1 = abs(a * pred_x1**2 + b * pred_x1 + c)
+        pred_error2 = abs(a * pred_x2**2 + b * pred_x2 + c)
+        
+        # Test actual solutions (should be ~0)
+        actual_error1 = abs(a * actual_x1**2 + b * actual_x1 + c)
+        actual_error2 = abs(a * actual_x2**2 + b * actual_x2 + c)
+        
+        results.append("   Testing Predicted Solutions:")
+        results.append(f"     x₁ = {pred_x1:.6f} → Error: {pred_error1:.8f}")
+        results.append(f"     x₂ = {pred_x2:.6f} → Error: {pred_error2:.8f}")
+        results.append("")
+        
+        results.append("   Testing Actual Solutions:")
+        results.append(f"     x₁ = {actual_x1:.6f} → Error: {actual_error1:.8f}")
+        results.append(f"     x₂ = {actual_x2:.6f} → Error: {actual_error2:.8f}")
+        results.append("")
+        
+        # Overall verification status
+        max_pred_error = max(pred_error1, pred_error2)
+        if max_pred_error < 0.001:
+            results.append("   ✅ PERFECT: Predicted solutions satisfy the equation!")
+        elif max_pred_error < 0.01:
+            results.append("   👍 GOOD: Small error in equation satisfaction")
+        elif max_pred_error < 1.0:
+            results.append("   ⚠️ MODERATE: Noticeable error in equation satisfaction")
         else:
-            results.append("  ⚠️ Warning: Significant error in quadratic equation.")
+            results.append("   ❌ POOR: Predicted solutions don't satisfy the equation")
+
             
     def clear_results(self):
         """Clear results display"""
@@ -397,3 +506,41 @@ class PredictionTab:
     def update_status(self, message: str, status_type: str = 'info'):
         """Update status (interface for main app)"""
         pass  # Prediction tab doesn't have a separate status display
+
+    def calculate_actual_solutions(self, inputs):
+        """Calculate the actual correct solutions for comparison"""
+        try:
+            if self.current_scenario.name == "Coefficients → Roots":
+                # For quadratic equations, calculate using quadratic formula
+                a, b, c = inputs
+                
+                # Handle linear case (a = 0)
+                if abs(a) < 1e-10:
+                    if abs(b) < 1e-10:
+                        return None  # No solution or infinite solutions
+                    else:
+                        root = -c / b
+                        return [root, root]
+                
+                # Calculate discriminant
+                discriminant = b**2 - 4*a*c
+                
+                if discriminant < 0:
+                    return None  # No real solutions
+                
+                # Calculate the two roots
+                sqrt_discriminant = np.sqrt(discriminant)
+                x1 = (-b + sqrt_discriminant) / (2*a)
+                x2 = (-b - sqrt_discriminant) / (2*a)
+                
+                return [x1, x2]
+            
+            else:
+                # For other scenarios, we might not be able to calculate actual solutions
+                # This would need to be implemented based on the specific scenario
+                return None
+                
+        except Exception as e:
+            print(f"Error calculating actual solutions: {e}")
+            return None
+
