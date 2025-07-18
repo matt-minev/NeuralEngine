@@ -269,6 +269,46 @@ def get_performance_analysis():
     
     return jsonify(analysis_data)
 
+@app.route('/api/data/random', methods=['GET'])
+def get_random_data():
+    """Get random sample from dataset for testing"""
+    try:
+        # Check if data is loaded using the correct state variable
+        if app_state['data_processor'].data is None:
+            return jsonify({'success': False, 'error': 'No dataset loaded'})
+        
+        data = app_state['data_processor'].data
+        
+        # Handle both numpy arrays and pandas DataFrames
+        if isinstance(data, np.ndarray):
+            # Use numpy random selection for numpy arrays
+            random_index = np.random.randint(0, len(data))
+            sample_row = data[random_index]
+            
+            # Convert to dictionary with proper column names
+            # Assuming standard quadratic dataset columns: a, b, c, x1, x2
+            column_names = ['a', 'b', 'c', 'x1', 'x2']
+            sample_dict = {col: float(sample_row[i]) for i, col in enumerate(column_names)}
+            
+        elif hasattr(data, 'sample'):
+            # Use pandas sample method for DataFrames
+            sample = data.sample(n=1).iloc[0]
+            sample_dict = sample.to_dict()
+            
+        else:
+            # Convert to DataFrame first, then sample
+            df = pd.DataFrame(data, columns=['a', 'b', 'c', 'x1', 'x2'])
+            sample = df.sample(n=1).iloc[0]
+            sample_dict = sample.to_dict()
+        
+        return jsonify({
+            'success': True,
+            'data': sample_dict
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
 def _train_models_background(selected_scenarios, epochs):
     """Background training function"""
     try:

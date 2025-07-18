@@ -30,6 +30,7 @@ const API = {
   scenarios: "/api/scenarios",
   uploadData: "/api/data/upload",
   dataInfo: "/api/data/info",
+  randomData: "/api/data/random",
   startTraining: "/api/training/start",
   trainingStatus: "/api/training/status",
   stopTraining: "/api/training/stop",
@@ -698,6 +699,12 @@ const PredictionSection = {
 
   async refresh() {
     await this.loadScenarios();
+
+    // Show/hide random test button based on data availability
+    const randomBtn = document.getElementById("random-test-btn");
+    if (randomBtn) {
+      randomBtn.style.display = AppState.dataLoaded ? "inline-flex" : "none";
+    }
   },
 };
 
@@ -1107,6 +1114,131 @@ async function makePrediction() {
     }
   } catch (error) {
     Utils.showNotification("Prediction failed: " + error.message, "error");
+  }
+}
+
+async function randomTest() {
+  const scenario = document.getElementById("prediction-scenario").value;
+  const scenarioData = AppState.scenarios[scenario];
+
+  if (!scenarioData) {
+    Utils.showNotification("Please select a scenario first", "warning");
+    return;
+  }
+
+  if (!AppState.dataLoaded) {
+    Utils.showNotification("Please load a dataset first", "warning");
+    return;
+  }
+
+  try {
+    // Show loading state with cool animation
+    const randomBtn = document.getElementById("random-test-btn");
+    const originalHTML = randomBtn.innerHTML;
+    randomBtn.innerHTML =
+      '<i class="fas fa-spinner fa-spin"></i> Rolling the Dice...';
+    randomBtn.disabled = true;
+    randomBtn.style.transform = "scale(0.95)";
+
+    // Fetch random data
+    const response = await ApiClient.request(API.randomData);
+
+    if (!response.success) {
+      Utils.showNotification(
+        response.error || "Failed to get random data",
+        "error"
+      );
+      return;
+    }
+
+    const randomData = response.data;
+
+    // Create animated population of fields
+    const populateFieldsSequentially = async () => {
+      for (let i = 0; i < scenarioData.input_features.length; i++) {
+        const feature = scenarioData.input_features[i];
+        const input = document.getElementById(`input-${feature}`);
+
+        if (input && randomData[feature] !== undefined) {
+          // Clear field first
+          input.value = "";
+
+          // Add loading animation
+          input.style.background =
+            "linear-gradient(90deg, var(--primary-color)20 0%, var(--primary-color)10 50%, var(--primary-color)20 100%)";
+          input.style.backgroundSize = "200% 100%";
+          input.style.animation = "shimmer 0.5s ease-in-out";
+
+          // Wait a bit for effect
+          await new Promise((resolve) => setTimeout(resolve, 200));
+
+          // Populate with value
+          input.value = randomData[feature];
+
+          // Success animation
+          input.style.background = "var(--success-color)20";
+          input.style.border = "2px solid var(--success-color)";
+          input.style.animation = "none";
+
+          // Reset after delay
+          setTimeout(() => {
+            input.style.background = "";
+            input.style.border = "";
+          }, 1000);
+        }
+      }
+    };
+
+    // Add shimmer keyframes if not already present
+    if (!document.querySelector("#shimmer-styles")) {
+      const style = document.createElement("style");
+      style.id = "shimmer-styles";
+      style.textContent = `
+        @keyframes shimmer {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    await populateFieldsSequentially();
+
+    // Show fun notification
+    Utils.showNotification(
+      `🎲 Random test data loaded! Values: ${scenarioData.input_features
+        .map((f) => `${f}=${randomData[f]?.toFixed(3) || "N/A"}`)
+        .join(", ")}`,
+      "success"
+    );
+
+    // Reset button with success state
+    randomBtn.innerHTML = '<i class="fas fa-check"></i> Data Loaded!';
+    randomBtn.style.background = "var(--success-color)";
+    randomBtn.style.transform = "scale(1)";
+
+    // Auto-submit after showing the populated values
+    setTimeout(() => {
+      randomBtn.innerHTML = '<i class="fas fa-brain"></i> Predicting...';
+      randomBtn.style.background = "var(--primary-color)";
+      makePrediction();
+    }, 2000);
+
+    // Reset button to original state
+    setTimeout(() => {
+      randomBtn.innerHTML = originalHTML;
+      randomBtn.style.background = "";
+      randomBtn.disabled = false;
+    }, 5000);
+  } catch (error) {
+    Utils.showNotification("Random test failed: " + error.message, "error");
+
+    // Reset button on error
+    const randomBtn = document.getElementById("random-test-btn");
+    randomBtn.innerHTML = '<i class="fas fa-dice"></i> Random Test';
+    randomBtn.style.background = "";
+    randomBtn.style.transform = "scale(1)";
+    randomBtn.disabled = false;
   }
 }
 
