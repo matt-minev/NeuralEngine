@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quadratic Neural Network | Advanced Analysis</title>
+
+    <!-- Apple-like Favicon -->
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>"
+    />
+
+    <!-- Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@100;200;300;400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@200;300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Custom Styles -->
+    <style>
+      /* Apple-like CSS Variables */
+      :root {
+        --primary-color: #007aff;
+        --secondary-color: #5856d6;
+        --success-color: #34c759;
+        --warning-color: #ff9500;
+        --error-color: #ff3b30;
+        --background-color: #f2f2f7;
+        --surface-color: #ffffff;
+        --text-primary: #1d1d1f;
+        --text-secondary: #6d6d80;
+        --border-color: #e5e5ea;
+        --shadow-light: 0 2px 10px rgba(0, 0, 0, 0.1);
+        --shadow-medium: 0 4px 20px rgba(0, 0, 0, 0.12);
+        --shadow-heavy: 0 8px 40px rgba(0, 0, 0, 0.16);
+        --blur-background: rgba(255, 255, 255, 0.8);
+        --radius-small: 8px;
+        --radius-medium: 12px;
+        --radius-large: 16px;
+        --radius-xl: 24px;
+      }
+
+      /* Dark mode support */
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --background-color: #000000;
+          --surface-color: #1c1c1e;
+          --text-primary: #ffffff;
+          --text-secondary: #8e8e93;
+          --border-color: #38383a;
+          --blur-background: rgba(28, 28, 30, 0.8);
+        }
+      }
+
+      /* Base Styles */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont,
+          "Segoe UI", Roboto, sans-serif;
+        background: var(--background-color);
+        color: var(--text-primary);
+        line-height: 1.6;
+        overflow-x: hidden;
+      }
+
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 20px;
+      }
+
+      /* Header */
+      .header {
+        background: var(--blur-background);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-bottom: 1px solid var(--border-color);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        padding: 16px 0;
+      }
+
+      .header-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--primary-color);
+      }
+
+      .logo i {
+        font-size: 28px;
+      }
+
+      .status-indicator {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        background: var(--surface-color);
+        border-radius: var(--radius-medium);
+        border: 1px solid var(--border-color);
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--success-color);
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+        100% {
+          opacity: 1;
+        }
+      }
+
+      /* Main Layout */
+      .main-layout {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        gap: 24px;
+        padding: 24px 0;
+        min-height: calc(100vh - 80px);
+      }
+
+      /* Sidebar */
+      .sidebar {
+        background: var(--surface-color);
+        border-radius: var(--radius-large);
+        padding: 24px;
+        box-shadow: var(--shadow-light);
+        border: 1px solid var(--border-color);
+        height: fit-content;
+        position: sticky;
+        top: 104px;
+      }
+
+      .sidebar h2 {
+        font-size: 20px;
+        font-weight: 600;
+        margin-bottom: 20px;
+        color: var(--text-primary);
+      }
+
+      .nav-menu {
+        list-style: none;
+      }
+
+      .nav-item {
+        margin-bottom: 4px;
+      }
+
+      .nav-link {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        border-radius: var(--radius-medium);
+        text-decoration: none;
+        color: var(--text-secondary);
+        font-weight: 500;
+        transition: all 0.3s ease;
+        cursor: pointer;
+      }
+
+      .nav-link:hover,
+      .nav-link.active {
+        background: var(--primary-color);
+        color: white;
+        transform: translateX(4px);
+      }
+
+      .nav-link i {
+        font-size: 16px;
+        width: 20px;
+      }
+
+      /* Main Content */
+      .main-content {
+        background: var(--surface-color);
+        border-radius: var(--radius-large);
+        padding: 32px;
+        box-shadow: var(--shadow-light);
+        border: 1px solid var(--border-color);
+        min-height: 600px;
+      }
+
+      .content-section {
+        display: none;
+      }
+
+      .content-section.active {
+        display: block;
+        animation: fadeIn 0.3s ease;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 32px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      .section-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      /* Cards */
+      .card {
+        background: var(--surface-color);
+        border-radius: var(--radius-large);
+        padding: 24px;
+        box-shadow: var(--shadow-light);
+        border: 1px solid var(--border-color);
+        margin-bottom: 24px;
+      }
+
+      .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: between;
+        margin-bottom: 20px;
+      }
+
+      .card-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      /* Buttons */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        border: none;
+        border-radius: var(--radius-medium);
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: var(--primary-color);
+        color: white;
+        box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+      }
+
+      .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(0, 122, 255, 0.4);
+      }
+
+      .btn:active {
+        transform: translateY(0);
+      }
+
+      .btn-secondary {
+        background: var(--surface-color);
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow-light);
+      }
+
+      .btn-secondary:hover {
+        background: var(--background-color);
+        box-shadow: var(--shadow-medium);
+      }
+
+      .btn-success {
+        background: var(--success-color);
+        box-shadow: 0 2px 8px rgba(52, 199, 89, 0.3);
+      }
+
+      .btn-warning {
+        background: var(--warning-color);
+        box-shadow: 0 2px 8px rgba(255, 149, 0, 0.3);
+      }
+
+      .btn-error {
+        background: var(--error-color);
+        box-shadow: 0 2px 8px rgba(255, 59, 48, 0.3);
+      }
+
+      .btn-small {
+        padding: 8px 16px;
+        font-size: 13px;
+      }
+
+      .btn-large {
+        padding: 16px 32px;
+        font-size: 16px;
+      }
+
+      /* Form Elements */
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      .form-label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+
+      .form-input {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-medium);
+        font-size: 16px;
+        background: var(--surface-color);
+        color: var(--text-primary);
+        transition: border-color 0.3s ease;
+      }
+
+      .form-input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+      }
+
+      .form-select {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+        background-position: right 12px center;
+        background-repeat: no-repeat;
+        background-size: 16px;
+        padding-right: 40px;
+      }
+
+      /* Progress Bar */
+      .progress-container {
+        margin: 20px 0;
+      }
+
+      .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: var(--background-color);
+        border-radius: var(--radius-small);
+        overflow: hidden;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          var(--primary-color),
+          var(--secondary-color)
+        );
+        border-radius: var(--radius-small);
+        transition: width 0.3s ease;
+        width: 0%;
+      }
+
+      .progress-text {
+        margin-top: 8px;
+        font-size: 14px;
+        color: var(--text-secondary);
+        text-align: center;
+      }
+
+      /* Loading Spinner */
+      .loading-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 2px solid var(--border-color);
+        border-radius: 50%;
+        border-top-color: var(--primary-color);
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Responsive Design */
+      @media (max-width: 768px) {
+        .main-layout {
+          grid-template-columns: 1fr;
+          gap: 16px;
+        }
+
+        .sidebar {
+          position: static;
+          order: 2;
+        }
+
+        .main-content {
+          padding: 20px;
+        }
+
+        .container {
+          padding: 0 16px;
+        }
+      }
+
+      /* Utility Classes */
+      .text-center {
+        text-align: center;
+      }
+      .text-right {
+        text-align: right;
+      }
+      .mb-1 {
+        margin-bottom: 8px;
+      }
+      .mb-2 {
+        margin-bottom: 16px;
+      }
+      .mb-3 {
+        margin-bottom: 24px;
+      }
+      .mt-1 {
+        margin-top: 8px;
+      }
+      .mt-2 {
+        margin-top: 16px;
+      }
+      .mt-3 {
+        margin-top: 24px;
+      }
+      .hidden {
+        display: none;
+      }
+      .flex {
+        display: flex;
+      }
+      .items-center {
+        align-items: center;
+      }
+      .justify-between {
+        justify-content: space-between;
+      }
+      .gap-2 {
+        gap: 8px;
+      }
+      .gap-3 {
+        gap: 16px;
+      }
+      .gap-4 {
+        gap: 24px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Header -->
+    <header class="header">
+      <div class="container">
+        <div class="header-content">
+          <div class="logo">
+            <i class="fas fa-brain"></i>
+            <span>Quadratic Neural Network</span>
+          </div>
+          <div class="status-indicator">
+            <div class="status-dot"></div>
+            <span id="connection-status">Connected</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+      <div class="main-layout">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+          <h2>Navigation</h2>
+          <ul class="nav-menu">
+            <li class="nav-item">
+              <a class="nav-link active" data-section="dashboard">
+                <i class="fas fa-home"></i>
+                <span>Dashboard</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" data-section="data">
+                <i class="fas fa-database"></i>
+                <span>Dataset</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" data-section="training">
+                <i class="fas fa-brain"></i>
+                <span>Training</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" data-section="prediction">
+                <i class="fas fa-magic"></i>
+                <span>Prediction</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" data-section="analysis">
+                <i class="fas fa-chart-line"></i>
+                <span>Analysis</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" data-section="comparison">
+                <i class="fas fa-balance-scale"></i>
+                <span>Comparison</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+          <!-- Dashboard Section -->
+          <section id="dashboard" class="content-section active">
+            <div class="section-header">
+              <h1 class="section-title">
+                <i class="fas fa-home"></i>
+                Dashboard
+              </h1>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">
+                  <i class="fas fa-rocket"></i>
+                  Welcome to Quadratic Neural Network Analysis
+                </h3>
+              </div>
+              <p
+                style="
+                  font-size: 16px;
+                  line-height: 1.6;
+                  color: var(--text-secondary);
+                  margin-bottom: 24px;
+                "
+              >
+                This advanced neural network application provides comprehensive
+                analysis for quadratic equations. Built with modern web
+                technologies and featuring an Apple-like design, it offers
+                powerful tools for dataset management, model training,
+                prediction, and performance analysis.
+              </p>
+
+              <div
+                style="
+                  display: grid;
+                  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                  gap: 20px;
+                  margin-top: 32px;
+                "
+              >
+                <div style="text-align: center; padding: 20px">
+                  <i
+                    class="fas fa-database"
+                    style="
+                      font-size: 48px;
+                      color: var(--primary-color);
+                      margin-bottom: 16px;
+                    "
+                  ></i>
+                  <h4 style="margin-bottom: 8px">Dataset Management</h4>
+                  <p style="color: var(--text-secondary); font-size: 14px">
+                    Upload and analyze quadratic equation datasets
+                  </p>
+                </div>
+                <div style="text-align: center; padding: 20px">
+                  <i
+                    class="fas fa-brain"
+                    style="
+                      font-size: 48px;
+                      color: var(--success-color);
+                      margin-bottom: 16px;
+                    "
+                  ></i>
+                  <h4 style="margin-bottom: 8px">Neural Training</h4>
+                  <p style="color: var(--text-secondary); font-size: 14px">
+                    Train multiple prediction scenarios
+                  </p>
+                </div>
+                <div style="text-align: center; padding: 20px">
+                  <i
+                    class="fas fa-magic"
+                    style="
+                      font-size: 48px;
+                      color: var(--warning-color);
+                      margin-bottom: 16px;
+                    "
+                  ></i>
+                  <h4 style="margin-bottom: 8px">Smart Prediction</h4>
+                  <p style="color: var(--text-secondary); font-size: 14px">
+                    Make predictions with confidence estimation
+                  </p>
+                </div>
+                <div style="text-align: center; padding: 20px">
+                  <i
+                    class="fas fa-chart-line"
+                    style="
+                      font-size: 48px;
+                      color: var(--secondary-color);
+                      margin-bottom: 16px;
+                    "
+                  ></i>
+                  <h4 style="margin-bottom: 8px">Advanced Analysis</h4>
+                  <p style="color: var(--text-secondary); font-size: 14px">
+                    Comprehensive performance visualization
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">
+                  <i class="fas fa-info-circle"></i>
+                  Quick Start Guide
+                </h3>
+              </div>
+              <div
+                style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px"
+              >
+                <div>
+                  <h4 style="margin-bottom: 16px; color: var(--text-primary)">
+                    Getting Started
+                  </h4>
+                  <ol style="line-height: 1.8; color: var(--text-secondary)">
+                    <li>Upload your quadratic equation dataset (CSV format)</li>
+                    <li>Select training scenarios and configure parameters</li>
+                    <li>Train neural network models</li>
+                    <li>Make predictions and analyze results</li>
+                  </ol>
+                </div>
+                <div>
+                  <h4 style="margin-bottom: 16px; color: var(--text-primary)">
+                    Data Format
+                  </h4>
+                  <p style="color: var(--text-secondary); margin-bottom: 12px">
+                    Expected CSV columns:
+                  </p>
+                  <code
+                    style="
+                      background: var(--background-color);
+                      padding: 12px;
+                      border-radius: var(--radius-small);
+                      display: block;
+                      font-family: 'JetBrains Mono', monospace;
+                    "
+                  >
+                    a, b, c, x1, x2
+                  </code>
+                  <p
+                    style="
+                      color: var(--text-secondary);
+                      margin-top: 8px;
+                      font-size: 14px;
+                    "
+                  >
+                    Where ax² + bx + c = 0 has solutions x1 and x2
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Data Section -->
+          <section id="data" class="content-section">
+            <div class="section-header">
+              <h1 class="section-title">
+                <i class="fas fa-database"></i>
+                Dataset Management
+              </h1>
+              <button class="btn" onclick="uploadDataset()">
+                <i class="fas fa-upload"></i>
+                Upload Dataset
+              </button>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">
+                  <i class="fas fa-file-csv"></i>
+                  Dataset Information
+                </h3>
+              </div>
+              <div id="dataset-info">
+                <p
+                  style="
+                    color: var(--text-secondary);
+                    text-align: center;
+                    padding: 40px;
+                  "
+                >
+                  No dataset loaded. Please upload a CSV file to begin.
+                </p>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">
+                  <i class="fas fa-table"></i>
+                  Data Preview
+                </h3>
+              </div>
+              <div id="data-preview">
+                <div style="overflow-x: auto">
+                  <table
+                    id="data-table"
+                    style="
+                      display: none;
+                      width: 100%;
+                      border-collapse: collapse;
+                    "
+                  >
+                    <thead>
+                      <tr style="background: var(--background-color)">
+                        <th
+                          style="
+                            padding: 12px;
+                            text-align: left;
+                            border-bottom: 1px solid var(--border-color);
+                          "
+                        >
+                          a
+                        </th>
+                        <th
+                          style="
+                            padding: 12px;
+                            text-align: left;
+                            border-bottom: 1px solid var(--border-color);
+                          "
+                        >
+                          b
+                        </th>
+                        <th
+                          style="
+                            padding: 12px;
+                            text-align: left;
+                            border-bottom: 1px solid var(--border-color);
+                          "
+                        >
+                          c
+                        </th>
+                        <th
+                          style="
+                            padding: 12px;
+                            text-align: left;
+                            border-bottom: 1px solid var(--border-color);
+                          "
+                        >
+                          x1
+                        </th>
+                        <th
+                          style="
+                            padding: 12px;
+                            text-align: left;
+                            border-bottom: 1px solid var(--border-color);
+                          "
+                        >
+                          x2
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody id="data-table-body"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Training Section -->
+          <section id="training" class="content-section">
+            <div class="section-header">
+              <h1 class="section-title">
+                <i class="fas fa-brain"></i>
+                Neural Network Training
+              </h1>
+              <button
+                class="btn"
+                onclick="startTraining()"
+                id="start-training-btn"
+              >
+                <i class="fas fa-play"></i>
+                Start Training
+              </button>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">
+                  <i class="fas fa-cog"></i>
+                  Training Configuration
+                </h3>
+              </div>
+              <div id="training-config">
+                <div class="form-group">
+                  <label class="form-label">Training Epochs</label>
+                  <input
+                    type="number"
+                    class="form-input"
+                    id="epochs-input"
+                    value="1000"
+                    min="100"
+                    max="10000"
+                  />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Select Scenarios to Train</label>
+                  <div
+                    id="scenarios-selection"
+                    style="
+                      display: grid;
+                      grid-template-columns: 1fr 1fr;
+                      gap: 12px;
+                      margin-top: 12px;
+                    "
+                  >
+                    <!-- Scenarios will be populated here -->
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">
+                  <i class="fas fa-tasks"></i>
+                  Training Progress
+                </h3>
+              </div>
+              <div id="training-progress">
+                <div class="progress-container">
+                  <div class="progress-bar">
+                    <div
+                      class="progress-fill"
+                      id="training-progress-fill"
+                    ></div>
+                  </div>
+                  <div class="progress-text" id="training-progress-text">
+                    Ready to train
+                  </div>
+                </div>
+                <div
+                  id="training-logs"
+                  style="
+                    background: var(--background-color);
+                    border-radius: var(--radius-medium);
+                    padding: 16px;
+                    max-height: 300px;
+                    overflow-y: auto;
+                    font-family: 'JetBrains Mono', monospace;
+                    font-size: 14px;
+                    margin-top: 16px;
+                  "
+                >
+                  <div style="color: var(--text-secondary)">
+                    Training logs will appear here...
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Prediction Section -->
+          <section id="prediction" class="content-section">
+            <div class="section-header">
+              <h1 class="section-title">
+                <i class="fas fa-magic"></i>
+                Neural Network Prediction
+              </h1>
+              <button class="btn" onclick="makePrediction()" id="predict-btn">
+                <i class="fas fa-brain"></i>
+                Make Prediction
+              </button>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">
+                  <i class="fas fa-sliders-h"></i>
+                  Prediction Settings
+                </h3>
+              </div>
+              <div id="prediction-config">
+                <div class="form-group">
+                  <label class="form-label">Prediction Scenario</label>
+                  <select
+                    class="form-input form-select"
+                    id="prediction-scenario"
+                  >
+                    <!-- Options will be populated here -->
+                  </select>
+                </div>
+                <div
+                  id="prediction-inputs"
+                  style="
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                    gap: 16px;
+                    margin-top: 20px;
+                  "
+                >
+                  <!-- Input fields will be populated here -->
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">
+                  <i class="fas fa-chart-pie"></i>
+                  Prediction Results
+                </h3>
+              </div>
+              <div id="prediction-results">
+                <div
+                  style="
+                    color: var(--text-secondary);
+                    text-align: center;
+                    padding: 40px;
+                  "
+                >
+                  Make a prediction to see results here.
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Analysis Section -->
+          <section id="analysis" class="content-section">
+            <div class="section-header">
+              <h1 class="section-title">
+                <i class="fas fa-chart-line"></i>
+                Performance Analysis
+              </h1>
+              <button class="btn" onclick="generateAnalysis()">
+                <i class="fas fa-chart-bar"></i>
+                Generate Analysis
+              </button>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">
+                  <i class="fas fa-tachometer-alt"></i>
+                  Performance Metrics
+                </h3>
+              </div>
+              <div id="performance-metrics">
+                <canvas id="metrics-chart" style="max-height: 400px"></canvas>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">
+                  <i class="fas fa-chart-area"></i>
+                  Accuracy Comparison
+                </h3>
+              </div>
+              <div id="accuracy-chart-container">
+                <canvas id="accuracy-chart" style="max-height: 400px"></canvas>
+              </div>
+            </div>
+          </section>
+
+          <!-- Comparison Section -->
+          <section id="comparison" class="content-section">
+            <div class="section-header">
+              <h1 class="section-title">
+                <i class="fas fa-balance-scale"></i>
+                Model Comparison
+              </h1>
+              <button class="btn" onclick="generateComparison()">
+                <i class="fas fa-trophy"></i>
+                Compare Models
+              </button>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">
+                  <i class="fas fa-medal"></i>
+                  Model Rankings
+                </h3>
+              </div>
+              <div id="model-rankings">
+                <div
+                  style="
+                    color: var(--text-secondary);
+                    text-align: center;
+                    padding: 40px;
+                  "
+                >
+                  Train models to see comparison results.
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">
+                  <i class="fas fa-file-alt"></i>
+                  Benchmark Report
+                </h3>
+              </div>
+              <div id="benchmark-report">
+                <canvas
+                  id="comparison-chart"
+                  style="max-height: 400px"
+                ></canvas>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <!-- Hidden file input for dataset upload -->
+    <input type="file" id="file-input" accept=".csv" style="display: none" />
+
+    <!-- Custom JavaScript -->
+    <script src="/static/js/app.js"></script>
+  </body>
+</html>

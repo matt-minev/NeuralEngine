@@ -1,0 +1,763 @@
+/**
+ * Quadratic Neural Network Web Application
+ * Additional CSS Styles
+ * 
+ * Author: Matt
+ * Location: Varna, Bulgaria
+ * Date: July 2025
+ * 
+ * Beautiful Apple-like web interface complementary styles
+ */
+
+/* Additional component styles not in the main HTML */
+
+/* Info Cards */
+.info-card {
+  background: var(--background-color);
+  border-radius: var(--radius-medium);
+  padding: 20px;
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
+}
+
+.info-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-medium);
+}
+
+.info-card h4 {
+  color: var(--primary-color);
+  margin-bottom: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.info-card p {
+  margin: 4px 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.info-card strong {
+  color: var(--text-primary);
+}
+
+/* Scenario Cards */
+.scenario-card {
+  margin-bottom: 12px;
+}
+
+.scenario-card label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-medium);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.scenario-card label:hover {
+  background: var(--background-color);
+  border-color: var(--primary-color);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-light);
+}
+
+.scenario-card input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary-color);
+}
+
+.scenario-card input[type="checkbox"]:checked + div {
+  color: var(--primary-color);
+}
+
+.scenario-info {
+  flex: 1;
+}
+
+.scenario-title {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.scenario-description {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.scenario-features {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.scenario-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-left: auto;
+}
+
+/* Data Table Styles */
+.data-table-container {
+  background: var(--surface-color);
+  border-radius: var(--radius-medium);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.data-table th {
+  background: var(--background-color);
+  color: var(--text-primary);
+  font-weight: 600;
+  padding: 12px;
+  text-align: left;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.data-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-family: "JetBrains Mono", monospace;
+}
+
+.data-table tr:hover {
+  background: var(--background-color);
+}
+
+.data-table tr:nth-child(even) {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+/* Training Log Styles */
+.training-logs {
+  background: var(--background-color);
+  border-radius: var(--radius-medium);
+  padding: 16px;
+  max-height: 300px;
+  overflow-y: auto;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 14px;
+  border: 1px solid var(--border-color);
+}
+
+.training-logs::-webkit-scrollbar {
+  width: 8px;
+}
+
+.training-logs::-webkit-scrollbar-track {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+.training-logs::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  border-radius: 4px;
+}
+
+.training-logs::-webkit-scrollbar-thumb:hover {
+  background: var(--secondary-color);
+}
+
+.log-entry {
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
+.log-timestamp {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.log-message {
+  color: var(--text-primary);
+}
+
+/* Prediction Results */
+.prediction-results {
+  background: var(--surface-color);
+  border-radius: var(--radius-medium);
+  padding: 20px;
+  border: 1px solid var(--border-color);
+}
+
+.prediction-result-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: var(--background-color);
+  border-radius: var(--radius-medium);
+  border: 1px solid var(--border-color);
+  margin-bottom: 12px;
+  transition: all 0.3s ease;
+}
+
+.prediction-result-item:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-light);
+}
+
+.prediction-value {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: "JetBrains Mono", monospace;
+}
+
+.prediction-confidence {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.confidence-high {
+  color: var(--success-color);
+}
+
+.confidence-medium {
+  color: var(--warning-color);
+}
+
+.confidence-low {
+  color: var(--error-color);
+}
+
+/* Analysis Charts */
+.chart-container {
+  background: var(--surface-color);
+  border-radius: var(--radius-medium);
+  padding: 20px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 20px;
+}
+
+.chart-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.chart-canvas {
+  border-radius: var(--radius-small);
+  background: var(--background-color);
+}
+
+/* Comparison Tables */
+.comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  background: var(--surface-color);
+  border-radius: var(--radius-medium);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.comparison-table th {
+  background: var(--primary-color);
+  color: white;
+  font-weight: 600;
+  padding: 12px;
+  text-align: left;
+}
+
+.comparison-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.comparison-table tr:hover {
+  background: var(--background-color);
+}
+
+.performance-score {
+  font-weight: 600;
+  font-family: "JetBrains Mono", monospace;
+}
+
+.performance-excellent {
+  color: var(--success-color);
+}
+
+.performance-good {
+  color: var(--primary-color);
+}
+
+.performance-fair {
+  color: var(--warning-color);
+}
+
+.performance-poor {
+  color: var(--error-color);
+}
+
+/* Model Rankings */
+.model-ranking {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: var(--background-color);
+  border-radius: var(--radius-medium);
+  border: 1px solid var(--border-color);
+  margin-bottom: 12px;
+  transition: all 0.3s ease;
+}
+
+.model-ranking:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-medium);
+}
+
+.ranking-medal {
+  font-size: 24px;
+  min-width: 40px;
+  text-align: center;
+}
+
+.ranking-details {
+  flex: 1;
+}
+
+.ranking-title {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.ranking-description {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.ranking-metrics {
+  display: flex;
+  gap: 16px;
+  font-size: 14px;
+}
+
+.ranking-metrics span {
+  color: var(--text-secondary);
+}
+
+.ranking-score {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.ranking-assessment {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Status Indicators */
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: var(--radius-small);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-success {
+  background: var(--success-color) 20;
+  color: var(--success-color);
+  border: 1px solid var(--success-color);
+}
+
+.status-warning {
+  background: var(--warning-color) 20;
+  color: var(--warning-color);
+  border: 1px solid var(--warning-color);
+}
+
+.status-error {
+  background: var(--error-color) 20;
+  color: var(--error-color);
+  border: 1px solid var(--error-color);
+}
+
+.status-info {
+  background: var(--primary-color) 20;
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+}
+
+/* Tooltip Styles */
+.tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip .tooltip-text {
+  visibility: hidden;
+  width: 200px;
+  background-color: var(--text-primary);
+  color: var(--surface-color);
+  text-align: center;
+  border-radius: var(--radius-small);
+  padding: 8px;
+  position: absolute;
+  z-index: 1000;
+  bottom: 125%;
+  left: 50%;
+  margin-left: -100px;
+  opacity: 0;
+  transition: opacity 0.3s;
+  font-size: 12px;
+}
+
+.tooltip:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* File Upload Styles */
+.file-upload-area {
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius-medium);
+  padding: 40px;
+  text-align: center;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  background: var(--background-color);
+}
+
+.file-upload-area:hover {
+  border-color: var(--primary-color);
+  background: var(--primary-color) 10;
+}
+
+.file-upload-area.drag-over {
+  border-color: var(--primary-color);
+  background: var(--primary-color) 20;
+  transform: scale(1.02);
+}
+
+.file-upload-icon {
+  font-size: 48px;
+  color: var(--primary-color);
+  margin-bottom: 16px;
+}
+
+.file-upload-text {
+  color: var(--text-secondary);
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.file-upload-subtext {
+  color: var(--text-secondary);
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+/* Error Messages */
+.error-message {
+  background: var(--error-color) 10;
+  border: 1px solid var(--error-color);
+  color: var(--error-color);
+  padding: 16px;
+  border-radius: var(--radius-medium);
+  margin: 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.error-message i {
+  font-size: 20px;
+}
+
+.success-message {
+  background: var(--success-color) 10;
+  border: 1px solid var(--success-color);
+  color: var(--success-color);
+  padding: 16px;
+  border-radius: var(--radius-medium);
+  margin: 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.success-message i {
+  font-size: 20px;
+}
+
+/* Animation Classes */
+.fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+.bounce-in {
+  animation: bounceIn 0.6s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes bounceIn {
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Code Blocks */
+.code-block {
+  background: var(--background-color);
+  border-radius: var(--radius-medium);
+  padding: 16px;
+  border: 1px solid var(--border-color);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 14px;
+  overflow-x: auto;
+  margin: 16px 0;
+}
+
+.code-block::-webkit-scrollbar {
+  height: 8px;
+}
+
+.code-block::-webkit-scrollbar-track {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+.code-block::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  border-radius: 4px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 1024px) {
+  .model-ranking {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .ranking-metrics {
+    justify-content: center;
+  }
+
+  .prediction-result-item {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .info-card {
+    padding: 16px;
+  }
+
+  .scenario-card label {
+    padding: 12px;
+  }
+
+  .chart-container {
+    padding: 16px;
+  }
+
+  .comparison-table {
+    font-size: 14px;
+  }
+
+  .comparison-table th,
+  .comparison-table td {
+    padding: 8px;
+  }
+
+  .training-logs {
+    max-height: 200px;
+  }
+}
+
+@media (max-width: 480px) {
+  .scenario-card label {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .scenario-features {
+    font-size: 11px;
+  }
+
+  .prediction-result-item {
+    padding: 12px;
+  }
+
+  .model-ranking {
+    padding: 12px;
+  }
+
+  .ranking-metrics {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .sidebar,
+  .header,
+  .btn,
+  .nav-menu {
+    display: none !important;
+  }
+
+  .main-layout {
+    grid-template-columns: 1fr !important;
+  }
+
+  .main-content {
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .chart-container {
+    break-inside: avoid;
+  }
+
+  .model-ranking {
+    break-inside: avoid;
+  }
+}
+
+/* Dark Mode Enhancements */
+@media (prefers-color-scheme: dark) {
+  .data-table tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  .file-upload-area {
+    background: var(--surface-color);
+  }
+
+  .file-upload-area:hover {
+    background: var(--primary-color) 15;
+  }
+
+  .code-block {
+    background: var(--surface-color);
+  }
+
+  .training-logs {
+    background: var(--surface-color);
+  }
+}
+
+/* Custom Scrollbar for Webkit browsers */
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background-color);
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-color);
+}
+
+/* Selection Styles */
+::selection {
+  background: var(--primary-color) 30;
+  color: var(--text-primary);
+}
+
+::-moz-selection {
+  background: var(--primary-color) 30;
+  color: var(--text-primary);
+}
+
+/* Focus Styles */
+.form-input:focus,
+.btn:focus,
+.nav-link:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* Accessibility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

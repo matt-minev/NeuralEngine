@@ -1,0 +1,667 @@
+/**
+ * Quadratic Neural Network Web Application
+ * Component-Specific CSS Styles
+ * 
+ * Author: Matt
+ * Location: Varna, Bulgaria
+ * Date: July 2025
+ * 
+ * Specialized styles for web application components
+ */
+
+/* Dataset Upload Component */
+.upload-zone {
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius-large);
+  padding: 40px;
+  text-align: center;
+  background: var(--background-color);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.upload-zone:hover {
+  border-color: var(--primary-color);
+  background: var(--primary-color) 10;
+  transform: translateY(-2px);
+}
+
+.upload-zone.dragover {
+  border-color: var(--primary-color);
+  background: var(--primary-color) 20;
+  transform: scale(1.02);
+}
+
+.upload-icon {
+  font-size: 48px;
+  color: var(--primary-color);
+  margin-bottom: 16px;
+}
+
+.upload-text {
+  font-size: 18px;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.upload-subtext {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+}
+
+.upload-formats {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-family: "JetBrains Mono", monospace;
+  background: var(--surface-color);
+  padding: 8px 16px;
+  border-radius: var(--radius-small);
+  border: 1px solid var(--border-color);
+}
+
+/* Training Configuration */
+.training-scenario-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.scenario-selector {
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-medium);
+  padding: 16px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+}
+
+.scenario-selector:hover {
+  border-color: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-medium);
+}
+
+.scenario-selector.selected {
+  border-color: var(--primary-color);
+  background: var(--primary-color) 10;
+}
+
+.scenario-selector input[type="checkbox"] {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary-color);
+}
+
+.scenario-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  padding-right: 30px;
+}
+
+.scenario-desc {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+.scenario-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.scenario-io {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-family: "JetBrains Mono", monospace;
+}
+
+.scenario-color-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-left: 8px;
+}
+
+.scenario-architecture {
+  font-size: 11px;
+  color: var(--text-secondary);
+  background: var(--background-color);
+  padding: 4px 8px;
+  border-radius: var(--radius-small);
+  font-family: "JetBrains Mono", monospace;
+}
+
+/* Training Progress */
+.training-progress-container {
+  background: var(--surface-color);
+  border-radius: var(--radius-medium);
+  padding: 20px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 20px;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.progress-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.progress-status {
+  font-size: 14px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.progress-bar-container {
+  position: relative;
+  height: 8px;
+  background: var(--background-color);
+  border-radius: var(--radius-small);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    var(--primary-color),
+    var(--secondary-color)
+  );
+  border-radius: var(--radius-small);
+  transition: width 0.3s ease;
+  position: relative;
+}
+
+.progress-bar-fill::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.training-controls {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.epoch-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.epoch-input label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.epoch-input input {
+  width: 100px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-small);
+  font-size: 14px;
+  background: var(--surface-color);
+  color: var(--text-primary);
+}
+
+/* Prediction Interface */
+.prediction-form {
+  background: var(--surface-color);
+  border-radius: var(--radius-medium);
+  padding: 24px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 20px;
+}
+
+.prediction-scenario-select {
+  margin-bottom: 20px;
+}
+
+.prediction-scenario-select label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.prediction-scenario-select select {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-medium);
+  background: var(--surface-color);
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.prediction-inputs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.prediction-input-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.prediction-input-group label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.prediction-input-group input {
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-small);
+  background: var(--surface-color);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: "JetBrains Mono", monospace;
+}
+
+.prediction-input-group input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+}
+
+.prediction-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+/* Results Display */
+.results-container {
+  background: var(--surface-color);
+  border-radius: var(--radius-medium);
+  padding: 24px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 20px;
+}
+
+.results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.results-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.result-item {
+  background: var(--background-color);
+  border-radius: var(--radius-medium);
+  padding: 16px;
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
+}
+
+.result-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-light);
+}
+
+.result-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.result-value {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: "JetBrains Mono", monospace;
+  margin-bottom: 4px;
+}
+
+.result-confidence {
+  font-size: 12px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.confidence-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.confidence-high {
+  background: var(--success-color);
+}
+.confidence-medium {
+  background: var(--warning-color);
+}
+.confidence-low {
+  background: var(--error-color);
+}
+
+/* Analysis Charts */
+.chart-wrapper {
+  background: var(--surface-color);
+  border-radius: var(--radius-medium);
+  padding: 20px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 20px;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.chart-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.chart-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.chart-control-btn {
+  padding: 4px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-small);
+  background: var(--surface-color);
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.chart-control-btn:hover {
+  background: var(--primary-color);
+  color: white;
+}
+
+.chart-content {
+  min-height: 300px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.chart-placeholder {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+/* Comparison Table */
+.comparison-table-wrapper {
+  background: var(--surface-color);
+  border-radius: var(--radius-medium);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+}
+
+.comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.comparison-table th {
+  background: var(--primary-color);
+  color: white;
+  font-weight: 600;
+  padding: 12px;
+  text-align: left;
+}
+
+.comparison-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.comparison-table tr:hover {
+  background: var(--background-color);
+}
+
+.comparison-table .scenario-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.comparison-table .metric-value {
+  font-family: "JetBrains Mono", monospace;
+  font-weight: 500;
+}
+
+.comparison-table .performance-excellent {
+  color: var(--success-color);
+}
+
+.comparison-table .performance-good {
+  color: var(--primary-color);
+}
+
+.comparison-table .performance-fair {
+  color: var(--warning-color);
+}
+
+.comparison-table .performance-poor {
+  color: var(--error-color);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .training-scenario-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .prediction-inputs {
+    grid-template-columns: 1fr;
+  }
+
+  .results-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .training-controls {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .prediction-actions {
+    justify-content: stretch;
+  }
+
+  .prediction-actions .btn {
+    flex: 1;
+  }
+}
+
+/* Loading States */
+.loading {
+  opacity: 0.6;
+  pointer-events: none;
+  position: relative;
+}
+
+.loading::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border: 2px solid var(--border-color);
+  border-top: 2px solid var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Success/Error States */
+.success-state {
+  border-color: var(--success-color);
+  background: var(--success-color) 10;
+}
+
+.error-state {
+  border-color: var(--error-color);
+  background: var(--error-color) 10;
+}
+
+/* Tooltips */
+.tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip .tooltiptext {
+  visibility: hidden;
+  width: 200px;
+  background-color: var(--text-primary);
+  color: var(--surface-color);
+  text-align: center;
+  border-radius: var(--radius-small);
+  padding: 8px;
+  position: absolute;
+  z-index: 1000;
+  bottom: 125%;
+  left: 50%;
+  margin-left: -100px;
+  opacity: 0;
+  transition: opacity 0.3s;
+  font-size: 12px;
+  box-shadow: var(--shadow-medium);
+}
+
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Animation Classes */
+.fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+.scale-in {
+  animation: scaleIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
