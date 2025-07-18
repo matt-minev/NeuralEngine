@@ -606,9 +606,12 @@ const TrainingSection = {
             1
           )}%)`
         : `Training in progress... (${status.progress.toFixed(1)}%)`;
+      document.getElementById("stop-training-btn").style.display =
+        "inline-block";
     } else {
       progressText.textContent =
         status.progress === 100 ? "Training completed!" : "Ready to train";
+      document.getElementById("stop-training-btn").style.display = "none";
     }
 
     // Update logs
@@ -1021,11 +1024,48 @@ async function startTraining() {
       document.getElementById("start-training-btn").innerHTML =
         '<i class="loading-spinner"></i> Training...';
       document.getElementById("start-training-btn").disabled = true;
+      document.getElementById("stop-training-btn").style.display =
+        "inline-block";
       Utils.showNotification("Training started successfully", "success");
     }
   } catch (error) {
     Utils.showNotification(
       "Failed to start training: " + error.message,
+      "error"
+    );
+  }
+}
+
+async function stopTraining() {
+  if (!AppState.isTraining) {
+    Utils.showNotification(
+      "No training session is currently active",
+      "warning"
+    );
+    return;
+  }
+
+  try {
+    const response = await ApiClient.request(API.stopTraining, {
+      method: "POST",
+    });
+
+    if (response.success) {
+      AppState.isTraining = false;
+      document.getElementById("start-training-btn").innerHTML =
+        '<i class="fas fa-play"></i> Start Training';
+      document.getElementById("start-training-btn").disabled = false;
+      document.getElementById("stop-training-btn").style.display = "none";
+      Utils.showNotification("Training stopped successfully", "success");
+    } else {
+      Utils.showNotification(
+        response.error || "Failed to stop training",
+        "error"
+      );
+    }
+  } catch (error) {
+    Utils.showNotification(
+      "Failed to stop training: " + error.message,
       "error"
     );
   }
@@ -1363,6 +1403,7 @@ setInterval(async () => {
         document.getElementById("start-training-btn").innerHTML =
           '<i class="fas fa-play"></i> Start Training';
         document.getElementById("start-training-btn").disabled = false;
+        document.getElementById("stop-training-btn").style.display = "none";
         Utils.showNotification("Training completed!", "success");
       }
     } catch (error) {
