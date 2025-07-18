@@ -133,6 +133,133 @@ const Utils = {
       timeout = setTimeout(later, wait);
     };
   },
+
+  // NEW: Format quadratic equation
+  formatQuadraticEquation: (a, b, c) => {
+    let equation = "";
+
+    // Handle coefficient 'a'
+    if (a === 1) {
+      equation += "x²";
+    } else if (a === -1) {
+      equation += "-x²";
+    } else {
+      equation += `${Utils.formatNumber(a, 3)}x²`;
+    }
+
+    // Handle coefficient 'b'
+    if (b > 0) {
+      if (b === 1) {
+        equation += " + x";
+      } else {
+        equation += ` + ${Utils.formatNumber(b, 3)}x`;
+      }
+    } else if (b < 0) {
+      if (b === -1) {
+        equation += " - x";
+      } else {
+        equation += ` - ${Utils.formatNumber(Math.abs(b), 3)}x`;
+      }
+    }
+
+    // Handle coefficient 'c'
+    if (c > 0) {
+      equation += ` + ${Utils.formatNumber(c, 3)}`;
+    } else if (c < 0) {
+      equation += ` - ${Utils.formatNumber(Math.abs(c), 3)}`;
+    }
+
+    equation += " = 0";
+    return equation;
+  },
+
+  // NEW: Calculate actual quadratic solutions
+  calculateActualSolutions: (a, b, c) => {
+    if (Math.abs(a) < 1e-10) {
+      if (Math.abs(b) < 1e-10) {
+        return { type: "invalid", message: "Not a valid equation" };
+      } else {
+        const root = -c / b;
+        return {
+          type: "linear",
+          roots: [root],
+          message: "Linear equation (not quadratic)",
+        };
+      }
+    }
+
+    const discriminant = b * b - 4 * a * c;
+
+    if (discriminant < 0) {
+      return { type: "complex", message: "Complex roots (no real solutions)" };
+    } else if (discriminant === 0) {
+      const root = -b / (2 * a);
+      return {
+        type: "repeated",
+        roots: [root],
+        message: "One repeated real root",
+      };
+    } else {
+      const sqrtDiscriminant = Math.sqrt(discriminant);
+      const root1 = (-b + sqrtDiscriminant) / (2 * a);
+      const root2 = (-b - sqrtDiscriminant) / (2 * a);
+      return {
+        type: "distinct",
+        roots: [root1, root2],
+        message: "Two distinct real roots",
+      };
+    }
+  },
+
+  // NEW: Calculate solution error
+  calculateSolutionError: (predicted, actual) => {
+    if (!actual || actual.type === "complex" || actual.type === "invalid") {
+      return null;
+    }
+
+    const actualRoots = actual.roots;
+    if (actualRoots.length === 1) {
+      // Single root case
+      const error1 = Math.abs(predicted[0] - actualRoots[0]);
+      const error2 = Math.abs(predicted[1] - actualRoots[0]);
+      return {
+        x1_error: error1,
+        x2_error: error2,
+        avg_error: (error1 + error2) / 2,
+        type: "single_root",
+      };
+    } else {
+      // Two roots case - match closest pairs
+      const error1 =
+        Math.abs(predicted[0] - actualRoots[0]) +
+        Math.abs(predicted[1] - actualRoots[1]);
+      const error2 =
+        Math.abs(predicted[0] - actualRoots[1]) +
+        Math.abs(predicted[1] - actualRoots[0]);
+
+      if (error1 <= error2) {
+        return {
+          x1_error: Math.abs(predicted[0] - actualRoots[0]),
+          x2_error: Math.abs(predicted[1] - actualRoots[1]),
+          avg_error:
+            (Math.abs(predicted[0] - actualRoots[0]) +
+              Math.abs(predicted[1] - actualRoots[1])) /
+            2,
+          type: "two_roots",
+        };
+      } else {
+        return {
+          x1_error: Math.abs(predicted[0] - actualRoots[1]),
+          x2_error: Math.abs(predicted[1] - actualRoots[0]),
+          avg_error:
+            (Math.abs(predicted[0] - actualRoots[1]) +
+              Math.abs(predicted[1] - actualRoots[0])) /
+            2,
+          type: "two_roots",
+        };
+      }
+    }
+  },
 };
 
 // API helper functions
@@ -934,7 +1061,7 @@ async function makePrediction() {
     });
 
     if (response.success) {
-      displayPredictionResults(response);
+      displayPredictionResults(response, inputs);
     } else {
       Utils.showNotification(response.error || "Prediction failed", "error");
     }
@@ -943,16 +1070,149 @@ async function makePrediction() {
   }
 }
 
-function displayPredictionResults(response) {
+// ENHANCED: Display prediction results with new features
+function displayPredictionResults(response, inputs) {
   const resultsContainer = document.getElementById("prediction-results");
 
+  // Calculate actual solutions if this is a coefficient-to-roots prediction
+  const actualSolutions = Utils.calculateActualSolutions(
+    inputs[0],
+    inputs[1],
+    inputs[2]
+  );
+  const solutionError = Utils.calculateSolutionError(
+    response.predictions,
+    actualSolutions
+  );
+
   let html = `
-        <div style="padding: 20px;">
-            <h3 style="margin-bottom: 20px;">
-                <i class="fas fa-brain"></i> Prediction Results
-            </h3>
-            <div style="display: grid; gap: 16px;">
-    `;
+    <div style="padding: 20px; animation: fadeIn 0.5s ease-in-out;">
+      <!-- NEW: Equation Display Section -->
+      <div style="background: var(--primary-color)15; border-radius: var(--radius-medium); padding: 0px 20px 20px 20px; margin-top: -10px; margin-bottom: 20px; border: 1px solid var(--primary-color)30;">
+        <h4 style="margin: 0 0 12px 0; color: var(--primary-color); display: flex; align-items: center; gap: 8px;">
+          <i class="fas fa-function"></i> Quadratic Equation
+        </h4>
+        <div style="font-size: 24px; font-family: 'JetBrains Mono', monospace; text-align: center; padding: 16px; background: var(--surface-color); border-radius: var(--radius-small); border: 1px solid var(--border-color);">
+          ${Utils.formatQuadraticEquation(inputs[0], inputs[1], inputs[2])}
+        </div>
+      </div>
+
+      <!-- NEW: Interactive Solution Comparison -->
+      <div style="background: var(--surface-color); border-radius: var(--radius-medium); padding: 20px; margin-bottom: 20px; border: 1px solid var(--border-color);">
+        <h4 style="margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
+          <i class="fas fa-balance-scale"></i> Solution Comparison
+        </h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+          
+          <!-- Neural Network Column -->
+          <div style="background: var(--primary-color)10; border-radius: var(--radius-medium); padding: 16px; border: 1px solid var(--primary-color)30;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px; color: var(--primary-color);">
+              <i class="fas fa-brain"></i>
+              <strong>Neural Network</strong>
+            </div>
+            <div style="display: grid; gap: 8px;">
+              <div style="display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace;">
+                <span>x₁ =</span>
+                <span style="font-weight: 600; color: var(--primary-color);">${Utils.formatNumber(
+                  response.predictions[0],
+                  6
+                )}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace;">
+                <span>x₂ =</span>
+                <span style="font-weight: 600; color: var(--primary-color);">${Utils.formatNumber(
+                  response.predictions[1],
+                  6
+                )}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Actual Solution Column -->
+          <div style="background: var(--success-color)10; border-radius: var(--radius-medium); padding: 16px; border: 1px solid var(--success-color)30;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px; color: var(--success-color);">
+              <i class="fas fa-calculator"></i>
+              <strong>Actual Solution</strong>
+            </div>
+            <div style="display: grid; gap: 8px;">
+              ${
+                actualSolutions.type === "distinct"
+                  ? `
+                <div style="display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace;">
+                  <span>x₁ =</span>
+                  <span style="font-weight: 600; color: var(--success-color);">${Utils.formatNumber(
+                    actualSolutions.roots[0],
+                    6
+                  )}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace;">
+                  <span>x₂ =</span>
+                  <span style="font-weight: 600; color: var(--success-color);">${Utils.formatNumber(
+                    actualSolutions.roots[1],
+                    6
+                  )}</span>
+                </div>
+              `
+                  : actualSolutions.type === "repeated"
+                  ? `
+                <div style="display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace;">
+                  <span>x₁ = x₂ =</span>
+                  <span style="font-weight: 600; color: var(--success-color);">${Utils.formatNumber(
+                    actualSolutions.roots[0],
+                    6
+                  )}</span>
+                </div>
+              `
+                  : `
+                <div style="color: var(--text-secondary); font-style: italic; text-align: center;">
+                  ${actualSolutions.message}
+                </div>
+              `
+              }
+            </div>
+          </div>
+        </div>
+
+        ${
+          solutionError
+            ? `
+          <!-- Error Analysis -->
+          <div style="background: var(--warning-color)10; border-radius: var(--radius-medium); padding: 16px; border: 1px solid var(--warning-color)30;">
+            <h5 style="margin: 0 0 12px 0; color: var(--warning-color); display: flex; align-items: center; gap: 8px;">
+              <i class="fas fa-chart-line"></i> Error Analysis
+            </h5>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; font-family: 'JetBrains Mono', monospace; font-size: 14px;">
+              <div style="text-align: center;">
+                <div style="color: var(--text-secondary); margin-bottom: 4px;">x₁ Error</div>
+                <div style="font-weight: 600; color: var(--warning-color);">${Utils.formatNumber(
+                  solutionError.x1_error,
+                  8
+                )}</div>
+              </div>
+              <div style="text-align: center;">
+                <div style="color: var(--text-secondary); margin-bottom: 4px;">x₂ Error</div>
+                <div style="font-weight: 600; color: var(--warning-color);">${Utils.formatNumber(
+                  solutionError.x2_error,
+                  8
+                )}</div>
+              </div>
+              <div style="text-align: center; background: var(--warning-color)15; padding: 8px; border-radius: var(--radius-small);">
+                <div style="color: var(--text-secondary); margin-bottom: 4px;">Avg Error</div>
+                <div style="font-weight: 600; color: var(--warning-color);">${Utils.formatNumber(
+                  solutionError.avg_error,
+                  8
+                )}</div>
+              </div>
+            </div>
+          </div>
+        `
+            : ""
+        }
+      </div>
+
+      <!-- Original Results Grid (preserved) -->
+      <div style="display: grid; gap: 16px; margin-bottom: 20px;">
+  `;
 
   response.target_features.forEach((feature, index) => {
     const prediction = response.predictions[index];
@@ -960,32 +1220,26 @@ function displayPredictionResults(response) {
     const confidenceLevel = Utils.getConfidenceLevel(confidence);
 
     html += `
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: var(--background-color); border-radius: var(--radius-medium); border: 1px solid var(--border-color);">
-                <div>
-                    <strong>${feature}:</strong> ${Utils.formatNumber(
-      prediction,
-      6
-    )}
-                </div>
-                <div style="text-align: right;">
-                    <div>Confidence: ${Utils.formatPercentage(
-                      confidence * 100,
-                      1
-                    )}</div>
-                    <div style="font-size: 14px; margin-top: 4px;">${confidenceLevel}</div>
-                </div>
-            </div>
-        `;
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: var(--background-color); border-radius: var(--radius-medium); border: 1px solid var(--border-color);">
+        <div>
+          <strong>${feature}:</strong> ${Utils.formatNumber(prediction, 6)}
+        </div>
+        <div style="text-align: right;">
+          <div>Confidence: ${Utils.formatPercentage(confidence * 100, 1)}</div>
+          <div style="font-size: 14px; margin-top: 4px;">${confidenceLevel}</div>
+        </div>
+      </div>
+    `;
   });
 
-  // Add actual solutions comparison if available
+  // Add actual solutions comparison if available (original format preserved)
   if (response.actual_solutions) {
     html += `
-            <div style="margin-top: 20px; padding: 16px; background: var(--success-color)20; border-radius: var(--radius-medium); border: 1px solid var(--success-color);">
-                <h4 style="margin-bottom: 12px;">
-                    <i class="fas fa-check-circle"></i> Actual Solutions Comparison
-                </h4>
-        `;
+      <div style="margin-top: 20px; padding: 16px; background: var(--success-color)20; border-radius: var(--radius-medium); border: 1px solid var(--success-color);">
+        <h4 style="margin-bottom: 12px;">
+          <i class="fas fa-check-circle"></i> Neural Network vs Actual
+        </h4>
+    `;
 
     response.actual_solutions.forEach((actual, index) => {
       const predicted = response.predictions[index];
@@ -993,36 +1247,36 @@ function displayPredictionResults(response) {
       const errorPercent = Math.abs(error / (actual + 1e-8)) * 100;
 
       html += `
-                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                    <span>${
-                      response.target_features[index]
-                    }: Predicted ${Utils.formatNumber(
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span>${
+            response.target_features[index]
+          }: Predicted ${Utils.formatNumber(
         predicted,
         6
       )} vs Actual ${Utils.formatNumber(actual, 6)}</span>
-                    <span style="font-weight: 600; color: ${
-                      error < 0.01
-                        ? "var(--success-color)"
-                        : error < 0.1
-                        ? "var(--warning-color)"
-                        : "var(--error-color)"
-                    };">
-                        Error: ${Utils.formatNumber(
-                          error,
-                          6
-                        )} (${Utils.formatNumber(errorPercent, 2)}%)
-                    </span>
-                </div>
-            `;
+          <span style="font-weight: 600; color: ${
+            error < 0.01
+              ? "var(--success-color)"
+              : error < 0.1
+              ? "var(--warning-color)"
+              : "var(--error-color)"
+          };">
+            Error: ${Utils.formatNumber(error, 6)} (${Utils.formatNumber(
+        errorPercent,
+        2
+      )}%)
+          </span>
+        </div>
+      `;
     });
 
     html += "</div>";
   }
 
   html += `
-            </div>
-        </div>
-    `;
+      </div>
+    </div>
+  `;
 
   resultsContainer.innerHTML = html;
 }
