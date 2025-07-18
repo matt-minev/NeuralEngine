@@ -155,13 +155,13 @@ def start_training():
     try:
         if app_state['data_processor'].data is None:
             return jsonify({'error': 'No dataset loaded'}), 400
-        
         if app_state['training_status']['is_training']:
             return jsonify({'error': 'Training already in progress'}), 400
         
         data = request.get_json()
         selected_scenarios = data.get('scenarios', [])
         epochs = data.get('epochs', 1000)
+        learning_rate = data.get('learning_rate', 0.001)
         
         if not selected_scenarios:
             return jsonify({'error': 'No scenarios selected'}), 400
@@ -169,7 +169,7 @@ def start_training():
         # Start training in background thread
         training_thread = threading.Thread(
             target=_train_models_background,
-            args=(selected_scenarios, epochs)
+            args=(selected_scenarios, epochs, learning_rate)
         )
         training_thread.daemon = True
         training_thread.start()
@@ -178,9 +178,9 @@ def start_training():
             'success': True,
             'message': 'Training started',
             'scenarios': selected_scenarios,
-            'epochs': epochs
+            'epochs': epochs,
+            'learning_rate': learning_rate
         })
-        
     except Exception as e:
         return jsonify({'error': f'Training start failed: {str(e)}'}), 500
 
@@ -309,7 +309,7 @@ def get_random_data():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
-def _train_models_background(selected_scenarios, epochs):
+def _train_models_background(selected_scenarios, epochs, learning_rate):
     """Background training function"""
     try:
         app_state['training_status']['is_training'] = True
@@ -319,6 +319,7 @@ def _train_models_background(selected_scenarios, epochs):
         
         _log_training('🎯 Starting training session...')
         _log_training(f'Selected scenarios: {len(selected_scenarios)}')
+        _log_training(f'Training parameters: {epochs} epochs, learning rate: {learning_rate}')
         
         for i, scenario_key in enumerate(selected_scenarios):
             if not app_state['training_status']['is_training']:
@@ -333,7 +334,7 @@ def _train_models_background(selected_scenarios, epochs):
             try:
                 # Create and train predictor
                 predictor = QuadraticPredictor(scenario, app_state['data_processor'])
-                training_results = predictor.train(epochs=epochs, verbose=False)
+                training_results = predictor.train(epochs=epochs, learning_rate=learning_rate, verbose=False)
                 
                 # Store results
                 app_state['predictors'][scenario_key] = predictor

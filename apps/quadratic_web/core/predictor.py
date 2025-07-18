@@ -26,7 +26,7 @@ class QuadraticPredictor:
         self.training_history = {}
         self.performance_stats = {}
         
-    def create_network(self):
+    def create_network(self, learning_rate: float = 0.001):
         """Create neural network for this scenario"""
         self.network = NeuralNetwork(
             self.scenario.network_architecture,
@@ -34,14 +34,14 @@ class QuadraticPredictor:
         )
         
         # Create trainer with Adam optimizer and MSE loss function
-        optimizer = Adam(learning_rate=0.001, beta1=0.9, beta2=0.999)
+        optimizer = Adam(learning_rate=learning_rate, beta1=0.9, beta2=0.999)
         self.trainer = TrainingEngine(self.network, optimizer, mean_squared_error)
         
-    def train(self, epochs: int = 1000, verbose: bool = True) -> Dict[str, Any]:
+    def train(self, epochs: int = 1000, learning_rate: float = 0.001, verbose: bool = True) -> Dict[str, Any]:
         """Train the neural network"""
-        if self.network is None:
-            self.create_network()
-            
+        # Always create/recreate network with new learning rate
+        self.create_network(learning_rate)
+        
         # Prepare data
         X, y = self.data_processor.prepare_scenario_data(self.scenario, normalize=True)
         
@@ -56,6 +56,7 @@ class QuadraticPredictor:
             print(f"   Input shape: {X_train.shape}")
             print(f"   Target shape: {y_train.shape}")
             print(f"   Network: {self.scenario.network_architecture}")
+            print(f"   Learning rate: {learning_rate}")
         
         try:
             self.training_history = self.trainer.train(
@@ -68,6 +69,7 @@ class QuadraticPredictor:
             
             training_time = time.time() - start_time
             self.performance_stats['training_time'] = training_time
+            self.performance_stats['learning_rate'] = learning_rate
             self.is_trained = True
             
             # Evaluate on test set
@@ -88,6 +90,7 @@ class QuadraticPredictor:
             if verbose:
                 print(f"❌ Training failed: {str(e)}")
             raise e
+
     
     def predict(self, input_data: np.ndarray, return_confidence: bool = True) -> Tuple[np.ndarray, Optional[np.ndarray]]:
         """Make predictions with optional confidence estimation"""

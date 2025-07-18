@@ -1016,6 +1016,8 @@ async function startTraining() {
 
   const epochs =
     parseInt(document.getElementById("epochs-input").value) || 1000;
+  const learningRate =
+    parseFloat(document.getElementById("learning-rate-input").value) || 0.001;
 
   try {
     const response = await ApiClient.request(API.startTraining, {
@@ -1023,6 +1025,7 @@ async function startTraining() {
       body: JSON.stringify({
         scenarios: selectedScenarios,
         epochs: epochs,
+        learning_rate: learningRate,
       }),
     });
 
@@ -1033,7 +1036,11 @@ async function startTraining() {
       document.getElementById("start-training-btn").disabled = true;
       document.getElementById("stop-training-btn").style.display =
         "inline-block";
-      Utils.showNotification("Training started successfully", "success");
+
+      Utils.showNotification(
+        `Training started: ${selectedScenarios.length} scenarios, ${epochs} epochs, learning rate: ${learningRate}`,
+        "success"
+      );
     }
   } catch (error) {
     Utils.showNotification(

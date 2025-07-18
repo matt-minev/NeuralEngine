@@ -224,12 +224,6 @@
   }
 }
 
-.training-controls {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
 .epoch-input {
   display: flex;
   align-items: center;
@@ -535,11 +529,6 @@
 
   .results-grid {
     grid-template-columns: 1fr;
-  }
-
-  .training-controls {
-    flex-direction: column;
-    gap: 8px;
   }
 
   .prediction-actions {
