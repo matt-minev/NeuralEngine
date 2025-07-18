@@ -25,15 +25,15 @@ import time
 
 # Add the Neural Engine path
 current_dir = Path(__file__).parent
-parent_dir = current_dir.parent
-sys.path.insert(0, str(parent_dir))
+neural_engine_root = current_dir.parent.parent  # Go up two levels
+sys.path.insert(0, str(neural_engine_root))
 
 # Import application components
 try:
     from core.data_processor import QuadraticDataProcessor
     from core.predictor import QuadraticPredictor
     from config.scenarios import get_default_scenarios
-    from helpers import format_number, assess_performance, get_confidence_level
+    from core.helpers import format_number, assess_performance, get_confidence_level
 except ImportError as e:
     print(f"Error importing components: {e}")
     print("Please ensure all required modules are available.")

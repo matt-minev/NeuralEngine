@@ -2,7 +2,12 @@ import numpy as np
 import time
 from typing import Tuple, Optional, Dict, Any
 import sys
-sys.path.append('../..')
+from pathlib import Path
+
+# Add Neural Engine root to path
+current_dir = Path(__file__).parent
+neural_engine_root = current_dir.parent.parent
+sys.path.insert(0, str(neural_engine_root))
 
 from nn_core import NeuralNetwork, mean_squared_error, mean_absolute_error
 from autodiff import TrainingEngine, Adam

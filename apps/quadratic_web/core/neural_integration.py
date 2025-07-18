@@ -10,6 +10,14 @@ Date: July 2025
 Integration layer between the web application and the existing Neural Engine
 """
 
+import sys
+from pathlib import Path
+
+# Add Neural Engine root to path
+current_dir = Path(__file__).parent
+neural_engine_root = current_dir.parent.parent
+sys.path.insert(0, str(neural_engine_root))
+
 import numpy as np
 import json
 import time
