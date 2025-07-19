@@ -1332,3 +1332,376 @@
     padding: 12px;
   }
 }
+
+/* Comparison Section */
+.comparison-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.model-rankings-grid {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.model-card {
+  background: var(--background-color);
+  border-radius: var(--radius-large);
+  padding: 1.5rem;
+  border: 1px solid var(--border-color);
+  border-left: 4px solid var(--accent-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.model-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.model-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.model-rank {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 60px;
+}
+
+.medal {
+  font-size: 2rem;
+  margin-bottom: 0.25rem;
+}
+
+.rank-number {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.model-info {
+  flex: 1;
+}
+
+.model-name {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+  color: var(--text-primary);
+}
+
+.model-description {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.model-score {
+  text-align: center;
+  min-width: 100px;
+}
+
+.composite-score {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.performance-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-top: 0.25rem;
+  color: var(--text-secondary);
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.metric-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.metric-label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.metric-value {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.metric-bar {
+  height: 6px;
+  background: var(--background-secondary);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.metric-fill {
+  height: 100%;
+  transition: width 0.8s ease;
+  border-radius: 3px;
+}
+
+.model-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.model-indicator {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+}
+
+.insights-section {
+  margin-top: 3rem;
+}
+
+.insight-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+.insight-card {
+  background: linear-gradient(
+    135deg,
+    var(--background-color) 0%,
+    var(--background-secondary) 100%
+  );
+  border-radius: var(--radius-large);
+  padding: 1.5rem;
+  border: 1px solid var(--border-color);
+  display: flex;
+  gap: 1rem;
+}
+
+.insight-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.insight-content h4 {
+  margin: 0 0 0.75rem 0;
+  color: var(--text-primary);
+}
+
+.insight-recommendation {
+  background: var(--accent-color);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-medium);
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-top: 1rem;
+  display: inline-block;
+}
+
+.explanation-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.explanation-card {
+  background: var(--background-color);
+  border-radius: var(--radius-medium);
+  padding: 1.5rem;
+  border: 1px solid var(--border-color);
+  display: flex;
+  gap: 1rem;
+}
+
+.metric-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+.scale-indicators {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.scale {
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-small);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.scale.excellent {
+  background: #d4edda;
+  color: #155724;
+}
+.scale.good {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+.scale.fair {
+  background: #fff3cd;
+  color: #856404;
+}
+.scale.poor {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.error-note {
+  font-style: italic;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
+
+/* Model actions alignment fix */
+.model-actions {
+  display: flex;
+  justify-content: flex-end; /* This pushes the indicator to the right */
+  align-items: center;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+  margin-top: 1rem;
+}
+
+.model-indicator {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Insights styling */
+.insights-section {
+  padding: 0;
+}
+
+.insight-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+.insight-card {
+  background: var(--background-secondary);
+  border-radius: var(--radius-large);
+  padding: 1.5rem;
+  border: 1px solid var(--border-color);
+  display: flex;
+  gap: 1rem;
+}
+
+.insight-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.insight-content h4 {
+  margin: 0 0 0.75rem 0;
+  color: var(--text-primary);
+}
+
+.insight-recommendation {
+  background: var(--accent-color);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-medium);
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-top: 1rem;
+  display: inline-block;
+}
+
+.explanation-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.explanation-card {
+  background: var(--background-color);
+  border-radius: var(--radius-medium);
+  padding: 1.5rem;
+  border: 1px solid var(--border-color);
+  display: flex;
+  gap: 1rem;
+}
+
+.metric-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+.scale-indicators {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.scale {
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-small);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.scale.excellent {
+  background: #d4edda;
+  color: #155724;
+}
+.scale.good {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+.scale.fair {
+  background: #fff3cd;
+  color: #856404;
+}
+.scale.poor {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.error-note {
+  font-style: italic;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}

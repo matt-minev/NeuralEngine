@@ -855,6 +855,7 @@
               </button>
             </div>
 
+            <!-- Model Rankings - Moved to First Position -->
             <div class="card">
               <div class="card-header">
                 <h3 class="card-title">
@@ -868,25 +869,58 @@
                     color: var(--text-secondary);
                     text-align: center;
                     padding: 40px;
+                    background: var(--background-secondary);
+                    border-radius: var(--radius-medium);
+                    border: 2px dashed var(--border-color);
                   "
                 >
-                  Train models to see comparison results.
+                  <div style="font-size: 48px; margin-bottom: 16px">🏅</div>
+                  <h4 style="margin: 0 0 8px 0; color: var(--text-primary)">
+                    Ready for Model Comparison
+                  </h4>
+                  <p style="margin: 0; font-size: 14px">
+                    Train at least 2 models and click "Compare Models" to see
+                    detailed performance rankings and insights.
+                  </p>
                 </div>
               </div>
             </div>
 
+            <!-- Performance Overview Chart - Second Position -->
             <div class="card">
               <div class="card-header">
                 <h3 class="card-title">
-                  <i class="fas fa-file-alt"></i>
-                  Benchmark Report
+                  <i class="fas fa-chart-bar"></i>
+                  Performance Overview
                 </h3>
               </div>
-              <div id="benchmark-report">
+              <div class="chart-wrapper">
                 <canvas
-                  id="comparison-chart"
-                  style="max-height: 400px"
+                  id="comparison-performance-chart"
+                  width="800"
+                  height="400"
                 ></canvas>
+              </div>
+            </div>
+
+            <!-- Performance Insights - Third Position -->
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">
+                  <i class="fas fa-lightbulb"></i>
+                  Performance Insights
+                </h3>
+              </div>
+              <div id="comparison-insights">
+                <div
+                  style="
+                    color: var(--text-secondary);
+                    text-align: center;
+                    padding: 40px;
+                  "
+                >
+                  Complete model training to see detailed insights.
+                </div>
               </div>
             </div>
           </section>
