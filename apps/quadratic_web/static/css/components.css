@@ -26,20 +26,20 @@
 }
 
 .upload-zone:hover {
-  border-color: var(--primary-color);
-  background: var(--primary-color) 10;
+  border-color: purple;
+  background: purple 10;
   transform: translateY(-2px);
 }
 
 .upload-zone.dragover {
-  border-color: var(--primary-color);
-  background: var(--primary-color) 20;
+  border-color: purple;
+  background: purple 20;
   transform: scale(1.02);
 }
 
 .upload-icon {
   font-size: 48px;
-  color: var(--primary-color);
+  color: purple;
   margin-bottom: 16px;
 }
 
@@ -85,14 +85,14 @@
 }
 
 .scenario-selector:hover {
-  border-color: var(--primary-color);
+  border-color: purple;
   transform: translateY(-2px);
   box-shadow: var(--shadow-medium);
 }
 
 .scenario-selector.selected {
-  border-color: var(--primary-color);
-  background: var(--primary-color) 10;
+  border-color: purple;
+  background: purple 10;
 }
 
 .scenario-selector input[type="checkbox"] {
@@ -101,7 +101,7 @@
   right: 16px;
   width: 18px;
   height: 18px;
-  accent-color: var(--primary-color);
+  accent-color: purple;
 }
 
 .scenario-name {
@@ -189,11 +189,7 @@
 
 .progress-bar-fill {
   height: 100%;
-  background: linear-gradient(
-    90deg,
-    var(--primary-color),
-    var(--secondary-color)
-  );
+  background: linear-gradient(90deg, purple, var(--secondary-color));
   border-radius: var(--radius-small);
   transition: width 0.3s ease;
   position: relative;
@@ -308,7 +304,7 @@
 
 .prediction-input-group input:focus {
   outline: none;
-  border-color: var(--primary-color);
+  border-color: purple;
   box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
 }
 
@@ -443,7 +439,7 @@
 }
 
 .chart-control-btn:hover {
-  background: var(--primary-color);
+  background: purple;
   color: white;
 }
 
@@ -475,7 +471,7 @@
 }
 
 .comparison-table th {
-  background: var(--primary-color);
+  background: purple;
   color: white;
   font-weight: 600;
   padding: 12px;
@@ -506,7 +502,7 @@
 }
 
 .comparison-table .performance-good {
-  color: var(--primary-color);
+  color: purple;
 }
 
 .comparison-table .performance-fair {
@@ -556,7 +552,7 @@
   height: 20px;
   margin: -10px 0 0 -10px;
   border: 2px solid var(--border-color);
-  border-top: 2px solid var(--primary-color);
+  border-top: 2px solid purple;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -656,11 +652,11 @@
 }
 /* NEW: Equation Display Section */
 .equation-display-section {
-  background: var(--primary-color) 15;
+  background: purple 15;
   border-radius: var(--radius-medium);
   padding: 20px;
   margin-bottom: 20px;
-  border: 1px solid var(--primary-color) 30;
+  border: 1px solid purple 30;
   transition: all 0.3s ease;
 }
 
@@ -711,8 +707,8 @@
 }
 
 .solution-column:nth-child(1) {
-  background: var(--primary-color) 10;
-  border-color: var(--primary-color) 30;
+  background: purple 10;
+  border-color: purple 30;
 }
 
 .solution-column:nth-child(2) {
@@ -730,7 +726,7 @@
 }
 
 .solution-header.neural-network {
-  color: var(--primary-color);
+  color: purple;
 }
 
 .solution-header.actual-solution {
@@ -761,7 +757,7 @@
 }
 
 .solution-number.nn-prediction {
-  color: var(--primary-color);
+  color: purple;
 }
 
 .solution-number.actual-solution {
@@ -881,11 +877,7 @@
 
 /* Auto-loaded dataset styling */
 .auto-load-badge {
-  background: linear-gradient(
-    135deg,
-    var(--primary-color),
-    var(--secondary-color)
-  );
+  background: linear-gradient(135deg, purple, var(--secondary-color));
   color: white;
   padding: 8px 16px;
   border-radius: 50px;
@@ -897,7 +889,7 @@
 }
 
 .data-info.auto-loaded {
-  border: 2px solid var(--primary-color);
+  border: 2px solid purple;
   background: linear-gradient(
     135deg,
     var(--surface-color) 0%,

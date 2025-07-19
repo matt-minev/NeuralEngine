@@ -201,10 +201,18 @@
         cursor: pointer;
       }
 
-      .nav-link:hover,
-      .nav-link.active {
+      /* Sidebar links */
+      .nav-link:hover:not(.external-link),
+      .nav-link.active:not(.external-link) {
         background: var(--primary-color);
         color: white;
+        transform: translateX(4px);
+      }
+
+      .nav-link.external-link:hover {
+        background-color: rgba(194, 52, 199, 0.1);
+        border-left: 3px solid rgba(199, 52, 192, 0.8);
+        color: inherit;
         transform: translateX(4px);
       }
 
@@ -538,7 +546,7 @@
               </a>
             </li>
             <li class="nav-item">
-              <a href="/dataset-generator" class="nav-link active">
+              <a href="/dataset-generator" class="nav-link external-link">
                 <i class="fas fa-table"></i>
                 <span>Dataset Generator</span>
               </a>

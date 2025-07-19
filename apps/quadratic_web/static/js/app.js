@@ -370,6 +370,12 @@ const Navigation = {
     // Set up navigation event listeners
     document.querySelectorAll(".nav-link").forEach((link) => {
       link.addEventListener("click", (e) => {
+        // If it's an external link, allow default browser navigation
+        if (link.classList.contains("external-link")) {
+          return; // Let the browser handle the navigation
+        }
+
+        // For tab navigation, prevent default and handle internally
         e.preventDefault();
         const section = link.dataset.section;
         if (section) {
