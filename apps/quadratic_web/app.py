@@ -593,6 +593,31 @@ def load_specific_dataset(filename):
     except Exception as e:
         return jsonify({'error': f'Dataset loading failed: {str(e)}'}), 500
 
+@app.route('/api/data/clear', methods=['POST'])
+def clear_dataset():
+    """Clear the currently loaded dataset"""
+    try:
+        # Clear the data processor
+        app_state['data_processor'].data = None
+        
+        # Clear any related state
+        app_state['predictors'].clear()
+        app_state['results'].clear()
+        
+        # Stop any ongoing training
+        app_state['training_status']['is_training'] = False
+        app_state['training_status']['current_scenario'] = None
+        app_state['training_status']['progress'] = 0
+        app_state['training_status']['logs'].clear()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Dataset cleared successfully'
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'Failed to clear dataset: {str(e)}'}), 500
+
 def _train_models_background(selected_scenarios, epochs, learning_rate):
     """Background training function"""
     try:
@@ -703,30 +728,15 @@ def validate_dataset_file(filepath):
     except Exception as e:
         return False, f"File validation error: {str(e)}"
 
-@app.route('/api/data/clear', methods=['POST'])
-def clear_dataset():
-    """Clear the currently loaded dataset"""
+def cleanup_old_uploads():
+    """Clean up old uploaded files on startup"""
     try:
-        # Clear the data processor
-        app_state['data_processor'].data = None
-        
-        # Clear any related state
-        app_state['predictors'].clear()
-        app_state['results'].clear()
-        
-        # Stop any ongoing training
-        app_state['training_status']['is_training'] = False
-        app_state['training_status']['current_scenario'] = None
-        app_state['training_status']['progress'] = 0
-        app_state['training_status']['logs'].clear()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Dataset cleared successfully'
-        })
-        
+        from core.cleanup import cleanup_old_datasets
+        deleted_count, total_size = cleanup_old_datasets('uploads', max_age_days=1)
+        if deleted_count > 0:
+            print(f"🧹 Cleaned up {deleted_count} old dataset files ({total_size:,} bytes)")
     except Exception as e:
-        return jsonify({'error': f'Failed to clear dataset: {str(e)}'}), 500
+        print(f"⚠️ Cleanup failed: {e}")
 
 # Error handlers
 @app.errorhandler(404)
@@ -740,9 +750,37 @@ def internal_error(error):
 if __name__ == '__main__':
     print("🚀 Quadratic Neural Network Web Application")
     print("=" * 50)
+    
+    # Clean up old files on startup
+    cleanup_old_uploads()
+    
     print("Starting Flask server...")
     print("Location: Varna, Bulgaria 🇧🇬")
     print("Access the app at: http://localhost:5000")
     print("=" * 50)
     
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    try:
+        app.run(debug=True, host='0.0.0.0', port=5000)
+    except KeyboardInterrupt:
+        print("\n" + "=" * 50)
+        print("🛑 Server shutdown requested by user")
+        print("🧹 Performing cleanup...")
+        
+        # Stop any ongoing training
+        if app_state['training_status']['is_training']:
+            app_state['training_status']['is_training'] = False
+            print("   ⏹️  Stopped ongoing training sessions")
+        
+        # Clear predictors and results
+        app_state['predictors'].clear()
+        app_state['results'].clear()
+        print("   🗑️  Cleared cached models and results")
+        
+        print("✅ Cleanup completed")
+        print("👋 Thanks for using Quadratic Neural Network!")
+        print("=" * 50)
+    except Exception as e:
+        print(f"\n❌ Unexpected error: {e}")
+        print("🔍 Check the logs for more details")
+    finally:
+        print("🏁 Application terminated")
