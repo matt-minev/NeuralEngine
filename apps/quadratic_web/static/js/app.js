@@ -993,7 +993,10 @@ const AnalysisSection = {
   },
   createComparisonChart(data) {
     const ctx = document.getElementById("comparison-chart");
-    if (!ctx) return; // Exit if element doesn't exist
+    if (!ctx) {
+      console.error("Comparison chart canvas not found");
+      return;
+    }
 
     const chartCtx = ctx.getContext("2d");
 
@@ -1001,6 +1004,7 @@ const AnalysisSection = {
       AppState.charts.comparison.destroy();
     }
 
+    // Create a multi-metric comparison chart
     AppState.charts.comparison = new Chart(chartCtx, {
       type: "line",
       data: {
@@ -1009,18 +1013,43 @@ const AnalysisSection = {
           {
             label: "R² Score",
             data: data.metrics.r2_scores,
-            borderColor: "var(--chart-blue)",
+            borderColor: "#007aff",
             backgroundColor: "rgba(0, 122, 255, 0.1)",
             tension: 0.4,
-            fill: true,
+            fill: false,
+            pointBackgroundColor: "#007aff",
+            pointBorderColor: "#ffffff",
+            pointBorderWidth: 3,
+            pointRadius: 6,
+            pointHoverRadius: 8,
           },
           {
             label: "Accuracy (%)",
             data: data.metrics.accuracy_values,
-            borderColor: "var(--chart-green)",
+            borderColor: "#34c759",
             backgroundColor: "rgba(52, 199, 89, 0.1)",
             tension: 0.4,
-            fill: true,
+            fill: false,
+            pointBackgroundColor: "#34c759",
+            pointBorderColor: "#ffffff",
+            pointBorderWidth: 3,
+            pointRadius: 6,
+            pointHoverRadius: 8,
+          },
+          {
+            label: "MSE (inv) × 100",
+            data: data.metrics.mse_values.map(
+              (mse) => (1 - mse / Math.max(...data.metrics.mse_values)) * 100
+            ),
+            borderColor: "#ff9500",
+            backgroundColor: "rgba(255, 149, 0, 0.1)",
+            tension: 0.4,
+            fill: false,
+            pointBackgroundColor: "#ff9500",
+            pointBorderColor: "#ffffff",
+            pointBorderWidth: 3,
+            pointRadius: 6,
+            pointHoverRadius: 8,
           },
         ],
       },
@@ -1032,20 +1061,134 @@ const AnalysisSection = {
             position: "top",
             labels: {
               usePointStyle: true,
-              font: { size: 14, weight: "500" },
-              color: "var(--chart-text-primary)",
+              font: { size: 14, weight: "600" },
+              color: "#1f2937",
+              padding: 20,
+            },
+          },
+          tooltip: {
+            backgroundColor: "rgba(0, 0, 0, 0.8)",
+            titleColor: "#ffffff",
+            bodyColor: "#ffffff",
+            borderColor: "#007aff",
+            borderWidth: 1,
+            cornerRadius: 8,
+            callbacks: {
+              afterLabel: function (context) {
+                if (context.datasetIndex === 0) return "Higher is better";
+                if (context.datasetIndex === 1) return "Percentage accuracy";
+                if (context.datasetIndex === 2) return "Inverted & scaled MSE";
+                return "";
+              },
             },
           },
         },
         scales: {
           y: {
             beginAtZero: true,
-            grid: { color: "var(--chart-border)" },
-            ticks: { color: "var(--chart-text-secondary)" },
+            max: 100,
+            grid: {
+              color: "#d1d5db",
+              lineWidth: 1,
+            },
+            ticks: {
+              color: "#6b7280",
+              font: { size: 12, weight: "500" },
+            },
           },
           x: {
-            grid: { color: "var(--chart-border)" },
-            ticks: { color: "var(--chart-text-secondary)" },
+            grid: {
+              color: "#d1d5db",
+              lineWidth: 1,
+            },
+            ticks: {
+              color: "#6b7280",
+              font: { size: 12, weight: "500" },
+              maxRotation: 45,
+            },
+          },
+        },
+        interaction: {
+          intersect: false,
+          mode: "index",
+        },
+      },
+    });
+  },
+  createCorrelationChart(data) {
+    const ctx = document.getElementById("comparison-chart");
+    if (!ctx) return;
+
+    const chartCtx = ctx.getContext("2d");
+
+    if (AppState.charts.comparison) {
+      AppState.charts.comparison.destroy();
+    }
+
+    // Create scatter plot showing R² vs Accuracy correlation
+    const scatterData = data.scenario_names.map((name, index) => ({
+      x: data.metrics.r2_scores[index] * 100, // Convert to percentage
+      y: data.metrics.accuracy_values[index],
+      label: name,
+    }));
+
+    AppState.charts.comparison = new Chart(chartCtx, {
+      type: "scatter",
+      data: {
+        datasets: [
+          {
+            label: "R² vs Accuracy Correlation",
+            data: scatterData,
+            backgroundColor: data.colors.map((color) => color + "80"),
+            borderColor: data.colors,
+            borderWidth: 3,
+            pointRadius: 8,
+            pointHoverRadius: 12,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false,
+          },
+          tooltip: {
+            backgroundColor: "rgba(0, 0, 0, 0.8)",
+            callbacks: {
+              title: function (context) {
+                return context[0].raw.label;
+              },
+              label: function (context) {
+                return [
+                  `R² Score: ${(context.parsed.x / 100).toFixed(3)}`,
+                  `Accuracy: ${context.parsed.y.toFixed(1)}%`,
+                ];
+              },
+            },
+          },
+        },
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: "R² Score (%)",
+              color: "#1f2937",
+              font: { size: 14, weight: "600" },
+            },
+            grid: { color: "#d1d5db" },
+            ticks: { color: "#6b7280" },
+          },
+          y: {
+            title: {
+              display: true,
+              text: "Accuracy (%)",
+              color: "#1f2937",
+              font: { size: 14, weight: "600" },
+            },
+            grid: { color: "#d1d5db" },
+            ticks: { color: "#6b7280" },
           },
         },
       },
@@ -1075,11 +1218,32 @@ const AnalysisSection = {
           await this.showRadarView();
         } else if (chartType === "detailed") {
           await this.showDetailedView();
+        } else if (chartType === "trends") {
+          await this.showTrendsView();
+        } else if (chartType === "correlation") {
+          await this.showCorrelationView();
         }
       });
     });
   },
 
+  async showTrendsView() {
+    try {
+      const analysisData = await ApiClient.request(API.performanceAnalysis);
+      this.createComparisonChart(analysisData);
+    } catch (error) {
+      console.error("Failed to show trends view:", error);
+    }
+  },
+
+  async showCorrelationView() {
+    try {
+      const analysisData = await ApiClient.request(API.performanceAnalysis);
+      this.createCorrelationChart(analysisData);
+    } catch (error) {
+      console.error("Failed to show correlation view:", error);
+    }
+  },
   async showRadarView() {
     try {
       const analysisData = await ApiClient.request(API.performanceAnalysis);
