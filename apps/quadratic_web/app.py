@@ -309,6 +309,255 @@ def get_random_data():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
+@app.route('/dataset-generator')
+def dataset_generator():
+    """Dataset generator page"""
+    return render_template('dataset_generator.html')
+
+@app.route('/api/generate-dataset', methods=['POST'])
+def generate_dataset():
+    """Generate quadratic equation dataset"""
+    try:
+        data = request.get_json()
+        
+        # Extract parameters
+        equation_type = data.get('equation_type', 'school_grade')
+        num_equations = data.get('num_equations', 1000)
+        coefficient_range = data.get('coefficient_range', {'min': -10, 'max': 10})
+        root_type = data.get('root_type', 'mixed')  # integers, fractions, mixed
+        allow_complex = data.get('allow_complex', False)
+        
+        # Generate dataset
+        dataset = generate_quadratic_dataset(
+            equation_type=equation_type,
+            num_equations=num_equations,
+            coefficient_range=coefficient_range,
+            root_type=root_type,
+            allow_complex=allow_complex
+        )
+        
+        # Create filename
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"quadratic_dataset_{equation_type}_{timestamp}.csv"
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        
+        # Save as CSV
+        df = pd.DataFrame(dataset, columns=['a', 'b', 'c', 'x1', 'x2'])
+        df.to_csv(filepath, index=False)
+        
+        # Get statistics
+        stats = calculate_dataset_stats(df)
+        
+        return jsonify({
+            'success': True,
+            'message': f'Generated {len(dataset)} quadratic equations',
+            'filename': filename,
+            'stats': stats,
+            'preview': dataset[:10].tolist()  # First 10 equations for preview
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'Dataset generation failed: {str(e)}'}), 500
+
+def generate_quadratic_dataset(equation_type, num_equations, coefficient_range, root_type, allow_complex):
+    """Generate quadratic equation dataset with specified parameters"""
+    dataset = []
+    
+    for _ in range(num_equations):
+        if equation_type == 'school_grade':
+            equation = generate_school_grade_equation(coefficient_range, root_type)
+        elif equation_type == 'random':
+            equation = generate_random_equation(coefficient_range, allow_complex)
+        elif equation_type == 'integer_solutions':
+            equation = generate_integer_solution_equation(coefficient_range)
+        elif equation_type == 'fractional_solutions':
+            equation = generate_fractional_solution_equation(coefficient_range)
+        else:
+            equation = generate_school_grade_equation(coefficient_range, root_type)
+        
+        dataset.append(equation)
+    
+    return np.array(dataset)
+
+def generate_school_grade_equation(coefficient_range, root_type):
+    """Generate school-grade quadratic equations with nice solutions"""
+    # Define nice root values
+    integer_roots = list(range(-10, 11))
+    fractional_roots = [-3/2, -1/2, -1/3, -1/4, 1/4, 1/3, 1/2, 3/2, 2/3, 3/4, 5/4, 4/3, 5/3, 7/4]
+    
+    if root_type == 'integers':
+        possible_roots = integer_roots
+    elif root_type == 'fractions':
+        possible_roots = fractional_roots
+    else:  # mixed
+        possible_roots = integer_roots + fractional_roots
+    
+    # Remove zero to avoid degenerate cases
+    possible_roots = [r for r in possible_roots if r != 0]
+    
+    # Choose two roots
+    x1 = np.random.choice(possible_roots)
+    x2 = np.random.choice(possible_roots)
+    
+    # Generate coefficients using Vieta's formulas
+    # For ax² + bx + c = 0 with roots x1, x2:
+    # x1 + x2 = -b/a
+    # x1 * x2 = c/a
+    
+    # Choose 'a' coefficient (non-zero)
+    a_candidates = list(range(coefficient_range['min'], coefficient_range['max'] + 1))
+    a_candidates = [a for a in a_candidates if a != 0]
+    a = np.random.choice(a_candidates)
+    
+    # Calculate b and c to ensure integer coefficients when possible
+    sum_roots = x1 + x2
+    product_roots = x1 * x2
+    
+    # Find LCM to make coefficients integers
+    from fractions import Fraction
+    sum_frac = Fraction(sum_roots).limit_denominator()
+    prod_frac = Fraction(product_roots).limit_denominator()
+    
+    # Scale 'a' to make b and c integers
+    lcm_denom = np.lcm(sum_frac.denominator, prod_frac.denominator)
+    a *= lcm_denom
+    
+    b = -a * sum_roots
+    c = a * product_roots
+    
+    # Ensure coefficients are in range by scaling if necessary
+    max_coeff = max(abs(a), abs(b), abs(c))
+    max_allowed = max(abs(coefficient_range['min']), abs(coefficient_range['max']))
+    
+    if max_coeff > max_allowed:
+        scale_factor = max_allowed / max_coeff
+        a *= scale_factor
+        b *= scale_factor
+        c *= scale_factor
+    
+    # Round to remove floating point errors
+    a = round(a)
+    b = round(b)
+    c = round(c)
+    
+    # Ensure 'a' is not zero
+    if a == 0:
+        a = 1
+    
+    # Recalculate roots with final coefficients to ensure accuracy
+    discriminant = b**2 - 4*a*c
+    if discriminant >= 0:
+        sqrt_disc = np.sqrt(discriminant)
+        x1_calc = (-b + sqrt_disc) / (2*a)
+        x2_calc = (-b - sqrt_disc) / (2*a)
+    else:
+        # Fallback to complex roots (shouldn't happen with our method)
+        sqrt_disc = np.sqrt(-discriminant)
+        x1_calc = (-b + 1j*sqrt_disc) / (2*a)
+        x2_calc = (-b - 1j*sqrt_disc) / (2*a)
+        x1_calc = x1_calc.real  # Take real part for dataset
+        x2_calc = x2_calc.real
+    
+    return [float(a), float(b), float(c), float(x1_calc), float(x2_calc)]
+
+def generate_random_equation(coefficient_range, allow_complex):
+    """Generate random quadratic equations"""
+    a = np.random.randint(coefficient_range['min'], coefficient_range['max'] + 1)
+    while a == 0:  # Ensure quadratic
+        a = np.random.randint(coefficient_range['min'], coefficient_range['max'] + 1)
+    
+    b = np.random.randint(coefficient_range['min'], coefficient_range['max'] + 1)
+    c = np.random.randint(coefficient_range['min'], coefficient_range['max'] + 1)
+    
+    # Calculate roots
+    discriminant = b**2 - 4*a*c
+    if discriminant >= 0 or allow_complex:
+        if discriminant >= 0:
+            sqrt_disc = np.sqrt(discriminant)
+            x1 = (-b + sqrt_disc) / (2*a)
+            x2 = (-b - sqrt_disc) / (2*a)
+        else:
+            sqrt_disc = np.sqrt(-discriminant)
+            x1 = (-b + 1j*sqrt_disc) / (2*a)
+            x2 = (-b - 1j*sqrt_disc) / (2*a)
+            x1 = x1.real  # Store real part only
+            x2 = x2.real
+        
+        return [float(a), float(b), float(c), float(x1), float(x2)]
+    else:
+        # Regenerate if complex roots not allowed
+        return generate_random_equation(coefficient_range, allow_complex)
+
+def generate_integer_solution_equation(coefficient_range):
+    """Generate equations with integer solutions only"""
+    # Choose integer roots
+    roots = list(range(-20, 21))
+    x1 = np.random.choice(roots)
+    x2 = np.random.choice(roots)
+    
+    # Generate coefficients
+    a = np.random.randint(1, 6)  # Keep 'a' small for integer coefficients
+    b = -a * (x1 + x2)
+    c = a * x1 * x2
+    
+    return [float(a), float(b), float(c), float(x1), float(x2)]
+
+def generate_fractional_solution_equation(coefficient_range):
+    """Generate equations with fractional solutions"""
+    from fractions import Fraction
+    
+    # Choose fractional roots
+    numerators = list(range(-10, 11))
+    denominators = [2, 3, 4, 5, 6]
+    
+    x1 = Fraction(np.random.choice(numerators), np.random.choice(denominators))
+    x2 = Fraction(np.random.choice(numerators), np.random.choice(denominators))
+    
+    # Generate integer coefficients
+    a = np.random.randint(1, 6)
+    sum_roots = x1 + x2
+    product_roots = x1 * x2
+    
+    # Scale to get integer coefficients
+    lcm_denom = np.lcm(sum_roots.denominator, product_roots.denominator)
+    a *= lcm_denom
+    
+    b = -a * sum_roots
+    c = a * product_roots
+    
+    return [float(a), float(b), float(c), float(x1), float(x2)]
+
+def calculate_dataset_stats(df):
+    """Calculate dataset statistics"""
+    stats = {
+        'total_equations': len(df),
+        'coefficients': {
+            'a': {'min': float(df['a'].min()), 'max': float(df['a'].max()), 'mean': float(df['a'].mean())},
+            'b': {'min': float(df['b'].min()), 'max': float(df['b'].max()), 'mean': float(df['b'].mean())},
+            'c': {'min': float(df['c'].min()), 'max': float(df['c'].max()), 'mean': float(df['c'].mean())}
+        },
+        'roots': {
+            'x1': {'min': float(df['x1'].min()), 'max': float(df['x1'].max()), 'mean': float(df['x1'].mean())},
+            'x2': {'min': float(df['x2'].min()), 'max': float(df['x2'].max()), 'mean': float(df['x2'].mean())}
+        },
+        'quality_metrics': {
+            'integer_roots_x1': int(sum(abs(df['x1'] - df['x1'].round()) < 1e-6)),
+            'integer_roots_x2': int(sum(abs(df['x2'] - df['x2'].round()) < 1e-6)),
+            'integer_coefficients': int(sum((abs(df['a'] - df['a'].round()) < 1e-6) & 
+                                         (abs(df['b'] - df['b'].round()) < 1e-6) & 
+                                         (abs(df['c'] - df['c'].round()) < 1e-6)))
+        }
+    }
+    return stats
+
+@app.route('/api/download-dataset/<filename>')
+def download_dataset(filename):
+    """Download generated dataset"""
+    try:
+        return send_from_directory(app.config['UPLOAD_FOLDER'], filename, as_attachment=True)
+    except FileNotFoundError:
+        return jsonify({'error': 'File not found'}), 404
+
 def _train_models_background(selected_scenarios, epochs, learning_rate):
     """Background training function"""
     try:

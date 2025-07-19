@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dataset Generator - Quadratic Neural Network</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/main.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/components.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/styles.css') }}"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="app-container">
+      <!-- Header -->
+      <header class="header">
+        <div class="header-content">
+          <div class="header-left">
+            <h1 class="header-title">
+              <span class="header-icon">🧮</span>
+              Dataset Generator
+            </h1>
+          </div>
+          <nav class="header-nav">
+            <a href="/" class="nav-link">← Back to Dashboard</a>
+          </nav>
+        </div>
+      </header>
+
+      <div class="main-layout">
+        <!-- Main Content -->
+        <main class="main-content">
+          <!-- Generator Configuration -->
+          <section class="card">
+            <div class="card-header">
+              <h2 class="card-title">
+                <span class="card-icon">⚙️</span>
+                Dataset Configuration
+              </h2>
+              <p class="card-description">
+                Configure your quadratic equation dataset generation parameters
+              </p>
+            </div>
+
+            <div class="generator-form">
+              <!-- Equation Type Selection -->
+              <div class="form-section">
+                <h3 class="section-title">Equation Type</h3>
+                <div class="equation-type-grid">
+                  <div class="type-selector active" data-type="school_grade">
+                    <div class="type-icon">🎓</div>
+                    <div class="type-name">School Grade</div>
+                    <div class="type-desc">
+                      Perfect for learning - nice integer/fractional solutions
+                    </div>
+                    <div class="type-example">
+                      Example: x² - 5x + 6 = 0 → x = 2, 3
+                    </div>
+                  </div>
+
+                  <div class="type-selector" data-type="integer_solutions">
+                    <div class="type-icon">🔢</div>
+                    <div class="type-name">Integer Solutions</div>
+                    <div class="type-desc">
+                      Equations with whole number roots only
+                    </div>
+                    <div class="type-example">
+                      Example: x² - 3x + 2 = 0 → x = 1, 2
+                    </div>
+                  </div>
+
+                  <div class="type-selector" data-type="fractional_solutions">
+                    <div class="type-icon">📐</div>
+                    <div class="type-name">Fractional Solutions</div>
+                    <div class="type-desc">Equations with fractional roots</div>
+                    <div class="type-example">
+                      Example: 2x² - 3x + 1 = 0 → x = 1/2, 1
+                    </div>
+                  </div>
+
+                  <div class="type-selector" data-type="random">
+                    <div class="type-icon">🎲</div>
+                    <div class="type-name">Random</div>
+                    <div class="type-desc">
+                      Completely random coefficients and solutions
+                    </div>
+                    <div class="type-example">
+                      Example: 3x² + 7x - 2 = 0 → various roots
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Generation Parameters -->
+              <div class="form-section">
+                <h3 class="section-title">Generation Parameters</h3>
+                <div class="parameters-grid">
+                  <div class="parameter-group">
+                    <label for="num-equations">Number of Equations</label>
+                    <input
+                      type="number"
+                      id="num-equations"
+                      value="1000"
+                      min="100"
+                      max="100000"
+                      step="100"
+                    />
+                    <small>Recommended: 1000-10000 for training</small>
+                  </div>
+
+                  <div class="parameter-group">
+                    <label for="root-type">Root Types (School Grade)</label>
+                    <select id="root-type">
+                      <option value="mixed">
+                        Mixed (Integers + Fractions)
+                      </option>
+                      <option value="integers">Integers Only</option>
+                      <option value="fractions">Fractions Only</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Coefficient Range -->
+              <div class="form-section">
+                <h3 class="section-title">Coefficient Range</h3>
+                <div class="range-controls">
+                  <div class="range-group">
+                    <label for="coeff-min">Minimum Value</label>
+                    <input
+                      type="number"
+                      id="coeff-min"
+                      value="-10"
+                      min="-100"
+                      max="0"
+                    />
+                  </div>
+                  <div class="range-group">
+                    <label for="coeff-max">Maximum Value</label>
+                    <input
+                      type="number"
+                      id="coeff-max"
+                      value="10"
+                      min="1"
+                      max="100"
+                    />
+                  </div>
+                </div>
+                <div class="range-preview">
+                  <span
+                    >Coefficients will range from
+                    <strong id="range-display">-10 to 10</strong></span
+                  >
+                </div>
+              </div>
+
+              <!-- Advanced Options -->
+              <div class="form-section advanced-section">
+                <h3 class="section-title">
+                  Advanced Options
+                  <button type="button" class="toggle-advanced">
+                    <span class="toggle-text">Show</span>
+                    <span class="toggle-icon">▼</span>
+                  </button>
+                </h3>
+                <div class="advanced-options" style="display: none">
+                  <div class="checkbox-group">
+                    <label>
+                      <input type="checkbox" id="allow-complex" />
+                      <span class="checkbox-text"
+                        >Allow Complex Roots (Random only)</span
+                      >
+                    </label>
+                  </div>
+                  <div class="checkbox-group">
+                    <label>
+                      <input type="checkbox" id="ensure-discriminant" checked />
+                      <span class="checkbox-text"
+                        >Ensure Perfect Square Discriminants</span
+                      >
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Generation Button -->
+              <div class="form-section">
+                <button id="generate-btn" class="btn btn-primary btn-large">
+                  <span class="btn-icon">🚀</span>
+                  Generate Dataset
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- Generation Progress -->
+          <section class="card" id="generation-progress" style="display: none">
+            <div class="card-header">
+              <h2 class="card-title">
+                <span class="card-icon">⏳</span>
+                Generating Dataset
+              </h2>
+            </div>
+            <div class="progress-container">
+              <div class="progress-info">
+                <span id="progress-text">Preparing generation...</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Generation Results -->
+          <section class="card" id="generation-results" style="display: none">
+            <div class="card-header">
+              <h2 class="card-title">
+                <span class="card-icon">✅</span>
+                Dataset Generated Successfully
+              </h2>
+            </div>
+
+            <div class="results-content">
+              <!-- Dataset Statistics -->
+              <div class="stats-grid" id="dataset-stats">
+                <!-- Stats will be populated by JavaScript -->
+              </div>
+
+              <!-- Dataset Preview -->
+              <div class="preview-section">
+                <h3 class="preview-title">Dataset Preview</h3>
+                <div class="preview-table-container">
+                  <table class="preview-table">
+                    <thead>
+                      <tr>
+                        <th>a</th>
+                        <th>b</th>
+                        <th>c</th>
+                        <th>x₁</th>
+                        <th>x₂</th>
+                        <th>Equation</th>
+                      </tr>
+                    </thead>
+                    <tbody id="preview-table-body">
+                      <!-- Preview data will be populated by JavaScript -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Download Actions -->
+              <div class="download-section">
+                <button id="download-btn" class="btn btn-success btn-large">
+                  <span class="btn-icon">💾</span>
+                  Download CSV Dataset
+                </button>
+                <button id="load-dataset-btn" class="btn btn-secondary">
+                  <span class="btn-icon">📊</span>
+                  Load into Neural Network
+                </button>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/dataset_generator.js') }}"></script>
+  </body>
+</html>
