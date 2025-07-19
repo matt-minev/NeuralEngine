@@ -1421,28 +1421,6 @@ function displayPredictionResults(response, inputs) {
         </div>
       </div>
 
-      <!-- Overall Quality Badge -->
-      <div class="quality-badge-container scale-in">
-        <div class="quality-badge quality-${overallQuality.level}">
-          <div class="quality-icon">
-            ${
-              overallQuality.level === "excellent"
-                ? "🎯"
-                : overallQuality.level === "good"
-                ? "👍"
-                : overallQuality.level === "fair"
-                ? "🤔"
-                : "😅"
-            }
-          </div>
-          <div class="quality-message">${overallQuality.message}</div>
-          <div class="quality-metric">Avg Error: ${Utils.formatNumber(
-            avgError,
-            4
-          )}</div>
-        </div>
-      </div>
-
       <!-- Enhanced Solution Comparison -->
       <div class="solution-comparison-section slide-up">
         <h4 class="comparison-title">
@@ -1526,6 +1504,28 @@ function displayPredictionResults(response, inputs) {
               Mathematical ground truth
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Overall Quality Badge (MOVED HERE) -->
+      <div class="quality-badge-container scale-in">
+        <div class="quality-badge quality-${overallQuality.level}">
+          <div class="quality-icon">
+            ${
+              overallQuality.level === "excellent"
+                ? "🎯"
+                : overallQuality.level === "good"
+                ? "👍"
+                : overallQuality.level === "fair"
+                ? "🤔"
+                : "😅"
+            }
+          </div>
+          <div class="quality-message">${overallQuality.message}</div>
+          <div class="quality-metric">Avg Error: ${Utils.formatNumber(
+            avgError,
+            4
+          )}</div>
         </div>
       </div>
 
