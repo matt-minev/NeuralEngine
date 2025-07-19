@@ -703,6 +703,31 @@ def validate_dataset_file(filepath):
     except Exception as e:
         return False, f"File validation error: {str(e)}"
 
+@app.route('/api/data/clear', methods=['POST'])
+def clear_dataset():
+    """Clear the currently loaded dataset"""
+    try:
+        # Clear the data processor
+        app_state['data_processor'].data = None
+        
+        # Clear any related state
+        app_state['predictors'].clear()
+        app_state['results'].clear()
+        
+        # Stop any ongoing training
+        app_state['training_status']['is_training'] = False
+        app_state['training_status']['current_scenario'] = None
+        app_state['training_status']['progress'] = 0
+        app_state['training_status']['logs'].clear()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Dataset cleared successfully'
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'Failed to clear dataset: {str(e)}'}), 500
+
 # Error handlers
 @app.errorhandler(404)
 def not_found(error):

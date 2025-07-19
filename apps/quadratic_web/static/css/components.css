@@ -914,3 +914,34 @@
     opacity: 0.7;
   }
 }
+
+/* Dataset Clear Button */
+.data-actions {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-danger {
+  background: var(--error-color);
+  color: white;
+  border: none;
+}
+
+.btn-danger:hover {
+  background: #e6342a;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 59, 48, 0.25);
+}
+
+.btn-small {
+  padding: 8px 16px;
+  font-size: 12px;
+  border-radius: var(--radius-small);
+}
+
+.btn-small .btn-icon {
+  font-size: 14px;
+}

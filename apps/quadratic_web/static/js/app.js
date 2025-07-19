@@ -32,6 +32,7 @@ const API = {
   uploadData: "/api/data/upload",
   dataInfo: "/api/data/info",
   randomData: "/api/data/random",
+  clearData: "/api/data/clear",
   startTraining: "/api/training/start",
   trainingStatus: "/api/training/status",
   stopTraining: "/api/training/stop",
@@ -314,34 +315,8 @@ async function checkAndLoadDataset() {
 
 // Update data status display with loaded dataset info
 function updateDataStatusDisplay(dataInfo) {
-  const dataStatus = document.getElementById("data-status");
-  const dataDetails = document.getElementById("data-details");
-
-  if (!dataStatus || !dataDetails) return;
-
-  dataStatus.innerHTML = `
-        <div class="status-indicator status-success">
-            <span class="status-dot"></span>
-            <span class="status-text">Dataset Loaded</span>
-        </div>
-    `;
-
-  dataDetails.innerHTML = `
-        <div class="data-info ${dataInfo.auto_loaded ? "auto-loaded" : ""}">
-            ${
-              dataInfo.auto_loaded
-                ? '<div class="auto-load-badge">🎯 Auto-loaded from Dataset Generator</div>'
-                : ""
-            }
-            
-            <div class="data-summary">
-                <strong>Total Equations:</strong> ${dataInfo.total_equations.toLocaleString()}<br>
-                <strong>Features:</strong> a, b, c, x1, x2<br>
-                <strong>Format:</strong> Quadratic equation dataset<br>
-                <strong>Source:</strong> ${dataInfo.filename}
-            </div>
-        </div>
-    `;
+  // Use the existing DataSection to update the display
+  DataSection.updateDataInfo(dataInfo);
 }
 
 // API helper functions
@@ -472,63 +447,72 @@ const DataSection = {
 
     if (!dataInfo.loaded) {
       infoContainer.innerHTML = `
-                <div style="color: var(--text-secondary); text-align: center; padding: 40px;">
-                    <i class="fas fa-database" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;"></i>
-                    <p>No dataset loaded. Please upload a CSV file to begin.</p>
-                </div>
-            `;
+            <div style="color: var(--text-secondary); text-align: center; padding: 40px;">
+                <i class="fas fa-database" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;"></i>
+                <p>No dataset loaded. Please upload a CSV file to begin.</p>
+            </div>
+        `;
       tableContainer.style.display = "none";
       AppState.dataLoaded = false;
       return;
     }
 
-    // Update info display
+    // Check if this is an auto-loaded dataset
+    const autoLoadBadge = dataInfo.auto_loaded
+      ? '<div class="auto-load-badge">🎯 Auto-loaded from Dataset Generator</div>'
+      : "";
+
+    // Update info display with clear button
     infoContainer.innerHTML = `
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
-                <div class="info-card">
-                    <h4><i class="fas fa-chart-bar"></i> Dataset Overview</h4>
-                    <p><strong>Total Equations:</strong> ${dataInfo.total_equations.toLocaleString()}</p>
-                    <p><strong>Features:</strong> a, b, c, x1, x2</p>
-                    <p><strong>Format:</strong> Quadratic equation dataset</p>
-                </div>
-                <div class="info-card">
-                    <h4><i class="fas fa-calculator"></i> Statistics</h4>
-                    <p><strong>Coefficient 'a':</strong> ${Utils.formatNumber(
-                      dataInfo.stats.columns.a.mean,
-                      3
-                    )} ± ${Utils.formatNumber(
-      dataInfo.stats.columns.a.std,
-      3
-    )}</p>
-                    <p><strong>Coefficient 'b':</strong> ${Utils.formatNumber(
-                      dataInfo.stats.columns.b.mean,
-                      3
-                    )} ± ${Utils.formatNumber(
-      dataInfo.stats.columns.b.std,
-      3
-    )}</p>
-                    <p><strong>Coefficient 'c':</strong> ${Utils.formatNumber(
-                      dataInfo.stats.columns.c.mean,
-                      3
-                    )} ± ${Utils.formatNumber(
-      dataInfo.stats.columns.c.std,
-      3
-    )}</p>
-                </div>
-                <div class="info-card">
-                    <h4><i class="fas fa-check-circle"></i> Quality Metrics</h4>
-                    <p><strong>Integer Solutions (x1):</strong> ${Utils.formatNumber(
-                      dataInfo.stats.quality.x1_whole_pct,
-                      1
-                    )}%</p>
-                    <p><strong>Integer Solutions (x2):</strong> ${Utils.formatNumber(
-                      dataInfo.stats.quality.x2_whole_pct,
-                      1
-                    )}%</p>
-                    <p><strong>Data Quality:</strong> <span style="color: var(--success-color);">✓ Verified</span></p>
-                </div>
+        ${autoLoadBadge}
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+            <div class="info-card">
+                <h4><i class="fas fa-chart-bar"></i> Dataset Overview</h4>
+                <p><strong>Total Equations:</strong> ${dataInfo.total_equations.toLocaleString()}</p>
+                <p><strong>Features:</strong> a, b, c, x1, x2</p>
+                <p><strong>Format:</strong> Quadratic equation dataset</p>
             </div>
-        `;
+            <div class="info-card">
+                <h4><i class="fas fa-calculator"></i> Statistics</h4>
+                <p><strong>Coefficient 'a':</strong> ${Utils.formatNumber(
+                  dataInfo.stats.columns.a.mean,
+                  3
+                )} ± ${Utils.formatNumber(dataInfo.stats.columns.a.std, 3)}</p>
+                <p><strong>Coefficient 'b':</strong> ${Utils.formatNumber(
+                  dataInfo.stats.columns.b.mean,
+                  3
+                )} ± ${Utils.formatNumber(dataInfo.stats.columns.b.std, 3)}</p>
+                <p><strong>Coefficient 'c':</strong> ${Utils.formatNumber(
+                  dataInfo.stats.columns.c.mean,
+                  3
+                )} ± ${Utils.formatNumber(dataInfo.stats.columns.c.std, 3)}</p>
+            </div>
+            <div class="info-card">
+                <h4><i class="fas fa-check-circle"></i> Quality Metrics</h4>
+                <p><strong>Integer Solutions (x1):</strong> ${Utils.formatNumber(
+                  dataInfo.stats.quality.x1_whole_pct,
+                  1
+                )}%</p>
+                <p><strong>Integer Solutions (x2):</strong> ${Utils.formatNumber(
+                  dataInfo.stats.quality.x2_whole_pct,
+                  1
+                )}%</p>
+                <p><strong>Data Quality:</strong> <span style="color: var(--success-color);">✓ Verified</span></p>
+            </div>
+        </div>
+        <div class="data-actions" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end;">
+            <button id="clear-dataset-btn" class="btn btn-danger btn-small">
+                <i class="fas fa-trash"></i>
+                Clear Dataset
+            </button>
+        </div>
+    `;
+
+    // Add click handler for clear button
+    const clearBtn = document.getElementById("clear-dataset-btn");
+    if (clearBtn) {
+      clearBtn.addEventListener("click", this.clearDataset.bind(this));
+    }
 
     // Update data table
     this.updateDataTable(dataInfo.sample_data);
@@ -579,6 +563,41 @@ const DataSection = {
     });
 
     table.style.display = "table";
+  },
+  async clearDataset() {
+    try {
+      const confirmed = confirm(
+        "Are you sure you want to clear the current dataset? This will also stop any ongoing training and clear all results."
+      );
+
+      if (!confirmed) return;
+
+      Utils.showNotification("🗑️ Clearing dataset...", "info");
+
+      const response = await ApiClient.request(API.clearData, {
+        method: "POST",
+      });
+
+      if (response.success) {
+        // Update app state
+        AppState.dataLoaded = false;
+        AppState.isTraining = false;
+        AppState.results = {};
+
+        // Refresh data section to show "no data" state
+        await this.refresh();
+
+        Utils.showNotification("✅ Dataset cleared successfully!", "success");
+      } else {
+        throw new Error(response.error || "Failed to clear dataset");
+      }
+    } catch (error) {
+      console.error("Clear dataset error:", error);
+      Utils.showNotification(
+        `❌ Failed to clear dataset: ${error.message}`,
+        "error"
+      );
+    }
   },
 };
 
