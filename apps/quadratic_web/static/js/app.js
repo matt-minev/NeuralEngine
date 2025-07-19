@@ -17,6 +17,7 @@ const AppState = {
   scenarios: {},
   results: {},
   trainingInterval: null,
+  autoLoadDataset: null,
   charts: {
     metrics: null,
     accuracy: null,
@@ -262,6 +263,86 @@ const Utils = {
     }
   },
 };
+
+// Auto-load dataset from URL parameter
+async function checkAndLoadDataset() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const loadDataset = urlParams.get("load_dataset");
+
+  if (loadDataset) {
+    AppState.autoLoadDataset = loadDataset;
+
+    try {
+      Utils.showNotification("🔄 Loading generated dataset...", "info");
+
+      const response = await fetch(`/api/data/load/${loadDataset}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to load dataset");
+      }
+
+      const result = await response.json();
+
+      // Update app state
+      AppState.dataLoaded = true;
+
+      // Update the data display using existing logic
+      updateDataStatusDisplay(result);
+
+      Utils.showNotification(
+        `✅ Dataset loaded successfully! ${result.total_equations.toLocaleString()} equations ready for training.`,
+        "success"
+      );
+
+      // Clean URL
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+    } catch (error) {
+      Utils.showNotification(
+        `❌ Failed to load dataset: ${error.message}`,
+        "error"
+      );
+    }
+  }
+}
+
+// Update data status display with loaded dataset info
+function updateDataStatusDisplay(dataInfo) {
+  const dataStatus = document.getElementById("data-status");
+  const dataDetails = document.getElementById("data-details");
+
+  if (!dataStatus || !dataDetails) return;
+
+  dataStatus.innerHTML = `
+        <div class="status-indicator status-success">
+            <span class="status-dot"></span>
+            <span class="status-text">Dataset Loaded</span>
+        </div>
+    `;
+
+  dataDetails.innerHTML = `
+        <div class="data-info ${dataInfo.auto_loaded ? "auto-loaded" : ""}">
+            ${
+              dataInfo.auto_loaded
+                ? '<div class="auto-load-badge">🎯 Auto-loaded from Dataset Generator</div>'
+                : ""
+            }
+            
+            <div class="data-summary">
+                <strong>Total Equations:</strong> ${dataInfo.total_equations.toLocaleString()}<br>
+                <strong>Features:</strong> a, b, c, x1, x2<br>
+                <strong>Format:</strong> Quadratic equation dataset<br>
+                <strong>Source:</strong> ${dataInfo.filename}
+            </div>
+        </div>
+    `;
+}
 
 // API helper functions
 const ApiClient = {
@@ -1503,7 +1584,7 @@ async function generateComparison() {
 }
 
 // Application initialization
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   console.log("🚀 Quadratic Neural Network Web Application");
   console.log("Initializing application...");
 
@@ -1514,6 +1595,9 @@ document.addEventListener("DOMContentLoaded", () => {
   PredictionSection.init();
   AnalysisSection.init();
   ComparisonSection.init();
+
+  // Check for auto-load dataset from URL parameter
+  await checkAndLoadDataset();
 
   // Check API health
   ApiClient.request(API.health)

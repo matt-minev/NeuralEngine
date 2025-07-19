@@ -69,8 +69,9 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 # Routes
 @app.route('/')
 def index():
-    """Main application page"""
-    return render_template('index.html')
+    """Main application page with optional dataset loading"""
+    load_dataset = request.args.get('load_dataset')
+    return render_template('index.html', load_dataset=load_dataset)
 
 @app.route('/api/health')
 def health_check():
@@ -558,6 +559,40 @@ def download_dataset(filename):
     except FileNotFoundError:
         return jsonify({'error': 'File not found'}), 404
 
+@app.route('/api/data/load/<filename>', methods=['POST'])
+def load_specific_dataset(filename):
+    """Load a specific dataset by filename"""
+    try:
+        # Security check - only allow files from upload folder
+        if '..' in filename or '/' in filename:
+            return jsonify({'error': 'Invalid filename'}), 400
+        
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        
+        # Check if file exists
+        if not os.path.exists(filepath):
+            return jsonify({'error': 'Dataset file not found'}), 404
+        
+        # Load data using existing data processor
+        if app_state['data_processor'].load_data(filepath):
+            stats = app_state['data_processor'].get_stats()
+            sample_data = app_state['data_processor'].get_sample_data(100)
+            
+            return jsonify({
+                'success': True,
+                'message': f'Successfully loaded dataset: {filename}',
+                'filename': filename,
+                'total_equations': len(app_state['data_processor'].data),
+                'stats': stats,
+                'sample_data': sample_data.tolist() if sample_data.size > 0 else [],
+                'auto_loaded': True
+            })
+        else:
+            return jsonify({'error': 'Failed to load dataset'}), 400
+            
+    except Exception as e:
+        return jsonify({'error': f'Dataset loading failed: {str(e)}'}), 500
+
 def _train_models_background(selected_scenarios, epochs, learning_rate):
     """Background training function"""
     try:
@@ -643,6 +678,30 @@ def _calculate_quadratic_solutions(inputs):
         
     except Exception:
         return None
+
+def validate_dataset_file(filepath):
+    """Validate that a dataset file is properly formatted"""
+    try:
+        df = pd.read_csv(filepath)
+        
+        # Check required columns
+        required_columns = ['a', 'b', 'c', 'x1', 'x2']
+        if not all(col in df.columns for col in required_columns):
+            return False, f"Missing required columns. Expected: {required_columns}"
+        
+        # Check data types
+        for col in required_columns:
+            if not pd.api.types.is_numeric_dtype(df[col]):
+                return False, f"Column '{col}' must be numeric"
+        
+        # Check for empty data
+        if len(df) == 0:
+            return False, "Dataset is empty"
+        
+        return True, "Valid dataset"
+        
+    except Exception as e:
+        return False, f"File validation error: {str(e)}"
 
 # Error handlers
 @app.errorhandler(404)
