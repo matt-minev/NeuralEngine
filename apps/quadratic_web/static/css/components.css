@@ -1,15 +1,19 @@
 /**
  * Quadratic Neural Network Web Application
- * Component-Specific CSS Styles
+ * Specialized Component CSS Styles
  * 
  * Author: Matt
- * Location: Varna, Bulgaria
+ * Location: Varna, Bulgaria  
  * Date: July 2025
- * 
- * Specialized styles for web application components
+ *
+ * Component-specific styles for web application UI components
  */
 
-/* Dataset Upload Component */
+/* ========================================
+   DATASET UPLOAD COMPONENTS
+   ======================================== */
+
+/* Upload Zone */
 .upload-zone {
   border: 2px dashed var(--border-color);
   border-radius: var(--radius-large);
@@ -26,20 +30,20 @@
 }
 
 .upload-zone:hover {
-  border-color: purple;
-  background: purple 10;
+  border-color: var(--primary-color);
+  background: rgba(0, 122, 255, 0.1);
   transform: translateY(-2px);
 }
 
 .upload-zone.dragover {
-  border-color: purple;
-  background: purple 20;
+  border-color: var(--primary-color);
+  background: rgba(0, 122, 255, 0.2);
   transform: scale(1.02);
 }
 
 .upload-icon {
   font-size: 48px;
-  color: purple;
+  color: var(--primary-color);
   margin-bottom: 16px;
 }
 
@@ -66,7 +70,45 @@
   border: 1px solid var(--border-color);
 }
 
-/* Training Configuration */
+/* Auto-loaded Dataset Styling */
+.auto-load-badge {
+  background: linear-gradient(
+    135deg,
+    var(--primary-color),
+    var(--secondary-color)
+  );
+  color: white;
+  padding: 8px 16px;
+  border-radius: 50px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 16px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.data-info.auto-loaded {
+  border: 2px solid var(--primary-color);
+  background: linear-gradient(
+    135deg,
+    var(--surface-color) 0%,
+    rgba(0, 122, 255, 0.02) 100%
+  );
+}
+
+.data-actions {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ========================================
+   TRAINING CONFIGURATION COMPONENTS
+   ======================================== */
+
+/* Training Scenario Grid */
 .training-scenario-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -85,14 +127,14 @@
 }
 
 .scenario-selector:hover {
-  border-color: purple;
+  border-color: var(--primary-color);
   transform: translateY(-2px);
   box-shadow: var(--shadow-medium);
 }
 
 .scenario-selector.selected {
-  border-color: purple;
-  background: purple 10;
+  border-color: var(--primary-color);
+  background: rgba(0, 122, 255, 0.1);
 }
 
 .scenario-selector input[type="checkbox"] {
@@ -101,7 +143,7 @@
   right: 16px;
   width: 18px;
   height: 18px;
-  accent-color: purple;
+  accent-color: var(--primary-color);
 }
 
 .scenario-name {
@@ -189,7 +231,11 @@
 
 .progress-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, purple, var(--secondary-color));
+  background: linear-gradient(
+    90deg,
+    var(--primary-color),
+    var(--secondary-color)
+  );
   border-radius: var(--radius-small);
   transition: width 0.3s ease;
   position: relative;
@@ -242,7 +288,11 @@
   color: var(--text-primary);
 }
 
-/* Prediction Interface */
+/* ========================================
+   PREDICTION INTERFACE COMPONENTS
+   ======================================== */
+
+/* Prediction Form */
 .prediction-form {
   background: var(--surface-color);
   border-radius: var(--radius-medium);
@@ -304,7 +354,7 @@
 
 .prediction-input-group input:focus {
   outline: none;
-  border-color: purple;
+  border-color: var(--primary-color);
   box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
 }
 
@@ -314,7 +364,466 @@
   justify-content: flex-end;
 }
 
-/* Results Display */
+/* ========================================
+   ENHANCED PREDICTION RESULTS
+   ======================================== */
+
+/* Prediction Results Container */
+.prediction-results-container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Section Titles */
+.section-subtitle {
+  margin: 0 0 12px 0;
+  color: var(--primary-color);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.comparison-title {
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.error-title {
+  margin: 0 0 12px 0;
+  color: var(--warning-color);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.insights-title {
+  margin: 0 0 12px 0;
+  color: var(--primary-color);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* Enhanced Equation Display */
+.equation-display-section {
+  background: linear-gradient(
+    135deg,
+    rgba(0, 122, 255, 0.15),
+    rgba(0, 122, 255, 0.05)
+  );
+  border-radius: var(--radius-medium);
+  padding: 20px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(0, 122, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+.equation-display-section:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-light);
+}
+
+.animated-equation {
+  font-size: 24px;
+  font-family: "JetBrains Mono", monospace;
+  text-align: center;
+  padding: 16px;
+  background: var(--surface-color);
+  border-radius: var(--radius-small);
+  border: 2px solid var(--primary-color);
+  color: var(--text-primary);
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  position: relative;
+  overflow: hidden;
+  animation: equationGlow 2s ease-in-out infinite alternate;
+}
+
+.animated-equation::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(0, 122, 255, 0.2),
+    transparent
+  );
+  animation: equationSweep 3s ease-in-out infinite;
+}
+
+@keyframes equationGlow {
+  0% {
+    box-shadow: 0 0 5px rgba(0, 122, 255, 0.3);
+  }
+  100% {
+    box-shadow: 0 0 20px rgba(0, 122, 255, 0.5), 0 0 30px rgba(0, 122, 255, 0.3);
+  }
+}
+
+@keyframes equationSweep {
+  0% {
+    left: -100%;
+  }
+  50% {
+    left: 100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* Quality Badge System */
+.quality-badge-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 30px;
+}
+
+.quality-badge {
+  padding: 20px;
+  border-radius: var(--radius-large);
+  text-align: center;
+  border: 2px solid;
+  backdrop-filter: blur(10px);
+  min-width: 300px;
+  position: relative;
+  overflow: hidden;
+}
+
+.quality-badge::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+  animation: shimmer 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.quality-badge.quality-excellent {
+  background: linear-gradient(
+    135deg,
+    rgba(52, 199, 89, 0.15),
+    rgba(52, 199, 89, 0.05)
+  );
+  border-color: var(--success-color);
+  color: var(--success-color);
+}
+
+.quality-badge.quality-good {
+  background: linear-gradient(
+    135deg,
+    rgba(0, 122, 255, 0.15),
+    rgba(0, 122, 255, 0.05)
+  );
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.quality-badge.quality-fair {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 149, 0, 0.15),
+    rgba(255, 149, 0, 0.05)
+  );
+  border-color: var(--warning-color);
+  color: var(--warning-color);
+}
+
+.quality-badge.quality-poor {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 59, 48, 0.15),
+    rgba(255, 59, 48, 0.05)
+  );
+  border-color: var(--error-color);
+  color: var(--error-color);
+}
+
+.quality-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.quality-message {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.quality-metric {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+/* Solution Comparison */
+.solution-comparison-section {
+  background: var(--surface-color);
+  border-radius: var(--radius-medium);
+  padding: 20px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border-color);
+}
+
+.solution-comparison-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.solution-column {
+  border-radius: var(--radius-medium);
+  padding: 16px;
+  border: 1px solid;
+  transition: all 0.4s ease;
+  transform-style: preserve-3d;
+  position: relative;
+}
+
+.solution-column:hover {
+  transform: translateY(-8px) rotateX(5deg);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+.solution-column.neural-prediction {
+  background: linear-gradient(
+    135deg,
+    rgba(0, 122, 255, 0.1),
+    rgba(0, 122, 255, 0.03)
+  );
+  border-color: var(--primary-color);
+}
+
+.solution-column.actual-solution {
+  background: linear-gradient(
+    135deg,
+    rgba(52, 199, 89, 0.1),
+    rgba(52, 199, 89, 0.03)
+  );
+  border-color: var(--success-color);
+}
+
+.solution-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.solution-header.neural-network {
+  color: var(--primary-color);
+}
+
+.solution-header.actual-solution {
+  color: var(--success-color);
+}
+
+.solution-values {
+  display: grid;
+  gap: 8px;
+}
+
+.solution-value {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 14px;
+}
+
+.solution-label {
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.solution-number {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.solution-number.nn-prediction {
+  color: var(--primary-color);
+}
+
+.solution-number.actual-solution {
+  color: var(--success-color);
+}
+
+.solution-message {
+  color: var(--text-secondary);
+  font-style: italic;
+  text-align: center;
+  padding: 8px;
+  background: var(--background-color);
+  border-radius: var(--radius-small);
+  margin-top: 12px;
+}
+
+/* Confidence Display */
+.prediction-confidence {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0, 122, 255, 0.2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.confidence-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.confidence-value {
+  font-weight: 600;
+  font-size: 12px;
+}
+
+/* Enhanced Error Analysis */
+.error-analysis-enhanced {
+  background: linear-gradient(
+    135deg,
+    var(--surface-color),
+    rgba(255, 149, 0, 0.02)
+  );
+  border-radius: var(--radius-medium);
+  padding: 24px;
+  border: 1px solid rgba(255, 149, 0, 0.2);
+  margin-bottom: 20px;
+}
+
+.error-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.error-metric-card {
+  background: var(--surface-color);
+  border-radius: var(--radius-medium);
+  padding: 20px;
+  text-align: center;
+  border: 2px solid;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.error-metric-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+  transition: left 0.5s ease;
+}
+
+.error-metric-card:hover::before {
+  left: 100%;
+}
+
+.metric-icon {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.metric-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.metric-value {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.metric-status {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: var(--radius-small);
+}
+
+/* Performance Insights */
+.performance-insights {
+  background: linear-gradient(
+    135deg,
+    var(--surface-color),
+    rgba(0, 122, 255, 0.02)
+  );
+  border-radius: var(--radius-medium);
+  padding: 20px;
+  border: 1px solid rgba(0, 122, 255, 0.2);
+  margin-bottom: 20px;
+}
+
+.insights-content {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.insight-item {
+  padding: 12px;
+  background: var(--background-color);
+  border-radius: var(--radius-small);
+  border-left: 3px solid var(--primary-color);
+}
+
+/* Original Results Grid */
+.original-results-grid {
+  background: var(--surface-color);
+  border-radius: var(--radius-medium);
+  padding: 20px;
+  border: 1px solid var(--border-color);
+  margin-top: 20px;
+}
+
+/* ========================================
+   RESULTS DISPLAY COMPONENTS
+   ======================================== */
+
+/* Results Container */
 .results-container {
   background: var(--surface-color);
   border-radius: var(--radius-medium);
@@ -400,7 +909,11 @@
   background: var(--error-color);
 }
 
-/* Analysis Charts */
+/* ========================================
+   ANALYSIS & CHARTS
+   ======================================== */
+
+/* Chart Components */
 .chart-wrapper {
   background: var(--surface-color);
   border-radius: var(--radius-medium);
@@ -439,7 +952,7 @@
 }
 
 .chart-control-btn:hover {
-  background: purple;
+  background: var(--primary-color);
   color: white;
 }
 
@@ -471,7 +984,7 @@
 }
 
 .comparison-table th {
-  background: purple;
+  background: var(--primary-color);
   color: white;
   font-weight: 600;
   padding: 12px;
@@ -500,82 +1013,19 @@
 .comparison-table .performance-excellent {
   color: var(--success-color);
 }
-
 .comparison-table .performance-good {
-  color: purple;
+  color: var(--primary-color);
 }
-
 .comparison-table .performance-fair {
   color: var(--warning-color);
 }
-
 .comparison-table .performance-poor {
   color: var(--error-color);
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-  .training-scenario-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .prediction-inputs {
-    grid-template-columns: 1fr;
-  }
-
-  .results-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .prediction-actions {
-    justify-content: stretch;
-  }
-
-  .prediction-actions .btn {
-    flex: 1;
-  }
-}
-
-/* Loading States */
-.loading {
-  opacity: 0.6;
-  pointer-events: none;
-  position: relative;
-}
-
-.loading::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 20px;
-  height: 20px;
-  margin: -10px 0 0 -10px;
-  border: 2px solid var(--border-color);
-  border-top: 2px solid purple;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-/* Success/Error States */
-.success-state {
-  border-color: var(--success-color);
-  background: var(--success-color) 10;
-}
-
-.error-state {
-  border-color: var(--error-color);
-  background: var(--error-color) 10;
-}
+/* ========================================
+   UI ENHANCEMENTS & TOOLTIPS
+   ======================================== */
 
 /* Tooltips */
 .tooltip {
@@ -607,333 +1057,73 @@
   opacity: 1;
 }
 
-/* Animation Classes */
-.fade-in {
-  animation: fadeIn 0.5s ease-in-out;
-}
+/* ========================================
+   RESPONSIVE DESIGN
+   ======================================== */
 
-.slide-up {
-  animation: slideUp 0.3s ease-out;
-}
-
-.scale-in {
-  animation: scaleIn 0.3s ease-out;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slideUp {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-@keyframes scaleIn {
-  from {
-    transform: scale(0.95);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-/* NEW: Equation Display Section */
-.equation-display-section {
-  background: purple 15;
-  border-radius: var(--radius-medium);
-  padding: 20px;
-  margin-bottom: 20px;
-  border: 1px solid purple 30;
-  transition: all 0.3s ease;
-}
-
-.equation-display-section:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-light);
-}
-
-.equation-display {
-  font-size: 24px;
-  font-family: "JetBrains Mono", monospace;
-  text-align: center;
-  padding: 16px;
-  background: var(--surface-color);
-  border-radius: var(--radius-small);
-  border: 1px solid var(--border-color);
-  color: var(--text-primary);
-  font-weight: 500;
-  letter-spacing: 0.5px;
-}
-
-/* NEW: Solution Comparison Section */
-.solution-comparison-section {
-  background: var(--surface-color);
-  border-radius: var(--radius-medium);
-  padding: 20px;
-  margin-bottom: 20px;
-  border: 1px solid var(--border-color);
-}
-
-.solution-comparison-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  margin-bottom: 20px;
-}
-
-.solution-column {
-  border-radius: var(--radius-medium);
-  padding: 16px;
-  border: 1px solid;
-  transition: all 0.3s ease;
-}
-
-.solution-column:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-light);
-}
-
-.solution-column:nth-child(1) {
-  background: purple 10;
-  border-color: purple 30;
-}
-
-.solution-column:nth-child(2) {
-  background: var(--success-color) 10;
-  border-color: var(--success-color) 30;
-}
-
-.solution-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-  font-weight: 600;
-  font-size: 14px;
-}
-
-.solution-header.neural-network {
-  color: purple;
-}
-
-.solution-header.actual-solution {
-  color: var(--success-color);
-}
-
-.solution-values {
-  display: grid;
-  gap: 8px;
-}
-
-.solution-value {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-family: "JetBrains Mono", monospace;
-  font-size: 14px;
-}
-
-.solution-label {
-  font-weight: 500;
-  color: var(--text-secondary);
-}
-
-.solution-number {
-  font-weight: 600;
-  font-size: 16px;
-}
-
-.solution-number.nn-prediction {
-  color: purple;
-}
-
-.solution-number.actual-solution {
-  color: var(--success-color);
-}
-
-.solution-message {
-  color: var(--text-secondary);
-  font-style: italic;
-  text-align: center;
-  padding: 8px;
-  background: var(--background-color);
-  border-radius: var(--radius-small);
-}
-
-/* NEW: Error Analysis Section */
-.error-analysis {
-  background: var(--warning-color) 10;
-  border-radius: var(--radius-medium);
-  padding: 16px;
-  border: 1px solid var(--warning-color) 30;
-  margin-top: 16px;
-}
-
-.error-analysis h5 {
-  margin: 0 0 12px 0;
-  color: var(--warning-color);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.error-metrics {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 16px;
-  font-family: "JetBrains Mono", monospace;
-  font-size: 14px;
-}
-
-.error-metric {
-  text-align: center;
-  padding: 8px;
-  border-radius: var(--radius-small);
-  background: var(--surface-color);
-  border: 1px solid var(--border-color);
-}
-
-.error-metric.average {
-  background: var(--warning-color) 15;
-  border-color: var(--warning-color) 30;
-}
-
-.error-label {
-  color: var(--text-secondary);
-  margin-bottom: 4px;
-  display: block;
-  font-size: 12px;
-}
-
-.error-value {
-  font-weight: 600;
-  color: var(--warning-color);
-  font-size: 14px;
-}
-
-/* NEW: Enhanced animation for results */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.fade-in {
-  animation: fadeIn 0.5s ease-in-out;
-}
-
-/* NEW: Responsive design for new components */
 @media (max-width: 768px) {
+  .training-scenario-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .prediction-inputs {
+    grid-template-columns: 1fr;
+  }
+
+  .results-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .prediction-actions {
+    justify-content: stretch;
+  }
+
+  .prediction-actions .btn {
+    flex: 1;
+  }
+
+  .quality-badge {
+    min-width: 250px;
+    padding: 16px;
+  }
+
+  .error-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
   .solution-comparison-grid {
     grid-template-columns: 1fr;
-    gap: 16px;
   }
 
-  .error-metrics {
-    grid-template-columns: 1fr;
-    gap: 12px;
+  .quality-message {
+    font-size: 16px;
   }
 
-  .equation-display {
+  .animated-equation {
     font-size: 18px;
-    padding: 12px;
+  }
+
+  .solution-column:hover {
+    transform: translateY(-4px);
   }
 }
 
 @media (max-width: 480px) {
-  .equation-display {
+  .prediction-results-container {
+    padding: 16px;
+  }
+
+  .animated-equation {
     font-size: 16px;
-    padding: 8px;
+    padding: 12px;
+  }
+
+  .quality-badge {
+    min-width: 200px;
+    padding: 12px;
   }
 
   .solution-column {
     padding: 12px;
   }
-
-  .error-analysis {
-    padding: 12px;
-  }
-}
-
-/* Auto-loaded dataset styling */
-.auto-load-badge {
-  background: linear-gradient(135deg, purple, var(--secondary-color));
-  color: white;
-  padding: 8px 16px;
-  border-radius: 50px;
-  font-size: 12px;
-  font-weight: 600;
-  text-align: center;
-  margin-bottom: 16px;
-  animation: pulse 2s ease-in-out;
-}
-
-.data-info.auto-loaded {
-  border: 2px solid purple;
-  background: linear-gradient(
-    135deg,
-    var(--surface-color) 0%,
-    rgba(0, 122, 255, 0.02) 100%
-  );
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
-}
-
-/* Dataset Clear Button */
-.data-actions {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border-color);
-  display: flex;
-  justify-content: flex-end;
-}
-
-.btn-danger {
-  background: var(--error-color);
-  color: white;
-  border: none;
-}
-
-.btn-danger:hover {
-  background: #e6342a;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(255, 59, 48, 0.25);
-}
-
-.btn-small {
-  padding: 8px 16px;
-  font-size: 12px;
-  border-radius: var(--radius-small);
-}
-
-.btn-small .btn-icon {
-  font-size: 14px;
 }

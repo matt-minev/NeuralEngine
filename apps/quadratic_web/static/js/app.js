@@ -1340,7 +1340,9 @@ async function randomTest() {
     // Reset button to original state
     setTimeout(() => {
       randomBtn.innerHTML = originalHTML;
-      randomBtn.style.background = "";
+      randomBtn.style.background =
+        "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
+      randomBtn.style.boxShadow = "0 4px 12px rgba(102, 126, 234, 0.3)";
       randomBtn.disabled = false;
     }, 5000);
   } catch (error) {
@@ -1370,193 +1372,295 @@ function displayPredictionResults(response, inputs) {
     actualSolutions
   );
 
+  // Calculate quality metrics for color coding
+  const x1Error = solutionError ? Math.abs(solutionError.x1_error) : 0;
+  const x2Error = solutionError ? Math.abs(solutionError.x2_error) : 0;
+  const avgError = solutionError ? solutionError.avg_error : 0;
+
+  // Determine quality levels
+  const getQualityLevel = (error) => {
+    if (error < 0.1)
+      return {
+        level: "excellent",
+        color: "var(--success-color)",
+        message: "Excellent prediction! 🎯",
+      };
+    if (error < 0.5)
+      return {
+        level: "good",
+        color: "var(--primary-color)",
+        message: "Good prediction! 👍",
+      };
+    if (error < 1.0)
+      return {
+        level: "fair",
+        color: "var(--warning-color)",
+        message: "Fair prediction 🤔",
+      };
+    return {
+      level: "poor",
+      color: "var(--error-color)",
+      message: "Needs improvement 😅",
+    };
+  };
+
+  const x1Quality = getQualityLevel(x1Error);
+  const x2Quality = getQualityLevel(x2Error);
+  const overallQuality = getQualityLevel(avgError);
+
   let html = `
-    <div style="padding: 20px; animation: fadeIn 0.5s ease-in-out;">
-      <!-- NEW: Equation Display Section -->
-      <div style="background: var(--primary-color)15; border-radius: var(--radius-medium); padding: 0px 20px 20px 20px; margin-top: -10px; margin-bottom: 20px; border: 1px solid var(--primary-color)30;">
-        <h4 style="margin: 0 0 12px 0; color: var(--primary-color); display: flex; align-items: center; gap: 8px;">
-          <i class="fas fa-function"></i> Quadratic Equation
-        </h4>
-        <div style="font-size: 24px; font-family: 'JetBrains Mono', monospace; text-align: center; padding: 16px; background: var(--surface-color); border-radius: var(--radius-small); border: 1px solid var(--border-color);">
+    <div class="prediction-results-container fade-in">
+      <!-- Enhanced Equation Display -->
+      <div class="equation-display-section slide-up">
+        <h3 class="section-subtitle">
+          <i class="fas fa-function"></i>
+          Quadratic Equation
+        </h3>
+        <div class="equation-display animated-equation">
           ${Utils.formatQuadraticEquation(inputs[0], inputs[1], inputs[2])}
         </div>
       </div>
 
-      <!-- NEW: Interactive Solution Comparison -->
-      <div style="background: var(--surface-color); border-radius: var(--radius-medium); padding: 20px; margin-bottom: 20px; border: 1px solid var(--border-color);">
-        <h4 style="margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
-          <i class="fas fa-balance-scale"></i> Solution Comparison
+      <!-- Overall Quality Badge -->
+      <div class="quality-badge-container scale-in">
+        <div class="quality-badge quality-${overallQuality.level}">
+          <div class="quality-icon">
+            ${
+              overallQuality.level === "excellent"
+                ? "🎯"
+                : overallQuality.level === "good"
+                ? "👍"
+                : overallQuality.level === "fair"
+                ? "🤔"
+                : "😅"
+            }
+          </div>
+          <div class="quality-message">${overallQuality.message}</div>
+          <div class="quality-metric">Avg Error: ${Utils.formatNumber(
+            avgError,
+            4
+          )}</div>
+        </div>
+      </div>
+
+      <!-- Enhanced Solution Comparison -->
+      <div class="solution-comparison-section slide-up">
+        <h4 class="comparison-title">
+          <i class="fas fa-balance-scale"></i>
+          Solution Comparison
         </h4>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-          
-          <!-- Neural Network Column -->
-          <div style="background: var(--primary-color)10; border-radius: var(--radius-medium); padding: 16px; border: 1px solid var(--primary-color)30;">
-            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px; color: var(--primary-color);">
+        
+        <div class="solution-comparison-grid">
+          <!-- Neural Network Prediction -->
+          <div class="solution-column neural-prediction">
+            <div class="solution-header neural-network">
               <i class="fas fa-brain"></i>
-              <strong>Neural Network</strong>
+              <span>Neural Network</span>
             </div>
-            <div style="display: grid; gap: 8px;">
-              <div style="display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace;">
-                <span>x₁ =</span>
-                <span style="font-weight: 600; color: var(--primary-color);">${Utils.formatNumber(
-                  response.predictions[0],
-                  6
-                )}</span>
+            <div class="solution-values">
+              <div class="solution-value">
+                <span class="solution-label">x₁ =</span>
+                <span class="solution-number nn-prediction" style="color: ${
+                  x1Quality.color
+                }; text-shadow: 0 0 8px ${x1Quality.color}30;">
+                  ${Utils.formatNumber(response.predictions[0], 6)}
+                </span>
               </div>
-              <div style="display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace;">
-                <span>x₂ =</span>
-                <span style="font-weight: 600; color: var(--primary-color);">${Utils.formatNumber(
-                  response.predictions[1],
-                  6
-                )}</span>
+              <div class="solution-value">
+                <span class="solution-label">x₂ =</span>
+                <span class="solution-number nn-prediction" style="color: ${
+                  x2Quality.color
+                }; text-shadow: 0 0 8px ${x2Quality.color}30;">
+                  ${Utils.formatNumber(response.predictions[1], 6)}
+                </span>
               </div>
+            </div>
+            <div class="prediction-confidence">
+              <span class="confidence-label">Confidence:</span>
+              <span class="confidence-value">${Utils.getConfidenceLevel(
+                response.confidences[0]
+              )}</span>
             </div>
           </div>
 
-          <!-- Actual Solution Column -->
-          <div style="background: var(--success-color)10; border-radius: var(--radius-medium); padding: 16px; border: 1px solid var(--success-color)30;">
-            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px; color: var(--success-color);">
-              <i class="fas fa-calculator"></i>
-              <strong>Actual Solution</strong>
+          <!-- Actual Solution -->
+          <div class="solution-column actual-solution">
+            <div class="solution-header actual-solution">
+              <i class="fas fa-check-circle"></i>
+              <span>Actual Solution</span>
             </div>
-            <div style="display: grid; gap: 8px;">
+            <div class="solution-values">
               ${
                 actualSolutions.type === "distinct"
                   ? `
-                <div style="display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace;">
-                  <span>x₁ =</span>
-                  <span style="font-weight: 600; color: var(--success-color);">${Utils.formatNumber(
-                    actualSolutions.roots[0],
-                    6
-                  )}</span>
+                <div class="solution-value">
+                  <span class="solution-label">x₁ =</span>
+                  <span class="solution-number actual-solution">
+                    ${Utils.formatNumber(actualSolutions.roots[0], 6)}
+                  </span>
                 </div>
-                <div style="display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace;">
-                  <span>x₂ =</span>
-                  <span style="font-weight: 600; color: var(--success-color);">${Utils.formatNumber(
-                    actualSolutions.roots[1],
-                    6
-                  )}</span>
+                <div class="solution-value">
+                  <span class="solution-label">x₂ =</span>
+                  <span class="solution-number actual-solution">
+                    ${Utils.formatNumber(actualSolutions.roots[1], 6)}
+                  </span>
                 </div>
               `
                   : actualSolutions.type === "repeated"
                   ? `
-                <div style="display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace;">
-                  <span>x₁ = x₂ =</span>
-                  <span style="font-weight: 600; color: var(--success-color);">${Utils.formatNumber(
-                    actualSolutions.roots[0],
-                    6
-                  )}</span>
+                <div class="solution-value">
+                  <span class="solution-label">x₁ = x₂ =</span>
+                  <span class="solution-number actual-solution">
+                    ${Utils.formatNumber(actualSolutions.roots[0], 6)}
+                  </span>
                 </div>
               `
                   : `
-                <div style="color: var(--text-secondary); font-style: italic; text-align: center;">
+                <div style="color: var(--text-secondary); font-style: italic; text-align: center; padding: 16px;">
                   ${actualSolutions.message}
                 </div>
               `
               }
             </div>
-          </div>
-        </div>
-
-        ${
-          solutionError
-            ? `
-          <!-- Error Analysis -->
-          <div style="background: var(--warning-color)10; border-radius: var(--radius-medium); padding: 16px; border: 1px solid var(--warning-color)30;">
-            <h5 style="margin: 0 0 12px 0; color: var(--warning-color); display: flex; align-items: center; gap: 8px;">
-              <i class="fas fa-chart-line"></i> Error Analysis
-            </h5>
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; font-family: 'JetBrains Mono', monospace; font-size: 14px;">
-              <div style="text-align: center;">
-                <div style="color: var(--text-secondary); margin-bottom: 4px;">x₁ Error</div>
-                <div style="font-weight: 600; color: var(--warning-color);">${Utils.formatNumber(
-                  solutionError.x1_error,
-                  8
-                )}</div>
-              </div>
-              <div style="text-align: center;">
-                <div style="color: var(--text-secondary); margin-bottom: 4px;">x₂ Error</div>
-                <div style="font-weight: 600; color: var(--warning-color);">${Utils.formatNumber(
-                  solutionError.x2_error,
-                  8
-                )}</div>
-              </div>
-              <div style="text-align: center; background: var(--warning-color)15; padding: 8px; border-radius: var(--radius-small);">
-                <div style="color: var(--text-secondary); margin-bottom: 4px;">Avg Error</div>
-                <div style="font-weight: 600; color: var(--warning-color);">${Utils.formatNumber(
-                  solutionError.avg_error,
-                  8
-                )}</div>
-              </div>
+            <div class="solution-message">
+              Mathematical ground truth
             </div>
           </div>
-        `
-            : ""
-        }
+        </div>
       </div>
 
-      <!-- Original Results Grid (preserved) -->
-      <div style="display: grid; gap: 16px; margin-bottom: 20px;">
+      ${
+        solutionError
+          ? `
+      <!-- Enhanced Error Analysis -->
+      <div class="error-analysis-enhanced slide-up">
+        <h4 class="error-title">
+          <i class="fas fa-chart-line"></i>
+          Error Analysis
+        </h4>
+        
+        <div class="error-metrics-grid">
+          <div class="error-metric-card" style="border-color: ${
+            x1Quality.color
+          }; background: linear-gradient(135deg, ${
+              x1Quality.color
+            }05, var(--surface-color));">
+            <div class="metric-icon">📊</div>
+            <div class="metric-label">x₁ Error</div>
+            <div class="metric-value" style="color: ${
+              x1Quality.color
+            };">${Utils.formatNumber(x1Error, 6)}</div>
+            <div class="metric-status" style="background: ${
+              x1Quality.color
+            }20; color: ${x1Quality.color};">${x1Quality.message}</div>
+          </div>
+          
+          <div class="error-metric-card" style="border-color: ${
+            x2Quality.color
+          }; background: linear-gradient(135deg, ${
+              x2Quality.color
+            }05, var(--surface-color));">
+            <div class="metric-icon">📈</div>
+            <div class="metric-label">x₂ Error</div>
+            <div class="metric-value" style="color: ${
+              x2Quality.color
+            };">${Utils.formatNumber(x2Error, 6)}</div>
+            <div class="metric-status" style="background: ${
+              x2Quality.color
+            }20; color: ${x2Quality.color};">${x2Quality.message}</div>
+          </div>
+          
+          <div class="error-metric-card" style="border-color: ${
+            overallQuality.color
+          }; background: linear-gradient(135deg, ${
+              overallQuality.color
+            }05, var(--surface-color));">
+            <div class="metric-icon">🎯</div>
+            <div class="metric-label">Average Error</div>
+            <div class="metric-value" style="color: ${
+              overallQuality.color
+            };">${Utils.formatNumber(avgError, 6)}</div>
+            <div class="metric-status" style="background: ${
+              overallQuality.color
+            }20; color: ${overallQuality.color};">${
+              overallQuality.message
+            }</div>
+          </div>
+        </div>
+      </div>
+      `
+          : ""
+      }
+
+      <!-- Performance Insights -->
+      <div class="performance-insights slide-up">
+        <h4 class="insights-title">
+          <i class="fas fa-lightbulb"></i>
+          Performance Insights
+        </h4>
+        <div class="insights-content">
+          <div class="insight-item">
+            <strong>Prediction Type:</strong> Coefficient to Root Prediction
+          </div>
+          <div class="insight-item">
+            <strong>Confidence Level:</strong> ${Utils.getConfidenceLevel(
+              response.confidences[0]
+            )}
+          </div>
+          <div class="insight-item">
+            <strong>Overall Assessment:</strong> 
+            <span style="color: ${overallQuality.color}; font-weight: 600;">
+              ${
+                overallQuality.level.charAt(0).toUpperCase() +
+                overallQuality.level.slice(1)
+              }
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Original Results Grid (preserved for compatibility) -->
+      <div class="original-results-grid slide-up" style="display: grid; gap: 16px; margin-top: 20px; padding: 20px; background: var(--surface-color); border-radius: var(--radius-medium); border: 1px solid var(--border-color);">
+        <h4 style="margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
+          <i class="fas fa-list"></i>
+          Detailed Results
+        </h4>
   `;
 
   response.target_features.forEach((feature, index) => {
     const prediction = response.predictions[index];
     const confidence = response.confidences[index];
     const confidenceLevel = Utils.getConfidenceLevel(confidence);
+    const errorValue = index === 0 ? x1Error : x2Error;
+    const qualityColor = index === 0 ? x1Quality.color : x2Quality.color;
 
     html += `
-      <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: var(--background-color); border-radius: var(--radius-medium); border: 1px solid var(--border-color);">
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: var(--background-color); border-radius: var(--radius-medium); border: 1px solid var(--border-color); transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='var(--shadow-light)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
         <div>
-          <strong>${feature}:</strong> ${Utils.formatNumber(prediction, 6)}
+          <strong style="color: ${qualityColor};">${feature}:</strong> 
+          <span style="font-family: 'JetBrains Mono', monospace; color: ${qualityColor}; font-weight: 600;">${Utils.formatNumber(
+      prediction,
+      6
+    )}</span>
         </div>
         <div style="text-align: right;">
-          <div>Confidence: ${Utils.formatPercentage(confidence * 100, 1)}</div>
+          <div>Confidence: <span style="font-weight: 600;">${Utils.formatPercentage(
+            confidence * 100,
+            1
+          )}</span></div>
           <div style="font-size: 14px; margin-top: 4px;">${confidenceLevel}</div>
+          ${
+            solutionError
+              ? `<div style="font-size: 12px; color: ${qualityColor}; margin-top: 2px;">Error: ${Utils.formatNumber(
+                  errorValue,
+                  4
+                )}</div>`
+              : ""
+          }
         </div>
       </div>
     `;
   });
-
-  // Add actual solutions comparison if available (original format preserved)
-  if (response.actual_solutions) {
-    html += `
-      <div style="margin-top: 20px; padding: 16px; background: var(--success-color)20; border-radius: var(--radius-medium); border: 1px solid var(--success-color);">
-        <h4 style="margin-bottom: 12px;">
-          <i class="fas fa-check-circle"></i> Neural Network vs Actual
-        </h4>
-    `;
-
-    response.actual_solutions.forEach((actual, index) => {
-      const predicted = response.predictions[index];
-      const error = Math.abs(predicted - actual);
-      const errorPercent = Math.abs(error / (actual + 1e-8)) * 100;
-
-      html += `
-        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-          <span>${
-            response.target_features[index]
-          }: Predicted ${Utils.formatNumber(
-        predicted,
-        6
-      )} vs Actual ${Utils.formatNumber(actual, 6)}</span>
-          <span style="font-weight: 600; color: ${
-            error < 0.01
-              ? "var(--success-color)"
-              : error < 0.1
-              ? "var(--warning-color)"
-              : "var(--error-color)"
-          };">
-            Error: ${Utils.formatNumber(error, 6)} (${Utils.formatNumber(
-        errorPercent,
-        2
-      )}%)
-          </span>
-        </div>
-      `;
-    });
-
-    html += "</div>";
-  }
 
   html += `
       </div>
@@ -1564,6 +1668,14 @@ function displayPredictionResults(response, inputs) {
   `;
 
   resultsContainer.innerHTML = html;
+
+  // Trigger animations with delays
+  setTimeout(() => {
+    const elementsToAnimate = resultsContainer.querySelectorAll(".slide-up");
+    elementsToAnimate.forEach((el, index) => {
+      el.style.animationDelay = `${index * 0.1}s`;
+    });
+  }, 100);
 }
 
 async function generateAnalysis() {
