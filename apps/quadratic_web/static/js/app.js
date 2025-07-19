@@ -829,6 +829,10 @@ const AnalysisSection = {
       const analysisData = await ApiClient.request(API.performanceAnalysis);
       this.createMetricsChart(analysisData);
       this.createAccuracyChart(analysisData);
+      this.createComparisonChart(analysisData);
+
+      // Initialize chart controls after charts are created
+      this.initChartControls();
     } catch (error) {
       console.error("Failed to generate analysis:", error);
       Utils.showNotification("Failed to generate analysis charts", "error");
@@ -841,6 +845,16 @@ const AnalysisSection = {
     if (AppState.charts.metrics) {
       AppState.charts.metrics.destroy();
     }
+
+    // Enhanced color palette for better visibility
+    const enhancedColors = [
+      "#007aff", // Bright blue
+      "#34c759", // Bright green
+      "#ff9500", // Bright orange
+      "#ff3b30", // Bright red
+      "#af52de", // Bright purple
+      "#5ac8fa", // Bright cyan
+    ];
 
     AppState.charts.metrics = new Chart(ctx, {
       type: "radar",
@@ -858,12 +872,16 @@ const AnalysisSection = {
                 Math.max(...data.metrics.mae_values),
             data.metrics.accuracy_values[index] / 100,
           ],
-          backgroundColor: data.colors[index] + "20",
-          borderColor: data.colors[index],
-          pointBackgroundColor: data.colors[index],
-          pointBorderColor: "#fff",
-          pointHoverBackgroundColor: "#fff",
-          pointHoverBorderColor: data.colors[index],
+          backgroundColor: enhancedColors[index % enhancedColors.length] + "30", // 30% opacity
+          borderColor: enhancedColors[index % enhancedColors.length],
+          pointBackgroundColor: enhancedColors[index % enhancedColors.length],
+          pointBorderColor: "#ffffff",
+          pointBorderWidth: 3,
+          pointRadius: 6,
+          pointHoverBackgroundColor: "#ffffff",
+          pointHoverBorderColor: enhancedColors[index % enhancedColors.length],
+          pointHoverRadius: 8,
+          borderWidth: 3,
         })),
       },
       options: {
@@ -874,17 +892,41 @@ const AnalysisSection = {
             beginAtZero: true,
             max: 1,
             grid: {
-              color: "var(--border-color)",
+              color: "#d1d5db", // Darker grid lines
+              lineWidth: 2,
+            },
+            angleLines: {
+              color: "#d1d5db",
+              lineWidth: 2,
             },
             pointLabels: {
-              color: "var(--text-primary)",
+              color: "#1f2937", // Dark text
+              font: {
+                size: 14,
+                weight: "600",
+              },
+            },
+            ticks: {
+              color: "#6b7280",
+              font: { size: 12 },
+              stepSize: 0.2,
+              showLabelBackdrop: true,
+              backdropColor: "rgba(255, 255, 255, 0.8)",
+              backdropPadding: 4,
             },
           },
         },
         plugins: {
           legend: {
+            position: "bottom",
             labels: {
-              color: "var(--text-primary)",
+              color: "#1f2937",
+              usePointStyle: true,
+              font: {
+                size: 14,
+                weight: "600",
+              },
+              padding: 20,
             },
           },
         },
@@ -921,25 +963,202 @@ const AnalysisSection = {
             beginAtZero: true,
             max: 100,
             grid: {
-              color: "var(--border-color)",
+              color: "var(--chart-border)",
             },
             ticks: {
-              color: "var(--text-primary)",
+              color: "var(--chart-text-secondary)",
             },
           },
           x: {
             grid: {
-              color: "var(--border-color)",
+              color: "var(--chart-border)",
             },
             ticks: {
-              color: "var(--text-primary)",
+              color: "var(--chart-text-secondary)",
             },
           },
         },
         plugins: {
           legend: {
+            position: "top",
             labels: {
-              color: "var(--text-primary)",
+              color: "var(--chart-text-primary)",
+              usePointStyle: true,
+              font: { size: 14, weight: "500" },
+            },
+          },
+        },
+      },
+    });
+  },
+  createComparisonChart(data) {
+    const ctx = document.getElementById("comparison-chart");
+    if (!ctx) return; // Exit if element doesn't exist
+
+    const chartCtx = ctx.getContext("2d");
+
+    if (AppState.charts.comparison) {
+      AppState.charts.comparison.destroy();
+    }
+
+    AppState.charts.comparison = new Chart(chartCtx, {
+      type: "line",
+      data: {
+        labels: data.scenario_names,
+        datasets: [
+          {
+            label: "R² Score",
+            data: data.metrics.r2_scores,
+            borderColor: "var(--chart-blue)",
+            backgroundColor: "rgba(0, 122, 255, 0.1)",
+            tension: 0.4,
+            fill: true,
+          },
+          {
+            label: "Accuracy (%)",
+            data: data.metrics.accuracy_values,
+            borderColor: "var(--chart-green)",
+            backgroundColor: "rgba(52, 199, 89, 0.1)",
+            tension: 0.4,
+            fill: true,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: "top",
+            labels: {
+              usePointStyle: true,
+              font: { size: 14, weight: "500" },
+              color: "var(--chart-text-primary)",
+            },
+          },
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: { color: "var(--chart-border)" },
+            ticks: { color: "var(--chart-text-secondary)" },
+          },
+          x: {
+            grid: { color: "var(--chart-border)" },
+            ticks: { color: "var(--chart-text-secondary)" },
+          },
+        },
+      },
+    });
+  },
+  initChartControls() {
+    const chartControlBtns = document.querySelectorAll(".chart-control-btn");
+
+    chartControlBtns.forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
+        e.preventDefault();
+
+        // Remove active class from all buttons in the same container
+        const container = btn.closest(".chart-controls");
+        container
+          .querySelectorAll(".chart-control-btn")
+          .forEach((b) => b.classList.remove("active"));
+
+        // Add active class to clicked button
+        btn.classList.add("active");
+
+        // Get chart type and view
+        const chartType = btn.dataset.chart;
+
+        // Handle different chart views
+        if (chartType === "metrics") {
+          await this.showRadarView();
+        } else if (chartType === "detailed") {
+          await this.showDetailedView();
+        }
+      });
+    });
+  },
+
+  async showRadarView() {
+    try {
+      const analysisData = await ApiClient.request(API.performanceAnalysis);
+      this.createMetricsChart(analysisData); // Recreate radar chart
+    } catch (error) {
+      console.error("Failed to show radar view:", error);
+    }
+  },
+
+  async showDetailedView() {
+    try {
+      const analysisData = await ApiClient.request(API.performanceAnalysis);
+      this.createDetailedMetricsChart(analysisData);
+    } catch (error) {
+      console.error("Failed to create detailed view:", error);
+    }
+  },
+
+  createDetailedMetricsChart(data) {
+    const ctx = document.getElementById("metrics-chart").getContext("2d");
+
+    if (AppState.charts.metrics) {
+      AppState.charts.metrics.destroy();
+    }
+
+    AppState.charts.metrics = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: data.scenario_names,
+        datasets: [
+          {
+            label: "R² Score",
+            data: data.metrics.r2_scores,
+            backgroundColor: "#007aff",
+            borderColor: "#005bb5",
+            borderWidth: 2,
+          },
+          {
+            label: "Accuracy (%)",
+            data: data.metrics.accuracy_values,
+            backgroundColor: "#34c759",
+            borderColor: "#248a3d",
+            borderWidth: 2,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: "top",
+            labels: {
+              usePointStyle: true,
+              font: { size: 14, weight: "600" },
+              color: "#1f2937", // Dark text instead of variable
+            },
+          },
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: {
+              color: "#d1d5db",
+              lineWidth: 1,
+            },
+            ticks: {
+              color: "#6b7280",
+              font: { size: 12, weight: "500" },
+            },
+          },
+          x: {
+            grid: {
+              color: "#d1d5db",
+              lineWidth: 1,
+            },
+            ticks: {
+              color: "#6b7280",
+              font: { size: 12, weight: "500" },
             },
           },
         },

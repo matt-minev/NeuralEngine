@@ -32,6 +32,18 @@
   --radius-medium: 12px;
   --radius-large: 16px;
   --radius-xl: 24px;
+  /* chart specific */
+  --chart-blue: #007aff;
+  --chart-green: #34c759;
+  --chart-orange: #ff9500;
+  --chart-red: #ff3b30;
+  --chart-purple: #af52de;
+  --chart-teal: #5ac8fa;
+  --chart-bg-primary: #ffffff;
+  --chart-bg-secondary: #f8f9fa;
+  --chart-border: #e1e5e9;
+  --chart-text-primary: #1d1d1f;
+  --chart-text-secondary: #6d6d80;
 }
 
 /* Dark mode support */
@@ -625,5 +637,35 @@ body {
 
   .main-content {
     padding: 16px;
+  }
+}
+
+/* ========================================
+   CHART DESIGN
+   ======================================== */
+
+.charts-dashboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.chart-full-width {
+  grid-column: 1 / -1;
+  min-height: 500px;
+}
+
+.chart-half-width {
+  min-height: 400px;
+}
+
+@media (max-width: 1024px) {
+  .charts-dashboard {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-wrapper {
+    min-height: 350px;
   }
 }

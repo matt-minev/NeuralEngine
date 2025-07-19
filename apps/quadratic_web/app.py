@@ -270,6 +270,35 @@ def get_performance_analysis():
     
     return jsonify(analysis_data)
 
+@app.route('/api/charts/enhanced-data')
+def get_enhanced_chart_data():
+    """Get enhanced chart data with improved styling"""
+    if not app_state['results']:
+        return jsonify({'error': 'No results available'}), 400
+    
+    chart_data = {
+        'colors': {
+            'primary': '#007aff',
+            'success': '#34c759',
+            'warning': '#ff9500',
+            'error': '#ff3b30'
+        },
+        'scenarios': list(app_state['results'].keys()),
+        'enhanced_metrics': {}
+    }
+    
+    for scenario_key in app_state['results'].keys():
+        result = app_state['results'][scenario_key]
+        chart_data['enhanced_metrics'][scenario_key] = {
+            'r2': result.get('r2', 0),
+            'mse': result.get('mse', 0),
+            'mae': result.get('mae', 0),
+            'accuracy': result.get('accuracy_10pct', 0),
+            'scenario_name': app_state['scenarios'][scenario_key].name
+        }
+    
+    return jsonify(chart_data)
+
 @app.route('/api/data/random', methods=['GET'])
 def get_random_data():
     """Get random sample from dataset for testing"""

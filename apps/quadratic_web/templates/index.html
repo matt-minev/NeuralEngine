@@ -594,27 +594,250 @@
               </button>
             </div>
 
-            <div class="card">
-              <div class="card-header">
-                <h3 class="card-title">
-                  <i class="fas fa-tachometer-alt"></i>
-                  Performance Metrics
-                </h3>
+            <div class="charts-dashboard">
+              <div class="chart-wrapper chart-full-width">
+                <h3 class="chart-title">📊 Performance Metrics Radar</h3>
+                <div class="chart-controls">
+                  <button class="chart-control-btn active" data-chart="metrics">
+                    Radar View
+                  </button>
+                  <button class="chart-control-btn" data-chart="detailed">
+                    Detailed View
+                  </button>
+                </div>
+                <div class="chart-content">
+                  <canvas id="metrics-chart"></canvas>
+                </div>
               </div>
-              <div id="performance-metrics">
-                <canvas id="metrics-chart" style="max-height: 400px"></canvas>
-              </div>
-            </div>
 
-            <div class="card">
-              <div class="card-header">
-                <h3 class="card-title">
-                  <i class="fas fa-chart-area"></i>
-                  Accuracy Comparison
-                </h3>
+              <!-- Explanation OUTSIDE the chart container -->
+              <div class="chart-explanation-external">
+                <h4 class="explanation-title-external">
+                  📖 Understanding Performance Metrics
+                </h4>
+                <div class="metrics-grid-external">
+                  <div class="metric-explanation-external">
+                    <span class="metric-icon-external">📈</span>
+                    <div class="metric-content-external">
+                      <h5>R² Score (Coefficient of Determination)</h5>
+                      <p>
+                        Measures how well the model explains the variance in the
+                        target data. Range: 0 to 1.
+                      </p>
+                      <ul>
+                        <li><strong>1.0:</strong> Perfect predictions</li>
+                        <li><strong>0.8+:</strong> Excellent performance</li>
+                        <li><strong>0.6-0.8:</strong> Good performance</li>
+                        <li><strong>&lt;0.6:</strong> Needs improvement</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div class="metric-explanation-external">
+                    <span class="metric-icon-external">📉</span>
+                    <div class="metric-content-external">
+                      <h5>MSE (inv) - Inverted Mean Squared Error</h5>
+                      <p>
+                        Shows accuracy by inverting MSE values. Higher values
+                        indicate better performance.
+                      </p>
+                      <ul>
+                        <li>
+                          MSE measures average squared differences between
+                          predicted and actual values
+                        </li>
+                        <li>Inverted for easy comparison (higher = better)</li>
+                        <li>Normalized by maximum MSE in dataset</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div class="metric-explanation-external">
+                    <span class="metric-icon-external">🎯</span>
+                    <div class="metric-content-external">
+                      <h5>MAE (inv) - Inverted Mean Absolute Error</h5>
+                      <p>
+                        Average absolute difference between predictions and
+                        actual values (inverted).
+                      </p>
+                      <ul>
+                        <li>Less sensitive to outliers than MSE</li>
+                        <li>Represents average prediction error magnitude</li>
+                        <li>
+                          Inverted and normalized for better visualization
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div class="metric-explanation-external">
+                    <span class="metric-icon-external">🏆</span>
+                    <div class="metric-content-external">
+                      <h5>Accuracy (10% Tolerance)</h5>
+                      <p>
+                        Percentage of predictions within 10% of actual values.
+                      </p>
+                      <ul>
+                        <li><strong>90%+:</strong> Exceptional accuracy</li>
+                        <li><strong>80-90%:</strong> Very good accuracy</li>
+                        <li><strong>70-80%:</strong> Acceptable accuracy</li>
+                        <li><strong>&lt;70%:</strong> Requires optimization</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div id="accuracy-chart-container">
-                <canvas id="accuracy-chart" style="max-height: 400px"></canvas>
+
+              <div class="chart-wrapper chart-half-width">
+                <h3 class="chart-title">🎯 Accuracy Comparison</h3>
+                <div class="chart-content">
+                  <canvas id="accuracy-chart"></canvas>
+                </div>
+              </div>
+
+              <!-- External explanation for accuracy chart -->
+              <div class="chart-explanation-external">
+                <h4 class="explanation-title-external">📊 Accuracy Analysis</h4>
+                <p
+                  style="
+                    text-align: center;
+                    color: #475569;
+                    margin-bottom: 16px;
+                  "
+                >
+                  This bar chart compares the prediction accuracy across
+                  different neural network scenarios. Each bar represents the
+                  percentage of test predictions that fall within 10% of the
+                  actual solution values.
+                </p>
+                <div class="accuracy-guide-external">
+                  <div class="guide-item-external">
+                    <span
+                      class="guide-color-external"
+                      style="background: #34c759"
+                    ></span>
+                    <span
+                      ><strong>85%+ Accuracy:</strong> Production-ready
+                      model</span
+                    >
+                  </div>
+                  <div class="guide-item-external">
+                    <span
+                      class="guide-color-external"
+                      style="background: #007aff"
+                    ></span>
+                    <span
+                      ><strong>70-85% Accuracy:</strong> Good performance, minor
+                      tuning needed</span
+                    >
+                  </div>
+                  <div class="guide-item-external">
+                    <span
+                      class="guide-color-external"
+                      style="background: #ff9500"
+                    ></span>
+                    <span
+                      ><strong>50-70% Accuracy:</strong> Acceptable, requires
+                      optimization</span
+                    >
+                  </div>
+                  <div class="guide-item-external">
+                    <span
+                      class="guide-color-external"
+                      style="background: #ff3b30"
+                    ></span>
+                    <span
+                      ><strong>&lt;50% Accuracy:</strong> Needs significant
+                      improvement</span
+                    >
+                  </div>
+                </div>
+              </div>
+
+              <div class="chart-wrapper chart-half-width">
+                <h3 class="chart-title">📈 Performance Trends</h3>
+                <div class="chart-content">
+                  <canvas id="comparison-chart"></canvas>
+                </div>
+              </div>
+
+              <!-- External explanation for trends chart -->
+              <div class="chart-explanation-external">
+                <h4 class="explanation-title-external">
+                  📈 Performance Trends
+                </h4>
+                <p
+                  style="
+                    text-align: center;
+                    color: #475569;
+                    margin-bottom: 12px;
+                  "
+                >
+                  This line chart shows the relationship between R² scores and
+                  accuracy percentages across different scenarios, helping
+                  identify which approaches work best for your data.
+                </p>
+                <div
+                  style="
+                    background: white;
+                    border-radius: 12px;
+                    padding: 16px;
+                    margin-top: 16px;
+                    border: 1px solid #e2e8f0;
+                  "
+                >
+                  <p
+                    style="color: #1e293b; font-weight: 600; margin-bottom: 8px"
+                  >
+                    📌 Key Insights:
+                  </p>
+                  <ul style="list-style: none; padding: 0; margin: 0">
+                    <li
+                      style="
+                        color: #64748b;
+                        font-size: 13px;
+                        margin-bottom: 4px;
+                        padding-left: 16px;
+                        position: relative;
+                      "
+                    >
+                      <span style="position: absolute; left: 0; color: #007aff"
+                        >→</span
+                      >
+                      Higher R² scores typically correlate with higher accuracy
+                    </li>
+                    <li
+                      style="
+                        color: #64748b;
+                        font-size: 13px;
+                        margin-bottom: 4px;
+                        padding-left: 16px;
+                        position: relative;
+                      "
+                    >
+                      <span style="position: absolute; left: 0; color: #007aff"
+                        >→</span
+                      >
+                      Look for scenarios where both metrics are consistently
+                      high
+                    </li>
+                    <li
+                      style="
+                        color: #64748b;
+                        font-size: 13px;
+                        margin-bottom: 4px;
+                        padding-left: 16px;
+                        position: relative;
+                      "
+                    >
+                      <span style="position: absolute; left: 0; color: #007aff"
+                        >→</span
+                      >
+                      Steep increases indicate effective learning for that
+                      scenario
+                    </li>
+                  </ul>
+                </div>
               </div>
             </div>
           </section>
