@@ -1140,6 +1140,9 @@ const ModelSection = {
         loadButtonText.textContent = `Load ${selectedCount} Models`;
       }
     }
+
+    // Display info for selected models
+    this.displaySelectedModelsInfo();
   },
 
   async loadModel() {
@@ -1553,6 +1556,282 @@ const ModelSection = {
       );
       modelNameInput.hasPreviewListener = true;
     }
+  },
+  displaySelectedModelsInfo() {
+    const selectedCheckboxes = document.querySelectorAll(
+      "#modelsGrid input[type='checkbox']:checked"
+    );
+    const selectedModelIds = Array.from(selectedCheckboxes).map(
+      (cb) => cb.value
+    );
+    const display = document.getElementById("modelInfoDisplay");
+    const content = document.getElementById("modelInfoContent");
+
+    if (!display || !content) return;
+
+    // Hide if no models selected
+    if (selectedModelIds.length === 0) {
+      display.style.display = "none";
+      return;
+    }
+
+    // Get selected models data
+    const selectedModels =
+      AppState.savedModels?.filter((model) =>
+        selectedModelIds.includes(model.model_id)
+      ) || [];
+
+    if (selectedModels.length === 0) {
+      display.style.display = "none";
+      return;
+    }
+
+    // Update header based on selection count
+    const headerTitle = display.querySelector(".card-title");
+    if (headerTitle) {
+      const countText =
+        selectedModels.length === 1
+          ? "Model Information"
+          : `${selectedModels.length} Models Selected`;
+      headerTitle.innerHTML = `<i class="fas fa-info-circle"></i> ${countText}`;
+    }
+
+    // Generate info cards for selected models
+    content.innerHTML = selectedModels
+      .map((model) => this.generateModelInfoCard(model))
+      .join("");
+
+    // Show the display
+    display.style.display = "block";
+  },
+
+  generateModelInfoCard(model) {
+    const createdDate = new Date(model.created_date).toLocaleDateString(
+      "en-US",
+      {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      }
+    );
+    const createdTime = new Date(model.created_date).toLocaleTimeString(
+      "en-US",
+      {
+        hour: "2-digit",
+        minute: "2-digit",
+      }
+    );
+
+    // Performance metrics with proper scaling
+    const r2Score = (model.performance_metrics?.r2 || 0) * 100;
+    const accuracy = model.performance_metrics?.accuracy_10pct || 0;
+    const mse = model.performance_metrics?.mse || 0;
+    const mae = model.performance_metrics?.mae || 0;
+    const trainingTime = model.performance_metrics?.training_time || 0;
+
+    // Additional model details
+    const modelSize = model.model_size_bytes
+      ? (model.model_size_bytes / 1024).toFixed(1) + " KB"
+      : "N/A";
+    const datasetSize = (model.dataset_size || 0).toLocaleString();
+    const version = model.version || "1.0";
+    const description = model.description || "No description available";
+
+    // Performance quality assessment
+    const getPerformanceQuality = (r2, acc) => {
+      const avgPerf = (r2 + acc) / 2;
+      if (avgPerf >= 85)
+        return {
+          level: "excellent",
+          color: "#34C759",
+          bgColor: "rgba(52, 199, 89, 0.1)",
+          icon: "🏆",
+          label: "Excellent",
+        };
+      if (avgPerf >= 70)
+        return {
+          level: "good",
+          color: "#007AFF",
+          bgColor: "rgba(0, 122, 255, 0.1)",
+          icon: "👍",
+          label: "Very Good",
+        };
+      if (avgPerf >= 50)
+        return {
+          level: "fair",
+          color: "#FF9500",
+          bgColor: "rgba(255, 149, 0, 0.1)",
+          icon: "⚡",
+          label: "Good",
+        };
+      return {
+        level: "poor",
+        color: "#FF3B30",
+        bgColor: "rgba(255, 59, 48, 0.1)",
+        icon: "🔧",
+        label: "Needs Work",
+      };
+    };
+
+    const quality = getPerformanceQuality(r2Score, accuracy);
+    const isBatchModel = model.is_batch_model || false;
+
+    return `
+    <div class="enhanced-model-info-card" data-model-id="${model.model_id}">
+      <!-- Card Header with Model Name and Quality Badge -->
+      <div class="model-info-header">
+        <div class="model-title-section">
+          <div class="model-name-container">
+            <h3 class="model-name">${model.model_name}</h3>
+            ${
+              isBatchModel
+                ? `
+              <div class="batch-indicator">
+                <span class="batch-box">📦</span>
+                <span class="batch-text">BATCH</span>
+              </div>
+            `
+                : ""
+            }
+          </div>
+          <div class="model-scenario">${model.scenario_name}</div>
+        </div>
+        
+        <div class="quality-indicator">
+          <div class="quality-badge quality-${quality.level}">
+            <div class="quality-icon">${quality.icon}</div>
+            <div class="quality-label">${quality.label}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Metrics Grid -->
+      <div class="metrics-showcase-grid">
+        <!-- R² Score Card -->
+        <div class="metric-card r2-card">
+          <div class="metric-header">
+            <div class="metric-icon">📊</div>
+            <div class="metric-label">R² Score</div>
+          </div>
+          <div class="metric-value-container">
+            <div class="metric-value">${r2Score.toFixed(1)}%</div>
+            <div class="metric-progress">
+              <div class="metric-progress-fill r2-fill" style="width: ${r2Score}%"></div>
+            </div>
+          </div>
+          <div class="metric-description">Variance Explained</div>
+        </div>
+
+        <!-- Accuracy Card -->
+        <div class="metric-card accuracy-card">
+          <div class="metric-header">
+            <div class="metric-icon">🎯</div>
+            <div class="metric-label">Accuracy</div>
+          </div>
+          <div class="metric-value-container">
+            <div class="metric-value">${accuracy.toFixed(1)}%</div>
+            <div class="metric-progress">
+              <div class="metric-progress-fill accuracy-fill" style="width: ${accuracy}%"></div>
+            </div>
+          </div>
+          <div class="metric-description">10% Tolerance</div>
+        </div>
+
+        <!-- Dataset Size Card -->
+        <div class="metric-card dataset-card">
+          <div class="metric-header">
+            <div class="metric-icon">🗃️</div>
+            <div class="metric-label">Dataset Size</div>
+          </div>
+          <div class="metric-value-container">
+            <div class="metric-value large-number">${datasetSize}</div>
+          </div>
+          <div class="metric-description">Training Equations</div>
+        </div>
+
+        <!-- Model Size Card -->
+        <div class="metric-card size-card">
+          <div class="metric-header">
+            <div class="metric-icon">💾</div>
+            <div class="metric-label">Model Size</div>
+          </div>
+          <div class="metric-value-container">
+            <div class="metric-value">${modelSize}</div>
+          </div>
+          <div class="metric-description">Storage Required</div>
+        </div>
+      </div>
+
+      <!-- Technical Details Section -->
+      <div class="technical-details-section">
+        <div class="section-title">
+          <div class="section-icon">⚙️</div>
+          <span>Technical Details</span>
+        </div>
+        
+        <div class="details-grid">
+          <!-- Error Metrics -->
+          <div class="detail-group error-metrics">
+            <div class="detail-group-title">Error Metrics</div>
+            <div class="detail-items">
+              <div class="detail-item">
+                <span class="detail-label">MSE</span>
+                <span class="detail-value">${mse.toExponential(2)}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">MAE</span>
+                <span class="detail-value">${mae.toExponential(2)}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Model Info -->
+          <div class="detail-group model-info">
+            <div class="detail-group-title">Model Information</div>
+            <div class="detail-items">
+              <div class="detail-item">
+                <span class="detail-label">Model ID</span>
+                <span class="detail-value model-id">${model.model_id}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Version</span>
+                <span class="detail-value">${version}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Training Time</span>
+                <span class="detail-value">${trainingTime.toFixed(2)}s</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Creation Info -->
+          <div class="detail-group creation-info">
+            <div class="detail-group-title">Created</div>
+            <div class="detail-items">
+              <div class="detail-item">
+                <span class="detail-label">📅 Date</span>
+                <span class="detail-value">${createdDate}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">🕒 Time</span>
+                <span class="detail-value">${createdTime}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Performance Summary Footer -->
+      <div class="performance-summary">
+        <div class="summary-title">Performance Summary</div>
+        <div class="summary-content">
+          This model achieves <strong>${quality.label.toLowerCase()}</strong> performance with 
+          <strong>${r2Score.toFixed(1)}%</strong> variance explanation and 
+          <strong>${accuracy.toFixed(1)}%</strong> prediction accuracy.
+        </div>
+      </div>
+    </div>
+  `;
   },
 };
 
