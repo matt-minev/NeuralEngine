@@ -427,6 +427,7 @@ const Navigation = {
         break;
       case "model-management":
         ModelSection.refresh();
+        ModelSection.refreshAppState();
         break;
       case "prediction":
         PredictionSection.refresh();
@@ -758,9 +759,37 @@ const ModelSection = {
     this.setupEventListeners();
   },
 
-  refresh() {
-    this.loadSavedModelsList();
+  // Replace the existing ModelSection.refresh() method with this enhanced version:
+  async refresh() {
+    console.log("🔄 Refreshing Model Management tab...");
+
+    // Always load saved models list
+    await this.loadSavedModelsList();
+
+    // Fetch current results from backend to update AppState.results
+    await this.refreshAppState();
+
+    // Update save section based on current state
     this.updateSaveSection();
+  },
+
+  // Add this new method to ModelSection:
+  async refreshAppState() {
+    try {
+      // Fetch current results from backend
+      const results = await ApiClient.request(API.results);
+      AppState.results = results;
+      console.log(
+        "✅ AppState.results updated:",
+        Object.keys(AppState.results)
+      );
+
+      // Also check data loaded state
+      const dataInfo = await ApiClient.request(API.dataInfo);
+      AppState.dataLoaded = dataInfo.loaded;
+    } catch (error) {
+      console.error("Failed to refresh app state:", error);
+    }
   },
 
   setupEventListeners() {
@@ -900,10 +929,8 @@ const ModelSection = {
         Utils.showNotification(data.message, "success");
         this.displayModelInfo(data.model_info);
 
-        // Refresh results display if it exists
-        if (typeof AnalysisSection !== "undefined" && AnalysisSection.refresh) {
-          AnalysisSection.refresh();
-        }
+        // Update frontend state to reflect loaded model
+        await this.updateAppStateAfterLoad(data.model_info);
       } else {
         Utils.showNotification(data.error, "error");
       }
@@ -911,6 +938,76 @@ const ModelSection = {
       Utils.showNotification("Failed to load model", "error");
       console.error("Load model error:", error);
     }
+  },
+
+  // Method to update app state after loading a model
+  async updateAppStateAfterLoad(modelInfo) {
+    try {
+      // 1. Fetch updated results from backend
+      const results = await ApiClient.request(API.results);
+      AppState.results = results;
+      console.log("✅ Results updated after model load:", AppState.results);
+
+      // 2. Check and update data loaded state
+      const dataInfo = await ApiClient.request(API.dataInfo);
+      AppState.dataLoaded = dataInfo.loaded;
+
+      // 3. Update save section to show newly available trained models
+      this.updateSaveSection();
+
+      // 4. Refresh all dependent sections
+      this.refreshDependentSections();
+
+      // 5. Show enhanced success notification
+      Utils.showNotification(
+        `🚀 Model "${modelInfo.model_name}" loaded! All features now available.`,
+        "success"
+      );
+    } catch (error) {
+      console.error("Failed to update app state after model load:", error);
+      Utils.showNotification(
+        "Model loaded but some features may not be updated. Please refresh the page.",
+        "warning"
+      );
+    }
+  },
+
+  // Method to refresh all sections that depend on trained models
+  refreshDependentSections() {
+    // Refresh prediction section to show random button
+    if (typeof PredictionSection !== "undefined" && PredictionSection.refresh) {
+      PredictionSection.refresh();
+    }
+
+    // Enable analysis generation
+    const generateAnalysisBtn = document.getElementById(
+      "generate-analysis-btn"
+    );
+    if (generateAnalysisBtn) {
+      generateAnalysisBtn.disabled = false;
+      generateAnalysisBtn.style.opacity = "1";
+    }
+
+    // Enable comparison generation
+    const generateComparisonBtn = document.getElementById(
+      "generate-comparison-btn"
+    );
+    if (generateComparisonBtn) {
+      generateComparisonBtn.disabled = false;
+      generateComparisonBtn.style.opacity = "1";
+    }
+
+    // Update training section if needed
+    if (typeof TrainingSection !== "undefined" && TrainingSection.refresh) {
+      TrainingSection.refresh();
+    }
+
+    // Update data section display
+    if (typeof DataSection !== "undefined" && DataSection.refresh) {
+      DataSection.refresh();
+    }
+
+    console.log("✅ All dependent sections refreshed");
   },
 
   async deleteModel() {

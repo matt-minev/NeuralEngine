@@ -661,12 +661,18 @@ def save_model():
         
         if not model_name:
             return jsonify({'error': 'Model name is required'}), 400
-        
+            
         if len(model_name) > 50:
             return jsonify({'error': 'Model name too long (max 50 characters)'}), 400
-        
+            
         if scenario_key not in app_state['predictors']:
             return jsonify({'error': 'No trained model found for this scenario'}), 400
+        
+        # Get performance metrics from the correct source
+        if scenario_key not in app_state['results']:
+            return jsonify({'error': 'No performance results found for this scenario'}), 400
+            
+        performance_metrics = app_state['results'][scenario_key]
         
         # Get dataset info
         dataset_info = {
@@ -674,10 +680,10 @@ def save_model():
             'stats': app_state['data_processor'].get_stats()
         }
         
-        # Save the model
+        # Pass the correct performance metrics to save_model
         predictor = app_state['predictors'][scenario_key]
         model_id = model_manager.save_model(
-            predictor, scenario_key, model_name, dataset_info
+            predictor, scenario_key, model_name, dataset_info, performance_metrics
         )
         
         return jsonify({
@@ -713,9 +719,17 @@ def load_model():
         if model_info:
             scenario_key = model_info['scenario_key']
             
-            # Store in application state
+           # Store in application state
             app_state['predictors'][scenario_key] = predictor
-            app_state['results'][scenario_key] = predictor.performance_stats
+
+            # Normalize performance stats to match fresh training structure
+            performance = predictor.performance_stats
+            app_state['results'][scenario_key] = {
+                'r2': performance.get('r2', 0),
+                'mse': performance.get('mse', 0),
+                'mae': performance.get('mae', 0),
+                'accuracy_10pct': performance.get('accuracy_10pct', 0)
+            }
             
             return jsonify({
                 'success': True,

@@ -120,6 +120,7 @@ datasets/
 # *.h5
 # *.hdf5
 # models/
+saved_models/
 # checkpoints/
 
 # Logs and outputs

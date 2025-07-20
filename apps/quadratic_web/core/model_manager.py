@@ -51,7 +51,7 @@ class ModelManager:
             raise RuntimeError(f"Failed to save metadata: {e}")
     
     def save_model(self, predictor, scenario_key: str, model_name: str, 
-                   dataset_info: Dict) -> str:
+               dataset_info: Dict, performance_metrics: Dict = None) -> str:
         """Save a trained QuadraticPredictor model"""
         
         if not predictor.is_trained:
@@ -73,6 +73,9 @@ class ModelManager:
         model_dir.mkdir(exist_ok=True)
         
         try:
+            # ✅ Use the passed performance_metrics instead of predictor.performance_stats
+            actual_performance = performance_metrics or predictor.performance_stats
+            
             # Save model weights and network parameters
             model_data = {
                 'scenario_key': scenario_key,
@@ -80,7 +83,7 @@ class ModelManager:
                 'network_architecture': predictor.scenario.network_architecture,
                 'activations': predictor.scenario.activations,
                 'training_history': predictor.training_history,
-                'performance_stats': predictor.performance_stats,
+                'performance_stats': actual_performance,  # ✅ Use correct performance data
                 'is_trained': True
             }
             
@@ -99,7 +102,7 @@ class ModelManager:
             with open(model_dir / 'scalers.pkl', 'wb') as f:
                 pickle.dump(scalers_data, f)
             
-            # Save model metadata
+            # ✅ SINGLE model_info definition with correct performance metrics
             model_info = {
                 'model_id': model_id,
                 'model_name': model_name.strip(),
@@ -108,7 +111,7 @@ class ModelManager:
                 'created_date': datetime.now().isoformat(),
                 'dataset_size': dataset_info.get('total_equations', 0),
                 'dataset_stats': dataset_info.get('stats', {}),
-                'performance_metrics': predictor.performance_stats,
+                'performance_metrics': actual_performance,  # ✅ Use correct performance data
                 'description': f"Model trained on {dataset_info.get('total_equations', 0)} equations",
                 'model_size_bytes': self._calculate_model_size(model_dir),
                 'version': '1.0'
