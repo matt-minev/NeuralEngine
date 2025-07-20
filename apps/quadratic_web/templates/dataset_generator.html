@@ -177,6 +177,24 @@
                   </button>
                 </h3>
                 <div class="advanced-options" style="display: none">
+                  <!-- Infinite Mode Checkbox - Custom styling -->
+                  <div class="checkbox-group infinite-mode-group">
+                    <label>
+                      <input type="checkbox" id="infinite-mode" />
+                      <span class="checkbox-custom"></span>
+                      <div class="checkbox-content">
+                        <span class="checkbox-title"
+                          >🔄 Infinite Generation Mode</span
+                        >
+                        <small
+                          >Generate continuously until stopped. Coefficients
+                          start small and gradually increase.</small
+                        >
+                      </div>
+                    </label>
+                  </div>
+
+                  <!-- Regular checkboxes - Keep original structure -->
                   <div class="checkbox-group">
                     <label>
                       <input type="checkbox" id="allow-complex" />
@@ -185,6 +203,7 @@
                       >
                     </label>
                   </div>
+
                   <div class="checkbox-group">
                     <label>
                       <input type="checkbox" id="ensure-discriminant" checked />
@@ -196,12 +215,56 @@
                 </div>
               </div>
 
-              <!-- Generation Button -->
-              <div class="form-section">
-                <button id="generate-btn" class="btn btn-primary btn-large">
-                  <span class="btn-icon">🚀</span>
-                  Generate Dataset
-                </button>
+              <!-- Generate Dataset Section -->
+              <div class="form-section generation-section">
+                <div class="section-title">
+                  <span>🚀 Generate Dataset</span>
+                </div>
+
+                <!-- Infinite stats should appear here when enabled -->
+                <div
+                  id="infinite-stats"
+                  class="infinite-stats-container"
+                  style="display: none"
+                >
+                  <div class="infinite-stats-card">
+                    <div class="stat-item">
+                      <div class="stat-icon">📊</div>
+                      <div class="stat-content">
+                        <div class="stat-value" id="equations-generated">0</div>
+                        <div class="stat-label">Generated So Far</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="infinite-range-card">
+                    <div class="range-indicator">
+                      <span class="range-label"
+                        >Current coefficient range:</span
+                      >
+                      <span id="infinite-range-display" class="range-value"
+                        >-2 to 2</span
+                      >
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Button container for proper replacement -->
+                <div class="generation-buttons">
+                  <button id="generate-btn" class="btn btn-primary btn-large">
+                    <span class="btn-icon">⚡</span>
+                    Generate Dataset
+                  </button>
+
+                  <button
+                    id="stop-generation"
+                    class="btn btn-error btn-large"
+                    style="display: none"
+                  >
+                    <span class="btn-icon">⏹</span>
+                    Stop Generation
+                  </button>
+                </div>
               </div>
             </div>
           </section>

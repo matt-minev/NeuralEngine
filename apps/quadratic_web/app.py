@@ -395,6 +395,160 @@ def generate_dataset():
     except Exception as e:
         return jsonify({'error': f'Dataset generation failed: {str(e)}'}), 500
 
+# Global state for infinite generation
+infinite_generation_state = {
+    'active': False,
+    'generated_count': 0,
+    'current_range': {'min': -2, 'max': 2},
+    'batch_size': 100,
+    'dataset_buffer': [],
+    'config': None
+}
+
+@app.route('/api/generate-dataset-infinite/start', methods=['POST'])
+def start_infinite_generation():
+    """Start infinite dataset generation"""
+    try:
+        if infinite_generation_state['active']:
+            return jsonify({'error': 'Infinite generation already active'}), 400
+            
+        data = request.get_json()
+        
+        # Reset state
+        infinite_generation_state.update({
+            'active': True,
+            'generated_count': 0,
+            'current_range': {'min': -2, 'max': 2},  # Start small
+            'dataset_buffer': [],
+            'config': {
+                'equation_type': data.get('equation_type', 'school_grade'),
+                'root_type': data.get('root_type', 'mixed'),
+                'allow_complex': data.get('allow_complex', False)
+            }
+        })
+        
+        return jsonify({
+            'success': True,
+            'message': 'Infinite generation started',
+            'initial_range': infinite_generation_state['current_range']
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'Failed to start infinite generation: {str(e)}'}), 500
+
+@app.route('/api/generate-dataset-infinite/batch', methods=['POST'])
+def generate_infinite_batch():
+    """Generate next batch of equations for infinite mode"""
+    try:
+        if not infinite_generation_state['active']:
+            return jsonify({'error': 'Infinite generation not active'}), 400
+        
+        # Generate batch
+        config = infinite_generation_state['config']
+        current_range = infinite_generation_state['current_range']
+        
+        batch_data = []
+        for _ in range(infinite_generation_state['batch_size']):
+            if config['equation_type'] == 'school_grade':
+                equation = generate_school_grade_equation(current_range, config['root_type'])
+            elif config['equation_type'] == 'random':
+                equation = generate_random_equation(current_range, config['allow_complex'])
+            elif config['equation_type'] == 'integer_solutions':
+                equation = generate_integer_solution_equation(current_range)
+            elif config['equation_type'] == 'fractional_solutions':
+                equation = generate_fractional_solution_equation(current_range)
+            else:
+                equation = generate_school_grade_equation(current_range, config['root_type'])
+            
+            batch_data.append(equation)
+        
+        # Add to buffer - KEEP ALL EQUATIONS FOR SAVING
+        infinite_generation_state['dataset_buffer'].extend(batch_data)
+        infinite_generation_state['generated_count'] += len(batch_data)
+        
+        # Gradually expand range every 500 equations
+        if infinite_generation_state['generated_count'] % 500 == 0:
+            expansion = infinite_generation_state['generated_count'] // 500
+            new_min = max(-50, -2 - expansion)
+            new_max = min(50, 2 + expansion)
+            infinite_generation_state['current_range'] = {'min': new_min, 'max': new_max}
+        
+        # FIXED: Get latest 10 for preview WITHOUT truncating the full dataset
+        preview_data = infinite_generation_state['dataset_buffer'][-10:] if infinite_generation_state['dataset_buffer'] else []
+        
+        return jsonify({
+            'success': True,
+            'generated_count': infinite_generation_state['generated_count'],
+            'current_range': infinite_generation_state['current_range'],
+            'batch_size': len(batch_data),
+            'preview': preview_data,
+            'total_in_buffer': len(infinite_generation_state['dataset_buffer'])  # Added for debugging
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'Batch generation failed: {str(e)}'}), 500
+
+@app.route('/api/generate-dataset-infinite/status')
+def get_infinite_status():
+    """Get current infinite generation status"""
+    return jsonify({
+        'active': infinite_generation_state['active'],
+        'generated_count': infinite_generation_state['generated_count'],
+        'current_range': infinite_generation_state['current_range'],
+        'preview': infinite_generation_state['dataset_buffer'][-10:] if infinite_generation_state['dataset_buffer'] else []
+    })
+
+@app.route('/api/generate-dataset-infinite/stop', methods=['POST'])
+def stop_infinite_generation():
+    """Stop infinite generation and save dataset"""
+    try:
+        if not infinite_generation_state['active']:
+            return jsonify({'error': 'No infinite generation active'}), 400
+        
+        # Mark as inactive
+        infinite_generation_state['active'] = False
+        
+        # Save final dataset
+        if infinite_generation_state['dataset_buffer']:
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            filename = f"quadratic_infinite_{infinite_generation_state['config']['equation_type']}_{timestamp}.csv"
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            
+            # ADDED: Verify we have all equations before saving
+            buffer_size = len(infinite_generation_state['dataset_buffer'])
+            generated_count = infinite_generation_state['generated_count']
+            
+            print(f"DEBUG: Stopping infinite generation")
+            print(f"DEBUG: Generated count: {generated_count}")
+            print(f"DEBUG: Buffer size: {buffer_size}")
+            print(f"DEBUG: Saving {buffer_size} equations to {filename}")
+            
+            # Create DataFrame and save
+            df = pd.DataFrame(infinite_generation_state['dataset_buffer'], columns=['a', 'b', 'c', 'x1', 'x2'])
+            df.to_csv(filepath, index=False)
+            
+            # Get final statistics
+            stats = calculate_dataset_stats(df)
+            
+            return jsonify({
+                'success': True,
+                'message': f'Infinite generation stopped. Generated {generated_count} equations, saved {buffer_size} equations.',
+                'filename': filename,
+                'final_count': generated_count,
+                'saved_count': buffer_size,  # Added to show actual saved count
+                'final_range': infinite_generation_state['current_range'],
+                'stats': stats
+            })
+        else:
+            return jsonify({
+                'success': True,
+                'message': 'Infinite generation stopped. No equations generated.',
+                'final_count': 0
+            })
+        
+    except Exception as e:
+        return jsonify({'error': f'Failed to stop infinite generation: {str(e)}'}), 500
+
 def generate_quadratic_dataset(equation_type, num_equations, coefficient_range, root_type, allow_complex):
     """Generate quadratic equation dataset with specified parameters"""
     dataset = []
@@ -416,10 +570,14 @@ def generate_quadratic_dataset(equation_type, num_equations, coefficient_range, 
     return np.array(dataset)
 
 def generate_school_grade_equation(coefficient_range, root_type):
-    """Generate school-grade quadratic equations with nice solutions"""
-    # Define nice root values
-    integer_roots = list(range(-10, 11))
-    fractional_roots = [-3/2, -1/2, -1/3, -1/4, 1/4, 1/3, 1/2, 3/2, 2/3, 3/4, 5/4, 4/3, 5/3, 7/4]
+    """Generate school-grade quadratic equations with nice solutions - FIXED VERSION"""
+    min_coeff = coefficient_range['min']
+    max_coeff = coefficient_range['max']
+    
+    # Define nice root values with better distribution
+    integer_roots = list(range(-8, 9))  # Reduced range for better coefficients
+    fractional_roots = [-5/2, -3/2, -1/2, -1/3, -1/4, 1/4, 1/3, 1/2, 3/2, 5/2, 
+                       -4/3, -2/3, 2/3, 4/3, -3/4, -5/4, 3/4, 5/4]
     
     if root_type == 'integers':
         possible_roots = integer_roots
@@ -428,73 +586,74 @@ def generate_school_grade_equation(coefficient_range, root_type):
     else:  # mixed
         possible_roots = integer_roots + fractional_roots
     
-    # Remove zero to avoid degenerate cases
-    possible_roots = [r for r in possible_roots if r != 0]
+    # Remove roots that are too large (causes coefficient boundary issues)
+    max_root = min(8, abs(max_coeff) // 2)
+    possible_roots = [r for r in possible_roots if abs(r) <= max_root and r != 0]
+    
+    if not possible_roots:
+        possible_roots = [-2, -1, 1, 2]  # Fallback
     
     # Choose two roots
     x1 = np.random.choice(possible_roots)
     x2 = np.random.choice(possible_roots)
     
-    # Generate coefficients using Vieta's formulas
-    # For ax² + bx + c = 0 with roots x1, x2:
-    # x1 + x2 = -b/a
-    # x1 * x2 = c/a
+    # Generate 'a' with bias toward smaller values to avoid boundary issues
+    a_range = min(abs(max_coeff), abs(min_coeff), 8)  # Cap at 8
+    weights = [1/(abs(i)+1) for i in range(-a_range, a_range+1) if i != 0]  # Bias toward smaller values
+    a_candidates = [i for i in range(-a_range, a_range+1) if i != 0]
+    a = np.random.choice(a_candidates, p=np.array(weights)/sum(weights))
     
-    # Choose 'a' coefficient (non-zero)
-    a_candidates = list(range(coefficient_range['min'], coefficient_range['max'] + 1))
-    a_candidates = [a for a in a_candidates if a != 0]
-    a = np.random.choice(a_candidates)
-    
-    # Calculate b and c to ensure integer coefficients when possible
+    # Calculate b and c using Vieta's formulas
     sum_roots = x1 + x2
     product_roots = x1 * x2
     
-    # Find LCM to make coefficients integers
+    # Handle fractional roots properly
     from fractions import Fraction
-    sum_frac = Fraction(sum_roots).limit_denominator()
-    prod_frac = Fraction(product_roots).limit_denominator()
+    sum_frac = Fraction(sum_roots).limit_denominator(100)
+    prod_frac = Fraction(product_roots).limit_denominator(100)
     
-    # Scale 'a' to make b and c integers
+    # Scale 'a' to make b and c integers when possible
     lcm_denom = np.lcm(sum_frac.denominator, prod_frac.denominator)
-    a *= lcm_denom
+    a_scaled = a * lcm_denom
     
-    b = -a * sum_roots
-    c = a * product_roots
+    b = -a_scaled * sum_roots
+    c = a_scaled * product_roots
     
-    # Ensure coefficients are in range by scaling if necessary
-    max_coeff = max(abs(a), abs(b), abs(c))
-    max_allowed = max(abs(coefficient_range['min']), abs(coefficient_range['max']))
-    
-    if max_coeff > max_allowed:
-        scale_factor = max_allowed / max_coeff
-        a *= scale_factor
+    # Check if scaled coefficients fit in range
+    max_scaled_coeff = max(abs(a_scaled), abs(b), abs(c))
+    if max_scaled_coeff > max(abs(max_coeff), abs(min_coeff)):
+        # Scale down proportionally instead of hitting boundaries
+        scale_factor = max(abs(max_coeff), abs(min_coeff)) * 0.8 / max_scaled_coeff  # 0.8 for safety margin
+        a_scaled *= scale_factor
         b *= scale_factor
         c *= scale_factor
     
     # Round to remove floating point errors
-    a = round(a)
-    b = round(b)
-    c = round(c)
+    a_final = round(a_scaled)
+    b_final = round(b)
+    c_final = round(c)
     
     # Ensure 'a' is not zero
-    if a == 0:
-        a = 1
+    if a_final == 0:
+        a_final = 1 if a > 0 else -1
     
-    # Recalculate roots with final coefficients to ensure accuracy
-    discriminant = b**2 - 4*a*c
+    # Final boundary check - regenerate if still at boundaries
+    if (abs(a_final) >= abs(max_coeff) or abs(b_final) >= abs(max_coeff) or 
+        abs(c_final) >= abs(max_coeff)):
+        return generate_school_grade_equation(coefficient_range, root_type)
+    
+    # Recalculate roots with final coefficients
+    discriminant = b_final**2 - 4*a_final*c_final
     if discriminant >= 0:
         sqrt_disc = np.sqrt(discriminant)
-        x1_calc = (-b + sqrt_disc) / (2*a)
-        x2_calc = (-b - sqrt_disc) / (2*a)
+        x1_calc = (-b_final + sqrt_disc) / (2*a_final)
+        x2_calc = (-b_final - sqrt_disc) / (2*a_final)
     else:
-        # Fallback to complex roots (shouldn't happen with our method)
-        sqrt_disc = np.sqrt(-discriminant)
-        x1_calc = (-b + 1j*sqrt_disc) / (2*a)
-        x2_calc = (-b - 1j*sqrt_disc) / (2*a)
-        x1_calc = x1_calc.real  # Take real part for dataset
-        x2_calc = x2_calc.real
+        # Fallback for edge cases
+        x1_calc = x1
+        x2_calc = x2
     
-    return [float(a), float(b), float(c), float(x1_calc), float(x2_calc)]
+    return [float(a_final), float(b_final), float(c_final), float(x1_calc), float(x2_calc)]
 
 def generate_random_equation(coefficient_range, allow_complex):
     """Generate random quadratic equations"""

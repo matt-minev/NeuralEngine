@@ -52,7 +52,7 @@ const DatasetGenerator = {
 
     // Advanced options toggle
     document.querySelector(".toggle-advanced").addEventListener("click", () => {
-      this.toggleAdvancedOptions();
+      DatasetGenerator.toggleAdvancedOptions();
     });
 
     // Generate button
@@ -70,6 +70,20 @@ const DatasetGenerator = {
       .getElementById("load-dataset-btn")
       .addEventListener("click", () => {
         this.loadDatasetIntoApp();
+      });
+
+    // Infinite mode checkbox
+    document
+      .getElementById("infinite-mode")
+      ?.addEventListener("change", (e) => {
+        this.toggleInfiniteMode(e.target.checked);
+      });
+
+    // Stop generation button
+    document
+      .getElementById("stop-generation")
+      ?.addEventListener("click", () => {
+        this.stopInfiniteGeneration();
       });
   },
 
@@ -118,7 +132,101 @@ const DatasetGenerator = {
     }
   },
 
+  infiniteMode: {
+    active: false,
+    intervalId: null,
+    generatedCount: 0,
+    currentRange: { min: -2, max: 2 },
+  },
+
+  toggleInfiniteMode(enabled) {
+    const numEquationsGroup = document
+      .getElementById("num-equations")
+      ?.closest(".parameter-group");
+    const infiniteStats = document.getElementById("infinite-stats");
+
+    if (numEquationsGroup) {
+      numEquationsGroup.style.display = enabled ? "none" : "block";
+    }
+
+    if (infiniteStats) {
+      infiniteStats.style.display = enabled ? "block" : "none";
+    }
+  },
+
   async generateDataset() {
+    const isInfiniteMode = document.getElementById("infinite-mode")?.checked;
+
+    if (isInfiniteMode) {
+      await this.startInfiniteGeneration();
+    } else {
+      await this.generateFiniteDataset();
+    }
+  },
+
+  async startInfiniteGeneration() {
+    try {
+      // Start infinite generation
+      const response = await fetch("/api/generate-dataset-infinite/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          equation_type: this.currentConfig.equation_type,
+          root_type: this.currentConfig.root_type,
+          allow_complex: this.currentConfig.allow_complex,
+        }),
+      });
+
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      // Update UI with proper button replacement
+      this.infiniteMode.active = true;
+      this.infiniteMode.generatedCount = 0;
+
+      const generateBtn = document.getElementById("generate-btn");
+      const stopBtn = document.getElementById("stop-generation");
+
+      // Smooth transition out for generate button
+      generateBtn.style.transition = "all 0.2s ease-out";
+      generateBtn.style.opacity = "0";
+      generateBtn.style.transform = "translateY(-10px)";
+
+      // After transition, hide generate and show stop button
+      setTimeout(() => {
+        generateBtn.style.display = "none";
+
+        // Show and animate in the stop button
+        stopBtn.style.display = "flex";
+        stopBtn.style.opacity = "0";
+        stopBtn.style.transform = "translateY(10px)";
+        stopBtn.style.transition = "all 0.2s ease-out";
+
+        // Trigger animation
+        setTimeout(() => {
+          stopBtn.style.opacity = "1";
+          stopBtn.style.transform = "translateY(0)";
+        }, 10);
+      }, 200);
+
+      // Show infinite stats
+      document.getElementById("infinite-stats").style.display = "flex";
+
+      // Start batch generation loop
+      this.infiniteGenerationLoop();
+
+      this.showNotification("Infinite generation started! 🚀", "success");
+    } catch (error) {
+      this.showNotification(
+        `Failed to start infinite generation: ${error.message}`,
+        "error"
+      );
+    }
+  },
+
+  async generateFiniteDataset() {
     try {
       // Show progress
       this.showProgress();
@@ -138,7 +246,7 @@ const DatasetGenerator = {
         throw new Error("Minimum coefficient must be less than maximum");
       }
 
-      // Generate dataset
+      // Generate dataset using the original API endpoint
       const response = await fetch("/api/generate-dataset", {
         method: "POST",
         headers: {
@@ -158,7 +266,6 @@ const DatasetGenerator = {
       // Hide progress and show results
       this.hideProgress();
       this.showResults(result);
-
       this.showNotification("Dataset generated successfully! 🎉", "success");
     } catch (error) {
       this.hideProgress();
@@ -166,6 +273,128 @@ const DatasetGenerator = {
     }
   },
 
+  async infiniteGenerationLoop() {
+    if (!this.infiniteMode.active) return;
+
+    try {
+      const response = await fetch("/api/generate-dataset-infinite/batch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        // Update display
+        this.infiniteMode.generatedCount = result.generated_count;
+        this.infiniteMode.currentRange = result.current_range;
+
+        document.getElementById("equations-generated").textContent =
+          result.generated_count.toLocaleString();
+
+        // Update range display if it exists
+        const rangeDisplay = document.getElementById("infinite-range-display");
+        if (rangeDisplay) {
+          rangeDisplay.textContent = `${result.current_range.min} to ${result.current_range.max}`;
+        }
+
+        // Update preview table - FIX: Proper data format handling
+        if (result.preview && result.preview.length > 0) {
+          // Convert backend data format to frontend expected format
+          const formattedPreview = result.preview.map((equation) => {
+            // Backend returns: [a, b, c, x1, x2]
+            // Frontend expects: {equation, a, b, c, x1, x2}
+            const [a, b, c, x1, x2] = equation;
+            return {
+              equation: this.formatEquation(a, b, c),
+              a: a,
+              b: b,
+              c: c,
+              x1: x1,
+              x2: x2,
+            };
+          });
+
+          this.populatePreviewTable(formattedPreview);
+        }
+      }
+    } catch (error) {
+      console.error("Batch generation error:", error);
+    }
+
+    // Schedule next batch
+    if (this.infiniteMode.active) {
+      this.infiniteMode.intervalId = setTimeout(() => {
+        this.infiniteGenerationLoop();
+      }, 200); // 200ms between batches
+    }
+  },
+
+  async stopInfiniteGeneration() {
+    try {
+      this.infiniteMode.active = false;
+
+      if (this.infiniteMode.intervalId) {
+        clearTimeout(this.infiniteMode.intervalId);
+      }
+
+      const response = await fetch("/api/generate-dataset-infinite/stop", {
+        method: "POST",
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        // Restore UI with smooth button transition
+        const generateBtn = document.getElementById("generate-btn");
+        const stopBtn = document.getElementById("stop-generation");
+
+        // Smooth transition out for stop button
+        stopBtn.style.transition = "all 0.2s ease-out";
+        stopBtn.style.opacity = "0";
+        stopBtn.style.transform = "translateY(-10px)";
+
+        // After transition, hide stop and show generate button
+        setTimeout(() => {
+          stopBtn.style.display = "none";
+
+          // Show and animate in the generate button
+          generateBtn.style.display = "flex";
+          generateBtn.style.opacity = "0";
+          generateBtn.style.transform = "translateY(10px)";
+          generateBtn.style.transition = "all 0.2s ease-out";
+
+          // Trigger animation
+          setTimeout(() => {
+            generateBtn.style.opacity = "1";
+            generateBtn.style.transform = "translateY(0)";
+          }, 10);
+        }, 200);
+
+        this.showNotification(
+          `Generation stopped! Final count: ${result.final_count.toLocaleString()} equations.`,
+          "success"
+        );
+
+        // Show download if dataset was saved
+        if (result.filename) {
+          this.downloadFilename = result.filename;
+          document.getElementById("generation-results").style.display = "block";
+          this.populateStatistics(result.stats);
+
+          // Scroll to results after a brief delay
+          setTimeout(() => {
+            document.getElementById("generation-results").scrollIntoView({
+              behavior: "smooth",
+            });
+          }, 300);
+        }
+      }
+    } catch (error) {
+      this.showNotification(
+        `Failed to stop generation: ${error.message}`,
+        "error"
+      );
+    }
+  },
   showProgress() {
     document.getElementById("generation-results").style.display = "none";
     document.getElementById("generation-progress").style.display = "block";
