@@ -798,6 +798,8 @@ const ModelSection = {
     const deleteBtn = document.getElementById("deleteModelBtn");
     const refreshBtn = document.getElementById("refreshModelsBtn");
     const modelsSelect = document.getElementById("savedModelsSelect");
+    const selectAllBtn = document.getElementById("selectAllModelsBtn");
+    const deselectAllBtn = document.getElementById("deselectAllModelsBtn");
 
     if (saveBtn) saveBtn.addEventListener("click", this.saveModel.bind(this));
     if (loadBtn) loadBtn.addEventListener("click", this.loadModel.bind(this));
@@ -807,6 +809,29 @@ const ModelSection = {
       refreshBtn.addEventListener("click", this.loadSavedModelsList.bind(this));
     if (modelsSelect)
       modelsSelect.addEventListener("change", this.onModelSelect.bind(this));
+    if (selectAllBtn) {
+      selectAllBtn.addEventListener("click", () => {
+        document
+          .querySelectorAll("#modelsGrid input[type='checkbox']")
+          .forEach((cb) => {
+            cb.checked = true;
+            cb.closest(".model-checkbox-card").classList.add("selected");
+          });
+        this.updateSelectionStatus();
+      });
+    }
+
+    if (deselectAllBtn) {
+      deselectAllBtn.addEventListener("click", () => {
+        document
+          .querySelectorAll("#modelsGrid input[type='checkbox']")
+          .forEach((cb) => {
+            cb.checked = false;
+            cb.closest(".model-checkbox-card").classList.remove("selected");
+          });
+        this.updateSelectionStatus();
+      });
+    }
   },
 
   async loadSavedModelsList() {
@@ -816,10 +841,13 @@ const ModelSection = {
 
       if (data.success) {
         AppState.savedModels = data.models;
-        this.updateModelsDropdown();
+        // **KEY FIX: Call the new grid update method**
+        this.updateModelsGrid();
+        console.log(`✅ Loaded ${data.models.length} saved models`);
       }
     } catch (error) {
       console.error("Failed to load saved models:", error);
+      Utils.showNotification("Failed to load saved models", "error");
     }
   },
 
@@ -844,6 +872,7 @@ const ModelSection = {
   updateSaveSection() {
     const section = document.getElementById("modelSaveSection");
     const select = document.getElementById("scenarioSelect");
+    const checkbox = document.getElementById("saveAllModelsCheckbox");
 
     if (!section || !select) return;
 
@@ -864,6 +893,19 @@ const ModelSection = {
           select.appendChild(option);
         }
       });
+
+      // Setup checkbox event listener
+      if (checkbox && !checkbox.hasEventListener) {
+        checkbox.addEventListener("change", this.onSaveAllToggle.bind(this));
+        checkbox.hasEventListener = true;
+      }
+
+      // Show save all option only if multiple models are trained
+      const saveAllContainer = checkbox?.closest(".save-mode-selection");
+      if (saveAllContainer) {
+        saveAllContainer.style.display =
+          trainedScenarios.length > 1 ? "block" : "none";
+      }
     } else {
       section.style.display = "none";
     }
@@ -871,86 +913,302 @@ const ModelSection = {
 
   async saveModel() {
     const modelName = document.getElementById("modelNameInput").value.trim();
-    const scenarioKey = document.getElementById("scenarioSelect").value;
+    const isBoxChecked = document.getElementById(
+      "saveAllModelsCheckbox"
+    ).checked;
 
     if (!modelName) {
-      Utils.showNotification("Please enter a model name", "error");
-      return;
-    }
-
-    if (!scenarioKey) {
-      Utils.showNotification("Please select a scenario", "error");
+      const label = isBoxChecked ? "model prefix" : "model name";
+      Utils.showNotification(`Please enter a ${label}`, "error");
       return;
     }
 
     try {
-      const response = await fetch(API.modelsSave, {
+      let response;
+
+      if (isBoxChecked) {
+        // **BATCH SAVE MODE**
+        Utils.showNotification("🚀 Saving all trained models...", "info");
+
+        response = await fetch(API.modelsSave + "-batch", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model_prefix: modelName,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          const successMsg = `✅ ${data.message}${
+            data.warning ? ` (${data.warning})` : ""
+          }`;
+          Utils.showNotification(successMsg, "success");
+
+          // Clear input and reset to single mode
+          document.getElementById("modelNameInput").value = "";
+          document.getElementById("saveAllModelsCheckbox").checked = false;
+          this.onSaveAllToggle(); // Reset UI to single mode
+        } else {
+          Utils.showNotification(data.error, "error");
+        }
+      } else {
+        // **SINGLE MODEL SAVE MODE (Legacy)**
+        const scenarioKey = document.getElementById("scenarioSelect").value;
+
+        if (!scenarioKey) {
+          Utils.showNotification("Please select a scenario", "error");
+          return;
+        }
+
+        Utils.showNotification("💾 Saving model...", "info");
+
+        response = await fetch(API.modelsSave, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model_name: modelName,
+            scenario_key: scenarioKey,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          Utils.showNotification(data.message, "success");
+          document.getElementById("modelNameInput").value = "";
+          document.getElementById("scenarioSelect").value = "";
+        } else {
+          Utils.showNotification(data.error, "error");
+        }
+      }
+
+      // **CRITICAL FIX: Refresh load section after any save**
+      await this.loadSavedModelsList();
+    } catch (error) {
+      Utils.showNotification("Failed to save model(s)", "error");
+      console.error("Save model error:", error);
+    }
+  },
+
+  updateModelsGrid() {
+    const modelsGrid = document.getElementById("modelsGrid");
+    const batchControls = document.getElementById("batchSelectionControls");
+    const modelsCountBadge = document.getElementById("modelsCountBadge");
+
+    if (!modelsGrid) return;
+
+    const models = AppState.savedModels || [];
+
+    if (models.length === 0) {
+      modelsGrid.innerHTML = `
+      <div class="no-models-message">
+        <i class="fas fa-folder-open"></i>
+        <p>No saved models available</p>
+      </div>
+    `;
+      batchControls.style.display = "none";
+      modelsCountBadge.style.display = "none";
+      return;
+    }
+
+    // Show batch controls and count
+    batchControls.style.display = "flex";
+    modelsCountBadge.style.display = "inline-flex";
+    modelsCountBadge.textContent = models.length;
+
+    // Generate model cards
+    modelsGrid.innerHTML = "";
+
+    models.forEach((model) => {
+      const modelCard = document.createElement("div");
+      modelCard.className = "model-checkbox-card";
+
+      const createdDate = new Date(model.created_date).toLocaleDateString();
+      const displayName = model.display_name || model.model_name;
+      const isBatchModel = model.is_batch_model || false;
+
+      modelCard.innerHTML = `
+      <input type="checkbox" id="model-${model.model_id}" value="${
+        model.model_id
+      }">
+      <div class="model-checkbox-checkmark"></div>
+      <div class="model-checkbox-content">
+        <div class="model-checkbox-title">${displayName}</div>
+        <div class="model-checkbox-meta">
+          <div class="model-checkbox-scenario">
+            <span>${model.scenario_name}</span>
+            ${
+              isBatchModel
+                ? '<div class="model-checkbox-badge">BATCH</div>'
+                : ""
+            }
+          </div>
+          <div class="model-checkbox-date">${createdDate}</div>
+        </div>
+        ${
+          model.performance_metrics
+            ? `
+        <div class="model-checkbox-stats">
+          <div class="model-stat">
+            <div class="model-stat-label">R²</div>
+            <div class="model-stat-value">${(
+              model.performance_metrics.r2 * 100
+            ).toFixed(1)}%</div>
+          </div>
+          <div class="model-stat">
+            <div class="model-stat-label">ACC</div>
+            <div class="model-stat-value">${
+              model.performance_metrics.accuracy_10pct?.toFixed(1) || 0
+            }%</div>
+          </div>
+        </div>
+        `
+            : ""
+        }
+      </div>
+    `;
+
+      // Add click handler for entire card
+      modelCard.addEventListener("click", (e) => {
+        if (e.target.type !== "checkbox") {
+          const checkbox = modelCard.querySelector("input[type='checkbox']");
+          checkbox.checked = !checkbox.checked;
+          checkbox.dispatchEvent(new Event("change"));
+        }
+      });
+
+      // Add change handler for checkbox
+      const checkbox = modelCard.querySelector("input[type='checkbox']");
+      checkbox.addEventListener("change", () => {
+        modelCard.classList.toggle("selected", checkbox.checked);
+        this.updateSelectionStatus();
+      });
+
+      modelsGrid.appendChild(modelCard);
+    });
+  },
+
+  updateSelectionStatus() {
+    const checkboxes = document.querySelectorAll(
+      "#modelsGrid input[type='checkbox']"
+    );
+    const selected = document.querySelectorAll(
+      "#modelsGrid input[type='checkbox']:checked"
+    );
+    const statusElement = document.getElementById("selectionStatus");
+    const loadButton = document.getElementById("loadModelBtn");
+    const loadButtonText = document.getElementById("loadButtonText");
+
+    const selectedCount = selected.length;
+    const totalCount = checkboxes.length;
+
+    if (statusElement) {
+      if (selectedCount === 0) {
+        statusElement.textContent = "No models selected";
+      } else if (selectedCount === 1) {
+        statusElement.textContent = "1 model selected";
+      } else {
+        statusElement.textContent = `${selectedCount} models selected`;
+      }
+    }
+
+    if (loadButton && loadButtonText) {
+      loadButton.disabled = selectedCount === 0;
+      if (selectedCount === 0) {
+        loadButtonText.textContent = "Load Models";
+      } else if (selectedCount === 1) {
+        loadButtonText.textContent = "Load Model";
+      } else {
+        loadButtonText.textContent = `Load ${selectedCount} Models`;
+      }
+    }
+  },
+
+  async loadModel() {
+    // Get selected model IDs from checkboxes (NEW APPROACH)
+    const selectedCheckboxes = document.querySelectorAll(
+      "#modelsGrid input[type='checkbox']:checked"
+    );
+    const modelIds = Array.from(selectedCheckboxes).map((cb) => cb.value);
+
+    if (modelIds.length === 0) {
+      Utils.showNotification(
+        "Please select at least one model to load",
+        "error"
+      );
+      return;
+    }
+
+    try {
+      const loadingMessage =
+        modelIds.length === 1
+          ? "💾 Loading model..."
+          : `💾 Loading ${modelIds.length} models...`;
+
+      Utils.showNotification(loadingMessage, "info");
+
+      const response = await fetch(API.modelsLoad, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model_name: modelName,
-          scenario_key: scenarioKey,
+          model_ids: modelIds, // Send array for batch loading
         }),
       });
 
       const data = await response.json();
 
       if (data.success) {
-        Utils.showNotification(data.message, "success");
-        document.getElementById("modelNameInput").value = "";
-        this.loadSavedModelsList();
+        // Success notification
+        const successMessage =
+          modelIds.length === 1
+            ? `✅ Model "${data.loaded_models[0].model_name}" loaded successfully!`
+            : `✅ ${data.loaded_count}/${data.total_count} models loaded successfully!`;
+
+        Utils.showNotification(successMessage, "success");
+
+        // Show warnings if some models failed
+        if (data.warning) {
+          Utils.showNotification(`⚠️ ${data.warning}`, "warning");
+        }
+
+        // Update frontend state to reflect loaded models
+        await this.updateAppStateAfterLoad(data);
+
+        // Clear selections after successful load
+        this.clearModelSelections();
       } else {
         Utils.showNotification(data.error, "error");
       }
     } catch (error) {
-      Utils.showNotification("Failed to save model", "error");
-      console.error("Save model error:", error);
-    }
-  },
-
-  async loadModel() {
-    const modelId = document.getElementById("savedModelsSelect").value;
-
-    if (!modelId) {
-      Utils.showNotification("Please select a model to load", "error");
-      return;
-    }
-
-    try {
-      const response = await fetch(API.modelsLoad, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model_id: modelId }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        Utils.showNotification(data.message, "success");
-        this.displayModelInfo(data.model_info);
-
-        // Update frontend state to reflect loaded model
-        await this.updateAppStateAfterLoad(data.model_info);
-      } else {
-        Utils.showNotification(data.error, "error");
-      }
-    } catch (error) {
-      Utils.showNotification("Failed to load model", "error");
+      Utils.showNotification("Failed to load model(s)", "error");
       console.error("Load model error:", error);
     }
   },
 
   // Method to update app state after loading a model
-  async updateAppStateAfterLoad(modelInfo) {
+  async updateAppStateAfterLoad(data) {
     try {
-      // 1. Fetch updated results from backend
-      const results = await ApiClient.request(API.results);
-      AppState.results = results;
-      console.log("✅ Results updated after model load:", AppState.results);
+      // 1. Update AppState.results directly from loaded models
+      data.loaded_models.forEach((model) => {
+        // The backend should have already updated the results
+        console.log(
+          `✅ Model loaded: ${model.model_name} (${model.scenario_key})`
+        );
+      });
 
-      // 2. Check and update data loaded state
-      const dataInfo = await ApiClient.request(API.dataInfo);
-      AppState.dataLoaded = dataInfo.loaded;
+      // 2. Fetch updated results from backend to ensure sync
+      try {
+        const results = await ApiClient.request(API.results);
+        AppState.results = results;
+        console.log(
+          "✅ Results updated after model load:",
+          Object.keys(AppState.results)
+        );
+      } catch (error) {
+        console.warn("Could not fetch updated results:", error);
+      }
 
       // 3. Update save section to show newly available trained models
       this.updateSaveSection();
@@ -958,20 +1216,20 @@ const ModelSection = {
       // 4. Refresh all dependent sections
       this.refreshDependentSections();
 
-      // 5. Show enhanced success notification
-      Utils.showNotification(
-        `🚀 Model "${modelInfo.model_name}" loaded! All features now available.`,
-        "success"
-      );
+      // 5. Display loaded model info for single model loads
+      if (data.loaded_count === 1 && data.model_info) {
+        this.displayModelInfo(data.model_info);
+      }
+
+      console.log("✅ App state fully updated after model load");
     } catch (error) {
       console.error("Failed to update app state after model load:", error);
       Utils.showNotification(
-        "Model loaded but some features may not be updated. Please refresh the page.",
+        "Models loaded but some features may not be updated. Please refresh the page.",
         "warning"
       );
     }
   },
-
   // Method to refresh all sections that depend on trained models
   refreshDependentSections() {
     // Refresh prediction section to show random button
@@ -1010,40 +1268,150 @@ const ModelSection = {
     console.log("✅ All dependent sections refreshed");
   },
 
-  async deleteModel() {
-    const modelId = document.getElementById("savedModelsSelect").value;
+  clearModelSelections() {
+    // Clear all checkbox selections
+    document
+      .querySelectorAll("#modelsGrid input[type='checkbox']")
+      .forEach((cb) => {
+        cb.checked = false;
+        cb.closest(".model-checkbox-card").classList.remove("selected");
+      });
+    this.updateSelectionStatus();
+  },
 
-    if (!modelId) {
-      Utils.showNotification("Please select a model to delete", "error");
+  async updateAppStateAfterLoad(data) {
+    try {
+      // 1. Fetch updated results from backend
+      const results = await ApiClient.request(API.results);
+      AppState.results = results;
+      console.log("✅ Results updated after model load:", AppState.results);
+
+      // 2. Check and update data loaded state
+      const dataInfo = await ApiClient.request(API.dataInfo);
+      AppState.dataLoaded = dataInfo.loaded;
+
+      // 3. Update save section to show newly available trained models
+      this.updateSaveSection();
+
+      // 4. Refresh all dependent sections
+      this.refreshDependentSections();
+
+      // 5. Display loaded model info for single model loads
+      if (data.loaded_count === 1 && data.model_info) {
+        this.displayModelInfo(data.model_info);
+      }
+
+      console.log("✅ App state fully updated after model load");
+    } catch (error) {
+      console.error("Failed to update app state after model load:", error);
+      Utils.showNotification(
+        "Models loaded but some features may not be updated. Please refresh the page.",
+        "warning"
+      );
+    }
+  },
+
+  refreshDependentSections() {
+    // Refresh prediction section to show random button
+    if (typeof PredictionSection !== "undefined" && PredictionSection.refresh) {
+      PredictionSection.refresh();
+    }
+
+    // Enable analysis generation
+    const generateAnalysisBtn = document.getElementById(
+      "generate-analysis-btn"
+    );
+    if (generateAnalysisBtn) {
+      generateAnalysisBtn.disabled = false;
+      generateAnalysisBtn.style.opacity = "1";
+    }
+
+    // Enable comparison generation
+    const generateComparisonBtn = document.getElementById(
+      "generate-comparison-btn"
+    );
+    if (generateComparisonBtn) {
+      generateComparisonBtn.disabled = false;
+      generateComparisonBtn.style.opacity = "1";
+    }
+
+    // Update training section if needed
+    if (typeof TrainingSection !== "undefined" && TrainingSection.refresh) {
+      TrainingSection.refresh();
+    }
+
+    console.log("✅ All dependent sections refreshed");
+  },
+
+  async deleteModel() {
+    const selectedCheckboxes = document.querySelectorAll(
+      "#modelsGrid input[type='checkbox']:checked"
+    );
+    const modelIds = Array.from(selectedCheckboxes).map((cb) => cb.value);
+
+    if (modelIds.length === 0) {
+      Utils.showNotification(
+        "Please select at least one model to delete",
+        "error"
+      );
       return;
     }
 
-    if (
-      !confirm(
-        "Are you sure you want to delete this model? This action cannot be undone."
-      )
-    ) {
+    const confirmMessage =
+      modelIds.length === 1
+        ? "Are you sure you want to delete this model? This action cannot be undone."
+        : `Are you sure you want to delete these ${modelIds.length} models? This action cannot be undone.`;
+
+    if (!confirm(confirmMessage)) {
       return;
     }
 
     try {
-      const response = await fetch(API.modelsDelete, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model_id: modelId }),
-      });
+      let deletedCount = 0;
+      let failedCount = 0;
 
-      const data = await response.json();
+      for (const modelId of modelIds) {
+        try {
+          const response = await fetch(API.modelsDelete, {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ model_id: modelId }),
+          });
 
-      if (data.success) {
-        Utils.showNotification(data.message, "success");
-        this.loadSavedModelsList();
+          const data = await response.json();
+          if (data.success) {
+            deletedCount++;
+          } else {
+            failedCount++;
+          }
+        } catch {
+          failedCount++;
+        }
+      }
+
+      if (deletedCount > 0) {
+        const message =
+          modelIds.length === 1
+            ? "Model deleted successfully"
+            : `${deletedCount}/${modelIds.length} models deleted successfully`;
+
+        Utils.showNotification(message, "success");
+
+        // Refresh the models list
+        await this.loadSavedModelsList();
+
+        // Hide model info display
         document.getElementById("modelInfoDisplay").style.display = "none";
-      } else {
-        Utils.showNotification(data.error, "error");
+      }
+
+      if (failedCount > 0) {
+        Utils.showNotification(
+          `${failedCount} models failed to delete`,
+          "warning"
+        );
       }
     } catch (error) {
-      Utils.showNotification("Failed to delete model", "error");
+      Utils.showNotification("Failed to delete model(s)", "error");
       console.error("Delete model error:", error);
     }
   },
@@ -1095,6 +1463,80 @@ const ModelSection = {
     `;
 
     display.style.display = "block";
+  },
+  onSaveAllToggle() {
+    const checkbox = document.getElementById("saveAllModelsCheckbox");
+    const isChecked = checkbox.checked;
+
+    // Update UI elements
+    const modelNameLabel = document.getElementById("modelNameLabel");
+    const modelNameInput = document.getElementById("modelNameInput");
+    const modelNameHelp = document.getElementById("modelNameHelp");
+    const scenarioGroup = document.getElementById("singleModelScenarioGroup");
+    const batchPreview = document.getElementById("batchSavePreview");
+    const saveButtonText = document.getElementById("saveButtonText");
+
+    if (isChecked) {
+      // Switch to batch mode
+      modelNameLabel.textContent = "Model Prefix";
+      modelNameInput.placeholder =
+        "Enter prefix for all models (e.g., 'experiment1')...";
+      modelNameHelp.style.display = "block";
+      scenarioGroup.style.display = "none";
+      batchPreview.style.display = "block";
+      saveButtonText.textContent = "Save All Models";
+
+      // Update batch preview
+      this.updateBatchPreview();
+    } else {
+      // Switch to single mode
+      modelNameLabel.textContent = "Model Name";
+      modelNameInput.placeholder = "Enter model name...";
+      modelNameHelp.style.display = "none";
+      scenarioGroup.style.display = "block";
+      batchPreview.style.display = "none";
+      saveButtonText.textContent = "Save Model";
+    }
+  },
+  updateBatchPreview() {
+    const previewList = document.getElementById("batchPreviewList");
+    const prefix =
+      document.getElementById("modelNameInput").value.trim() || "model";
+
+    if (!previewList) return;
+
+    previewList.innerHTML = "";
+
+    const trainedScenarios = Object.keys(AppState.results || {});
+    trainedScenarios.forEach((key) => {
+      const scenario = AppState.scenarios[key];
+      if (scenario) {
+        const previewItem = document.createElement("div");
+        previewItem.className = "batch-preview-item";
+        previewItem.innerHTML = `
+        <div class="batch-preview-icon" style="background: ${scenario.color};"></div>
+        <div style="flex: 1;">
+          <div class="batch-preview-name">${prefix}_${key}</div>
+          <div class="batch-preview-scenario">${scenario.name}</div>
+        </div>
+      `;
+        previewList.appendChild(previewItem);
+      }
+    });
+
+    // Update preview on input change
+    const modelNameInput = document.getElementById("modelNameInput");
+    if (modelNameInput && !modelNameInput.hasPreviewListener) {
+      modelNameInput.addEventListener(
+        "input",
+        Utils.debounce(() => {
+          if (document.getElementById("saveAllModelsCheckbox").checked) {
+            this.updateBatchPreview();
+          }
+        }, 300)
+      );
+      modelNameInput.hasPreviewListener = true;
+    }
   },
 };
 

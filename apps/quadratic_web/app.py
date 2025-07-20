@@ -695,53 +695,203 @@ def save_model():
     except Exception as e:
         return jsonify({'error': f'Failed to save model: {str(e)}'}), 500
 
-@app.route('/api/models/load', methods=['POST'])
-def load_model():
-    """Load a saved model"""
+@app.route('/api/models/save-batch', methods=['POST'])
+def save_models_batch():
+    """Save all trained models with a common prefix"""
     try:
         data = request.get_json()
-        model_id = data.get('model_id')
+        model_prefix = data.get('model_prefix', '').strip()
         
-        if not model_id:
-            return jsonify({'error': 'Model ID is required'}), 400
-        
-        # Load the model
-        predictor = model_manager.load_model(
-            model_id, app_state['data_processor'], app_state['scenarios']
-        )
-        
-        if predictor is None:
-            return jsonify({'error': 'Model not found'}), 404
-        
-        # Get model info
-        model_info = model_manager.get_model_info(model_id)
-        
-        if model_info:
-            scenario_key = model_info['scenario_key']
+        if not model_prefix:
+            return jsonify({'error': 'Model prefix is required'}), 400
             
-           # Store in application state
-            app_state['predictors'][scenario_key] = predictor
-
-            # Normalize performance stats to match fresh training structure
-            performance = predictor.performance_stats
-            app_state['results'][scenario_key] = {
-                'r2': performance.get('r2', 0),
-                'mse': performance.get('mse', 0),
-                'mae': performance.get('mae', 0),
-                'accuracy_10pct': performance.get('accuracy_10pct', 0)
-            }
+        if len(model_prefix) > 30:
+            return jsonify({'error': 'Model prefix too long (max 30 characters)'}), 400
             
+        # Validate prefix (no special characters that could cause file system issues)
+        import re
+        if not re.match(r'^[a-zA-Z0-9_-]+$', model_prefix):
+            return jsonify({'error': 'Model prefix can only contain letters, numbers, underscores, and hyphens'}), 400
+        
+        # Get all trained scenarios
+        trained_scenarios = list(app_state['results'].keys())
+        
+        if not trained_scenarios:
+            return jsonify({'error': 'No trained models available to save'}), 400
+            
+        # Check if we have predictors for all trained scenarios
+        missing_predictors = [key for key in trained_scenarios if key not in app_state['predictors']]
+        if missing_predictors:
+            return jsonify({'error': f'Missing predictors for scenarios: {", ".join(missing_predictors)}'}), 400
+            
+        # Get dataset info
+        dataset_info = {
+            'total_equations': len(app_state['data_processor'].data) if app_state['data_processor'].data is not None else 0,
+            'stats': app_state['data_processor'].get_stats()
+        }
+        
+        # Save all models in batch
+        saved_models = []
+        failed_models = []
+        
+        for scenario_key in trained_scenarios:
+            try:
+                # Create model name with prefix
+                model_name = f"{model_prefix}_{scenario_key}"
+                
+                # Get performance metrics
+                performance_metrics = app_state['results'][scenario_key]
+                predictor = app_state['predictors'][scenario_key]
+                
+                # Save individual model
+                model_id = model_manager.save_models_batch(
+                    predictor, 
+                    scenario_key, 
+                    model_name, 
+                    dataset_info, 
+                    performance_metrics,
+                    model_prefix  # Pass prefix for folder organization
+                )
+                
+                saved_models.append({
+                    'scenario_key': scenario_key,
+                    'model_name': model_name,
+                    'model_id': model_id,
+                    'scenario_name': app_state['scenarios'][scenario_key].name
+                })
+                
+            except Exception as model_error:
+                failed_models.append({
+                    'scenario_key': scenario_key,
+                    'error': str(model_error)
+                })
+                continue
+        
+        if not saved_models:
             return jsonify({
-                'success': True,
-                'message': f'Model "{model_info["model_name"]}" loaded successfully',
-                'model_info': model_info,
-                'scenario_key': scenario_key
-            })
-        else:
-            return jsonify({'error': 'Model metadata not found'}), 404
+                'error': 'Failed to save any models',
+                'failed_models': failed_models
+            }), 500
             
+        # Prepare response
+        response_data = {
+            'success': True,
+            'message': f'Batch save completed: {len(saved_models)}/{len(trained_scenarios)} models saved',
+            'prefix': model_prefix,
+            'saved_models': saved_models,
+            'saved_count': len(saved_models),
+            'total_count': len(trained_scenarios)
+        }
+        
+        if failed_models:
+            response_data['warning'] = f'{len(failed_models)} models failed to save'
+            response_data['failed_models'] = failed_models
+            
+        return jsonify(response_data)
+        
     except Exception as e:
-        return jsonify({'error': f'Failed to load model: {str(e)}'}), 500
+        return jsonify({'error': f'Batch save failed: {str(e)}'}), 500
+
+@app.route('/api/models/load', methods=['POST'])
+def load_models():
+    """Load one or multiple saved models"""
+    try:
+        data = request.get_json()
+        model_ids = data.get('model_ids', [])
+        
+        # Support both single model (backward compatibility) and multiple models
+        single_model_id = data.get('model_id')
+        if single_model_id and not model_ids:
+            model_ids = [single_model_id]
+        
+        if not model_ids:
+            return jsonify({'error': 'Model ID(s) required'}), 400
+            
+        loaded_models = []
+        failed_models = []
+        
+        for model_id in model_ids:
+            try:
+                # Load the model
+                predictor = model_manager.load_model(
+                    model_id, app_state['data_processor'], app_state['scenarios']
+                )
+
+                if predictor is None:
+                    failed_models.append({
+                        'model_id': model_id,
+                        'error': 'Model not found or corrupted'
+                    })
+                    continue
+                
+                # Get model info
+                model_info = model_manager.get_model_info(model_id)
+                
+                if model_info:
+                    scenario_key = model_info['scenario_key']
+                    
+                    # Store in application state
+                    app_state['predictors'][scenario_key] = predictor
+                    
+                    # Normalize performance stats to match fresh training structure
+                    performance = predictor.performance_stats
+                    app_state['results'][scenario_key] = {
+                        'r2': performance.get('r2', 0),
+                        'mse': performance.get('mse', 0),
+                        'mae': performance.get('mae', 0),
+                        'accuracy_10pct': performance.get('accuracy_10pct', 0)
+                    }
+                    
+                    loaded_models.append({
+                        'model_id': model_id,
+                        'model_name': model_info['model_name'],
+                        'scenario_key': scenario_key,
+                        'scenario_name': model_info['scenario_name']
+                    })
+                else:
+                    failed_models.append({
+                        'model_id': model_id,
+                        'error': 'Model metadata not found'
+                    })
+                    
+            except Exception as model_error:
+                failed_models.append({
+                    'model_id': model_id,
+                    'error': str(model_error)
+                })
+                continue
+        
+        if not loaded_models:
+            return jsonify({
+                'error': 'Failed to load any models',
+                'failed_models': failed_models
+            }), 500
+            
+        # Prepare response
+        response_data = {
+            'success': True,
+            'loaded_models': loaded_models,
+            'loaded_count': len(loaded_models),
+            'total_count': len(model_ids)
+        }
+        
+        if len(loaded_models) == 1:
+            # Single model response (backward compatibility)
+            response_data['message'] = f'Model "{loaded_models[0]["model_name"]}" loaded successfully'
+            response_data['model_info'] = model_manager.get_model_info(loaded_models[0]['model_id'])
+            response_data['scenario_key'] = loaded_models[0]['scenario_key']
+        else:
+            # Multiple models response
+            response_data['message'] = f'Batch load completed: {len(loaded_models)}/{len(model_ids)} models loaded'
+            
+        if failed_models:
+            response_data['warning'] = f'{len(failed_models)} models failed to load'
+            response_data['failed_models'] = failed_models
+            
+        return jsonify(response_data)
+        
+    except Exception as e:
+        return jsonify({'error': f'Failed to load models: {str(e)}'}), 500
 
 @app.route('/api/models/list')
 def list_saved_models():

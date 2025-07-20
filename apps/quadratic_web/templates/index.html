@@ -508,93 +508,154 @@
               </div>
 
               <!-- Save Model Section -->
-              <div class="card" id="modelSaveSection" style="display: none">
-                <div class="card-header">
-                  <h3 class="card-title">
-                    <i class="fas fa-save"></i>
-                    Save Trained Model
-                  </h3>
-                </div>
-                <div class="card-content">
-                  <div class="model-save-form">
-                    <div class="form-group">
-                      <label class="form-label" for="modelNameInput"
-                        >Model Name:</label
-                      >
-                      <input
-                        type="text"
-                        id="modelNameInput"
-                        placeholder="Enter a descriptive name..."
-                        maxlength="50"
-                        class="form-input"
-                      />
-                      <small class="form-help"
-                        >Choose a memorable name for your trained model</small
-                      >
-                    </div>
+              <div id="modelSaveSection" style="display: none">
+                <h4>💾 Save Trained Model</h4>
 
-                    <div class="form-group">
-                      <label class="form-label" for="scenarioSelect"
-                        >Select Scenario:</label
+                <!-- Save All Checkbox -->
+                <div class="save-mode-selection" style="margin-bottom: 20px">
+                  <label class="checkbox-container modern-checkbox">
+                    <input type="checkbox" id="saveAllModelsCheckbox" />
+                    <span class="checkmark"></span>
+                    <span class="checkbox-label">
+                      <strong>Save All Trained Models</strong>
+                      <span class="checkbox-description"
+                        >Save all currently trained models with a common
+                        prefix</span
                       >
-                      <select id="scenarioSelect" class="form-select">
-                        <option value="">Choose scenario to save...</option>
-                      </select>
-                      <small class="form-help"
-                        >Only trained scenarios are available</small
-                      >
-                    </div>
-
-                    <div class="model-actions-grid">
-                      <button
-                        id="saveModelBtn"
-                        class="btn btn-primary btn-large"
-                      >
-                        <i class="fas fa-save"></i>
-                        Save Model
-                      </button>
-                    </div>
-                  </div>
+                    </span>
+                  </label>
                 </div>
+
+                <!-- Model Name/Prefix Input -->
+                <div class="form-group">
+                  <label class="form-label" id="modelNameLabel"
+                    >Model Name</label
+                  >
+                  <input
+                    type="text"
+                    id="modelNameInput"
+                    class="form-input"
+                    placeholder="Enter model name..."
+                  />
+                  <small
+                    class="form-help"
+                    id="modelNameHelp"
+                    style="display: none"
+                  >
+                    This will be used as a prefix for all trained models (e.g.,
+                    "experiment1_coeff_to_roots")
+                  </small>
+                </div>
+
+                <!-- Single Model Scenario Selection -->
+                <div class="form-group" id="singleModelScenarioGroup">
+                  <label class="form-label">Select Scenario</label>
+                  <select id="scenarioSelect" class="form-input">
+                    <option value="">Choose scenario to save...</option>
+                  </select>
+                </div>
+
+                <!-- Batch Save Preview -->
+                <div
+                  id="batchSavePreview"
+                  style="
+                    display: none;
+                    margin-bottom: 16px;
+                    padding: 16px;
+                    background: var(--surface-color);
+                    border-radius: var(--radius-medium);
+                    border: 1px solid var(--border-color);
+                  "
+                >
+                  <h5
+                    style="
+                      margin: 0 0 12px 0;
+                      color: var(--primary-color);
+                      display: flex;
+                      align-items: center;
+                      gap: 8px;
+                    "
+                  >
+                    <i class="fas fa-layer-group"></i>
+                    Models to be saved:
+                  </h5>
+                  <div id="batchPreviewList" class="batch-preview-list"></div>
+                </div>
+
+                <button id="saveModelBtn" class="btn btn-primary">
+                  <i class="fas fa-save"></i>
+                  <span id="saveButtonText">Save Model</span>
+                </button>
               </div>
 
-              <!-- Load Model Section -->
+              <!-- Enhanced Load Model Section with Multiple Selection -->
               <div class="card">
                 <div class="card-header">
                   <h3 class="card-title">
                     <i class="fas fa-folder-open"></i>
-                    Load Saved Model
+                    Load Saved Models
                   </h3>
                 </div>
                 <div class="card-content">
-                  <div class="model-load-form">
-                    <div class="form-group">
-                      <label class="form-label" for="savedModelsSelect"
-                        >Saved Models:</label
+                  <div class="form-group">
+                    <label class="form-label">
+                      Select Models
+                      <span
+                        class="models-count-badge"
+                        id="modelsCountBadge"
+                        style="display: none"
+                      ></span>
+                    </label>
+
+                    <!-- Batch Selection Controls -->
+                    <div
+                      class="batch-selection-controls"
+                      id="batchSelectionControls"
+                      style="display: none; margin-bottom: 16px"
+                    >
+                      <button
+                        type="button"
+                        id="selectAllModelsBtn"
+                        class="btn btn-secondary btn-small"
                       >
-                      <select id="savedModelsSelect" class="form-select">
-                        <option value="">Select a saved model...</option>
-                      </select>
-                      <small class="form-help"
-                        >Models are sorted by creation date (newest
-                        first)</small
+                        <i class="fas fa-check-double"></i>
+                        Select All
+                      </button>
+                      <button
+                        type="button"
+                        id="deselectAllModelsBtn"
+                        class="btn btn-secondary btn-small"
+                      >
+                        <i class="fas fa-times"></i>
+                        Deselect All
+                      </button>
+                      <span class="selection-status" id="selectionStatus"
+                        >No models selected</span
                       >
                     </div>
 
-                    <div class="model-actions-grid">
-                      <button id="loadModelBtn" class="btn btn-secondary">
-                        <i class="fas fa-upload"></i>
-                        Load Model
-                      </button>
-                      <button id="deleteModelBtn" class="btn btn-danger">
-                        <i class="fas fa-trash-alt"></i>
-                        Delete Model
-                      </button>
-                      <button id="refreshModelsBtn" class="btn btn-outline">
-                        <i class="fas fa-sync-alt"></i>
-                        Refresh List
-                      </button>
+                    <!-- Models Grid -->
+                    <div class="models-grid" id="modelsGrid">
+                      <div class="no-models-message">
+                        <i class="fas fa-folder-open"></i>
+                        <p>No saved models available</p>
+                      </div>
                     </div>
+                  </div>
+
+                  <div class="model-actions-grid">
+                    <button id="loadModelBtn" class="btn btn-secondary">
+                      <i class="fas fa-upload"></i>
+                      <span id="loadButtonText">Load Models</span>
+                    </button>
+                    <button id="deleteModelBtn" class="btn btn-danger">
+                      <i class="fas fa-trash-alt"></i>
+                      Delete Selected
+                    </button>
+                    <button id="refreshModelsBtn" class="btn btn-outline">
+                      <i class="fas fa-sync-alt"></i>
+                      Refresh List
+                    </button>
                   </div>
                 </div>
               </div>
