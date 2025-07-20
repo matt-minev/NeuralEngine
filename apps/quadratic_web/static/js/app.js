@@ -1057,21 +1057,32 @@ const ModelSection = {
             ? `
         <div class="model-checkbox-stats">
           <div class="model-stat">
-            <div class="model-stat-label">R²</div>
+            <div class="model-stat-label">R² Score</div>
             <div class="model-stat-value">${(
               model.performance_metrics.r2 * 100
             ).toFixed(1)}%</div>
+            <div class="model-stat-progress">
+              <div class="model-stat-progress-fill" style="width: ${(
+                model.performance_metrics.r2 * 100
+              ).toFixed(1)}%"></div>
+            </div>
           </div>
           <div class="model-stat">
-            <div class="model-stat-label">ACC</div>
+            <div class="model-stat-label">Accuracy</div>
             <div class="model-stat-value">${
               model.performance_metrics.accuracy_10pct?.toFixed(1) || 0
             }%</div>
+            <div class="model-stat-progress">
+              <div class="model-stat-progress-fill" style="width: ${
+                model.performance_metrics.accuracy_10pct?.toFixed(1) || 0
+              }%"></div>
+            </div>
           </div>
         </div>
         `
             : ""
         }
+
       </div>
     `;
 
