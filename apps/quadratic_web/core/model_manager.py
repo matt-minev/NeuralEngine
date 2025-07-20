@@ -363,29 +363,57 @@ class ModelManager:
         return models
 
     def delete_model(self, model_id: str) -> bool:
-        """Delete a saved model"""
-        model_dir = self.save_path / model_id
+        """Delete a saved model (supports both single and batch models)"""
+        model_dir = None
+        prefix_folder = None  # Track the prefix folder for cleanup
         
-        if not model_dir.exists():
+        # Check if it's in the root save path (single models)
+        root_model_dir = self.save_path / model_id
+        if root_model_dir.exists():
+            model_dir = root_model_dir
+        else:
+            # Search in prefix folders for batch models
+            for item in self.save_path.iterdir():
+                if item.is_dir() and not item.name.startswith('model_'):
+                    # This might be a prefix folder
+                    potential_model_dir = item / model_id
+                    if potential_model_dir.exists():
+                        model_dir = potential_model_dir
+                        prefix_folder = item  # Remember the prefix folder
+                        break
+        
+        if not model_dir or not model_dir.exists():
             return False
-        
+
         try:
             # Move to backup before deletion
             backup_dir = self.backup_path / f"deleted_{model_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
             shutil.move(str(model_dir), str(backup_dir))
-            
+
             # Remove from metadata
             self.metadata['models'] = [
-                m for m in self.metadata['models'] 
+                m for m in self.metadata['models']
                 if m['model_id'] != model_id
             ]
+
             self._save_metadata()
             
+            # **NEW: Clean up empty prefix folder**
+            if prefix_folder and prefix_folder.exists():
+                try:
+                    # Check if prefix folder is empty
+                    if not any(prefix_folder.iterdir()):
+                        print(f"🗑️ Cleaning up empty prefix folder: {prefix_folder.name}")
+                        prefix_folder.rmdir()  # Remove empty directory
+                except OSError:
+                    # Folder not empty or other issue - ignore
+                    pass
+
             return True
-            
+
         except Exception:
             return False
-    
+
     def get_model_info(self, model_id: str) -> Optional[Dict]:
         """Get detailed information about a specific model"""
         models = [m for m in self.metadata['models'] if m['model_id'] == model_id]
