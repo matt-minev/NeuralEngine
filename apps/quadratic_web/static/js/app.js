@@ -3221,301 +3221,217 @@ async function randomTest() {
   }
 }
 
-// ENHANCED: Display prediction results with new features
+// Display prediction results - router
 function displayPredictionResults(response, inputs) {
   const resultsContainer = document.getElementById("prediction-results");
+  const details = response.details;
 
-  // Calculate actual solutions if this is a coefficient-to-roots prediction
-  const actualSolutions = Utils.calculateActualSolutions(
-    inputs[0],
-    inputs[1],
-    inputs[2]
-  );
-  const solutionError = Utils.calculateSolutionError(
-    response.predictions,
-    actualSolutions
-  );
+  if (!details || details.display_type === "error") {
+    resultsContainer.innerHTML = `
+      <div class="error-analysis-enhanced">
+        <h4><i class="fas fa-exclamation-triangle"></i> Prediction Analysis Failed</h4>
+        <p>Could not generate the detailed prediction analysis.</p>
+        <p><strong>Reason:</strong> ${
+          details.message || "An unknown server error occurred."
+        }</p>
+      </div>`;
+    return;
+  }
 
-  // Calculate quality metrics for color coding
-  const x1Error = solutionError ? Math.abs(solutionError.x1_error) : 0;
-  const x2Error = solutionError ? Math.abs(solutionError.x2_error) : 0;
-  const avgError = solutionError ? solutionError.avg_error : 0;
+  let html = "";
+  switch (details.scenario_key) {
+    case "coeff_to_roots":
+    case "partial_coeff_to_missing": // Formerly 'partial_coeff'
+    case "roots_to_coeff":
+    case "single_missing":
+      html = renderComparisonResults(details, response.confidences);
+      break;
+    case "verify_equation":
+      html = renderVerificationResults(details, response.confidences);
+      break;
+    default:
+      html = `<div class="error-analysis-enhanced"><h4>Unsupported scenario: ${details.scenario_key}</h4></div>`;
+  }
 
-  // Determine quality levels
-  const getQualityLevel = (error) => {
-    if (error < 0.1)
-      return {
-        level: "excellent",
-        color: "var(--success-color)",
-        message: "Excellent prediction! 🎯",
-      };
-    if (error < 0.5)
-      return {
-        level: "good",
-        color: "var(--primary-color)",
-        message: "Good prediction! 👍",
-      };
-    if (error < 1.0)
-      return {
-        level: "fair",
-        color: "var(--warning-color)",
-        message: "Fair prediction 🤔",
-      };
-    return {
-      level: "poor",
-      color: "var(--error-color)",
-      message: "Needs improvement 😅",
-    };
+  resultsContainer.innerHTML = html;
+
+  // Trigger animations
+  setTimeout(() => {
+    resultsContainer
+      .querySelectorAll(".slide-up, .scale-in")
+      .forEach((el, index) => {
+        el.style.animationDelay = `${index * 0.08}s`;
+      });
+  }, 50);
+}
+
+/**
+ * Reusable utility to get a quality level object based on error magnitude.
+ * This version has the corrected messages.
+ * @param {number} error - The error value.
+ * @param {boolean} isVerification - If true, low error is 'Excellent'.
+ * @returns {object} - An object with level, color, message, and icon.
+ */
+function getQualityLevel(error, isVerification = false) {
+  const excellent = {
+    level: "excellent",
+    color: "var(--success-color)",
+    message: "Excellent!",
+    icon: "🎯",
+  };
+  const good = {
+    level: "good",
+    color: "var(--primary-color)",
+    message: "Good!",
+    icon: "👍",
+  };
+  const fair = {
+    level: "fair",
+    color: "var(--warning-color)",
+    message: "Fair",
+    icon: "🤔",
+  };
+  const poor = {
+    level: "poor",
+    color: "var(--error-color)",
+    message: "Needs Improvement!",
+    icon: "😅",
   };
 
-  const x1Quality = getQualityLevel(x1Error);
-  const x2Quality = getQualityLevel(x2Error);
+  if (isVerification) {
+    if (error < 0.01) return { ...excellent, message: "Highly Consistent" };
+    if (error < 0.5) return { ...good, message: "Largely Consistent" };
+    if (error < 2.0) return { ...fair, message: "Minor Inconsistency" };
+    return { ...poor, message: "Significant Inconsistency", icon: "⚠️" };
+  }
+
+  if (error < 0.1) return excellent;
+  if (error < 0.5) return good;
+  if (error < 1.0) return fair;
+  return poor;
+}
+
+/**
+ * Renders the enhanced comparison view, with the final fixes for the
+ * quality badge's text and background styling.
+ * @param {object} details - The structured details object from the backend.
+ * @param {Array<number>} confidences - The array of confidence values.
+ * @returns {string} - The complete HTML string for the results section.
+ */
+function renderComparisonResults(details, confidences) {
+  const {
+    scenario_info,
+    equation_parts,
+    predicted_values,
+    actual_values,
+    error_metrics,
+    analysis,
+  } = details;
+  const avgError = error_metrics["Average Error"] ?? 0;
   const overallQuality = getQualityLevel(avgError);
 
-  let html = `
-    <div class="prediction-results-container fade-in">
-      <!-- Enhanced Equation Display -->
-      <div class="equation-display-section slide-up">
-        <h3 class="section-subtitle">
-          <i class="fas fa-function"></i>
-          Quadratic Equation
-        </h3>
-        <div class="equation-display animated-equation">
-          ${Utils.formatQuadraticEquation(inputs[0], inputs[1], inputs[2])}
-        </div>
-      </div>
+  const eq = (p) =>
+    equation_parts[p] ?? predicted_values[p] ?? actual_values[p] ?? "?";
+  const equation = Utils.formatQuadraticEquation(eq("a"), eq("b"), eq("c"));
 
-      <!-- Enhanced Solution Comparison -->
-      <div class="solution-comparison-section slide-up">
-        <h4 class="comparison-title">
-          <i class="fas fa-balance-scale"></i>
-          Solution Comparison
-        </h4>
-        
-        <div class="solution-comparison-grid">
-          <!-- Neural Network Prediction -->
-          <div class="solution-column neural-prediction">
-            <div class="solution-header neural-network">
-              <i class="fas fa-brain"></i>
-              <span>Neural Network</span>
-            </div>
-            <div class="solution-values">
-              <div class="solution-value">
-                <span class="solution-label">x₁ =</span>
-                <span class="solution-number nn-prediction" style="color: ${
-                  x1Quality.color
-                }; text-shadow: 0 0 8px ${x1Quality.color}30;">
-                  ${Utils.formatNumber(response.predictions[0], 6)}
-                </span>
-              </div>
-              <div class="solution-value">
-                <span class="solution-label">x₂ =</span>
-                <span class="solution-number nn-prediction" style="color: ${
-                  x2Quality.color
-                }; text-shadow: 0 0 8px ${x2Quality.color}30;">
-                  ${Utils.formatNumber(response.predictions[1], 6)}
-                </span>
-              </div>
-            </div>
-            <div class="prediction-confidence">
-              <span class="confidence-label">Confidence:</span>
-              <span class="confidence-value">${Utils.getConfidenceLevel(
-                response.confidences[0]
-              )}</span>
-            </div>
-          </div>
+  const predictedRows = Object.entries(predicted_values)
+    .map(([key, value]) => {
+      const error = error_metrics[`${key} Error`] ?? 0;
+      const quality = getQualityLevel(error);
+      return `
+        <div class="solution-value">
+          <span class="solution-label">${key} =</span>
+          <span class="solution-number nn-prediction" style="color: ${
+            quality.color
+          }; text-shadow: 0 0 8px ${quality.color}30;">
+            ${Utils.formatNumber(value, 6)}
+          </span>
+        </div>`;
+    })
+    .join("");
 
-          <!-- Actual Solution -->
-          <div class="solution-column actual-solution">
-            <div class="solution-header actual-solution">
-              <i class="fas fa-check-circle"></i>
-              <span>Actual Solution</span>
-            </div>
-            <div class="solution-values">
-              ${
-                actualSolutions.type === "distinct"
-                  ? `
-                <div class="solution-value">
-                  <span class="solution-label">x₁ =</span>
-                  <span class="solution-number actual-solution">
-                    ${Utils.formatNumber(actualSolutions.roots[0], 6)}
-                  </span>
-                </div>
-                <div class="solution-value">
-                  <span class="solution-label">x₂ =</span>
-                  <span class="solution-number actual-solution">
-                    ${Utils.formatNumber(actualSolutions.roots[1], 6)}
-                  </span>
-                </div>
-              `
-                  : actualSolutions.type === "repeated"
-                  ? `
-                <div class="solution-value">
-                  <span class="solution-label">x₁ = x₂ =</span>
-                  <span class="solution-number actual-solution">
-                    ${Utils.formatNumber(actualSolutions.roots[0], 6)}
-                  </span>
-                </div>
-              `
-                  : `
-                <div style="color: var(--text-secondary); font-style: italic; text-align: center; padding: 16px;">
-                  ${actualSolutions.message}
-                </div>
-              `
-              }
-            </div>
-            <div class="solution-message">
-              Mathematical ground truth
-            </div>
-          </div>
-        </div>
-      </div>
+  let actualRows = "";
+  if (
+    analysis.actual_solution_type === "complex" ||
+    analysis.actual_solution_type === "invalid"
+  ) {
+    actualRows = `<div class="solution-message-box">${analysis.actual_solution_message}</div>`;
+  } else if (Object.keys(actual_values).length > 0) {
+    actualRows = Object.entries(actual_values)
+      .map(
+        ([key, value]) => `
+      <div class="solution-value">
+        <span class="solution-label">${key} =</span>
+        <span class="solution-number actual-solution">${Utils.formatNumber(
+          value,
+          6
+        )}</span>
+      </div>`
+      )
+      .join("");
+  } else {
+    actualRows = `<div class="solution-message-box">Ground truth could not be calculated.</div>`;
+  }
 
-      <!-- Overall Quality Badge (MOVED HERE) -->
-      <div class="quality-badge-container scale-in">
-        <div class="quality-badge quality-${overallQuality.level}">
-          <div class="quality-icon">
-            ${
-              overallQuality.level === "excellent"
-                ? "🎯"
-                : overallQuality.level === "good"
-                ? "👍"
-                : overallQuality.level === "fair"
-                ? "🤔"
-                : "😅"
-            }
-          </div>
-          <div class="quality-message">${overallQuality.message}</div>
-          <div class="quality-metric">Avg Error: ${Utils.formatNumber(
-            avgError,
-            4
-          )}</div>
-        </div>
-      </div>
+  const errorCards = Object.entries(error_metrics)
+    .map(([name, error]) => {
+      if (name.includes("Average")) return "";
+      const quality = getQualityLevel(error);
+      return `
+      <div class="error-metric-card" style="border-color: ${
+        quality.color
+      }; background: linear-gradient(135deg, ${
+        quality.color
+      }08, var(--surface-color));">
+        <div class="metric-icon">${
+          name.includes("x") || name.includes("₂") ? "📊" : "📈"
+        }</div>
+        <div class="metric-label">${name}</div>
+        <div class="metric-value" style="color: ${
+          quality.color
+        };">${Utils.formatNumber(error, 6)}</div>
+        <div class="metric-status" style="background: ${
+          quality.color
+        }20; color: ${quality.color};">${quality.message}</div>
+      </div>`;
+    })
+    .join("");
 
-      ${
-        solutionError
-          ? `
-      <!-- Enhanced Error Analysis -->
-      <div class="error-analysis-enhanced slide-up">
-        <h4 class="error-title">
-          <i class="fas fa-chart-line"></i>
-          Error Analysis
-        </h4>
-        
-        <div class="error-metrics-grid">
-          <div class="error-metric-card" style="border-color: ${
-            x1Quality.color
-          }; background: linear-gradient(135deg, ${
-              x1Quality.color
-            }05, var(--surface-color));">
-            <div class="metric-icon">📊</div>
-            <div class="metric-label">x₁ Error</div>
-            <div class="metric-value" style="color: ${
-              x1Quality.color
-            };">${Utils.formatNumber(x1Error, 6)}</div>
-            <div class="metric-status" style="background: ${
-              x1Quality.color
-            }20; color: ${x1Quality.color};">${x1Quality.message}</div>
-          </div>
-          
-          <div class="error-metric-card" style="border-color: ${
-            x2Quality.color
-          }; background: linear-gradient(135deg, ${
-              x2Quality.color
-            }05, var(--surface-color));">
-            <div class="metric-icon">📈</div>
-            <div class="metric-label">x₂ Error</div>
-            <div class="metric-value" style="color: ${
-              x2Quality.color
-            };">${Utils.formatNumber(x2Error, 6)}</div>
-            <div class="metric-status" style="background: ${
-              x2Quality.color
-            }20; color: ${x2Quality.color};">${x2Quality.message}</div>
-          </div>
-          
-          <div class="error-metric-card" style="border-color: ${
-            overallQuality.color
-          }; background: linear-gradient(135deg, ${
-              overallQuality.color
-            }05, var(--surface-color));">
-            <div class="metric-icon">🎯</div>
-            <div class="metric-label">Average Error</div>
-            <div class="metric-value" style="color: ${
-              overallQuality.color
-            };">${Utils.formatNumber(avgError, 6)}</div>
-            <div class="metric-status" style="background: ${
-              overallQuality.color
-            }20; color: ${overallQuality.color};">${
-              overallQuality.message
-            }</div>
-          </div>
-        </div>
-      </div>
-      `
-          : ""
-      }
+  const avgConfidence =
+    confidences && confidences.length > 0
+      ? confidences.reduce((a, b) => a + b, 0) / confidences.length
+      : 0;
+  const confidenceLevel = Utils.getConfidenceLevel(avgConfidence);
 
-      <!-- Performance Insights -->
-      <div class="performance-insights slide-up">
-        <h4 class="insights-title">
-          <i class="fas fa-lightbulb"></i>
-          Performance Insights
-        </h4>
-        <div class="insights-content">
-          <div class="insight-item">
-            <strong>Prediction Type:</strong> Coefficient to Root Prediction
-          </div>
-          <div class="insight-item">
-            <strong>Confidence Level:</strong> ${Utils.getConfidenceLevel(
-              response.confidences[0]
-            )}
-          </div>
-          <div class="insight-item">
-            <strong>Overall Assessment:</strong> 
-            <span style="color: ${overallQuality.color}; font-weight: 600;">
-              ${
-                overallQuality.level.charAt(0).toUpperCase() +
-                overallQuality.level.slice(1)
-              }
-            </span>
-          </div>
-        </div>
-      </div>
+  const detailedResultsRows = Object.entries(predicted_values)
+    .map(([key, prediction], index) => {
+      const confidence =
+        confidences && confidences.length > index ? confidences[index] : 0;
+      const confidenceLevelText = Utils.getConfidenceLevel(confidence);
+      const errorValue = error_metrics[`${key} Error`] ?? null;
+      const quality = getQualityLevel(errorValue);
 
-      <!-- Original Results Grid (preserved for compatibility) -->
-      <div class="original-results-grid slide-up" style="display: grid; gap: 16px; margin-top: 20px; padding: 20px; background: var(--surface-color); border-radius: var(--radius-medium); border: 1px solid var(--border-color);">
-        <h4 style="margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
-          <i class="fas fa-list"></i>
-          Detailed Results
-        </h4>
-  `;
-
-  response.target_features.forEach((feature, index) => {
-    const prediction = response.predictions[index];
-    const confidence = response.confidences[index];
-    const confidenceLevel = Utils.getConfidenceLevel(confidence);
-    const errorValue = index === 0 ? x1Error : x2Error;
-    const qualityColor = index === 0 ? x1Quality.color : x2Quality.color;
-
-    html += `
-      <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: var(--background-color); border-radius: var(--radius-medium); border: 1px solid var(--border-color); transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='var(--shadow-light)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+      return `
+      <div class="detailed-result-row" style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: var(--background-color); border-radius: var(--radius-medium); border: 1px solid var(--border-color); transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='var(--shadow-light)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
         <div>
-          <strong style="color: ${qualityColor};">${feature}:</strong> 
-          <span style="font-family: 'JetBrains Mono', monospace; color: ${qualityColor}; font-weight: 600;">${Utils.formatNumber(
-      prediction,
-      6
-    )}</span>
+          <strong style="color: ${quality.color};">${key}:</strong> 
+          <span style="font-family: 'JetBrains Mono', monospace; color: ${
+            quality.color
+          }; font-weight: 600;">
+            ${Utils.formatNumber(prediction, 6)}
+          </span>
         </div>
         <div style="text-align: right;">
           <div>Confidence: <span style="font-weight: 600;">${Utils.formatPercentage(
             confidence * 100,
             1
           )}</span></div>
-          <div style="font-size: 14px; margin-top: 4px;">${confidenceLevel}</div>
+          <div style="font-size: 14px; margin-top: 4px;">${confidenceLevelText}</div>
           ${
-            solutionError
-              ? `<div style="font-size: 12px; color: ${qualityColor}; margin-top: 2px;">Error: ${Utils.formatNumber(
+            errorValue !== null
+              ? `<div style="font-size: 12px; color: ${
+                  quality.color
+                }; margin-top: 2px;">Error: ${Utils.formatNumber(
                   errorValue,
                   4
                 )}</div>`
@@ -3524,22 +3440,205 @@ function displayPredictionResults(response, inputs) {
         </div>
       </div>
     `;
-  });
+    })
+    .join("");
 
-  html += `
-      </div>
+  const detailedResultsSection =
+    Object.keys(predicted_values).length > 0
+      ? `
+    <div class="original-results-grid slide-up" style="display: grid; gap: 16px; margin-top: 24px; padding: 20px; background: var(--surface-color); border-radius: var(--radius-medium); border: 1px solid var(--border-color);">
+      <h4 style="margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
+        <i class="fas fa-list"></i>
+        Detailed Results
+      </h4>
+      ${detailedResultsRows}
     </div>
-  `;
+  `
+      : "";
 
-  resultsContainer.innerHTML = html;
+  return `
+    <div class="prediction-results-container fade-in">
+      <div class="equation-display-section slide-up">
+        <h3 class="section-subtitle"><i class="fas fa-function"></i> Quadratic Equation</h3>
+        <div class="equation-display animated-equation">${equation}</div>
+      </div>
 
-  // Trigger animations with delays
-  setTimeout(() => {
-    const elementsToAnimate = resultsContainer.querySelectorAll(".slide-up");
-    elementsToAnimate.forEach((el, index) => {
-      el.style.animationDelay = `${index * 0.1}s`;
-    });
-  }, 100);
+      <div class="solution-comparison-section slide-up">
+        <h4 class="comparison-title"><i class="fas fa-balance-scale"></i> Solution Comparison</h4>
+        <div class="solution-comparison-grid">
+          <div class="solution-column neural-prediction">
+            <div class="solution-header neural-network"><i class="fas fa-brain"></i><span>Neural Network</span></div>
+            <div class="solution-values">${predictedRows}</div>
+            <div class="prediction-confidence">
+              <span class="confidence-label">Avg. Confidence:</span>
+              <span class="confidence-value">${confidenceLevel}</span>
+            </div>
+          </div>
+          <div class="solution-column actual-solution">
+            <div class="solution-header actual-solution"><i class="fas fa-check-circle"></i><span>Actual Solution</span></div>
+            <div class="solution-values">${actualRows}</div>
+            <div class="solution-message">Mathematical ground truth</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FINAL FIX: Quality Badge with class-based background and corrected text -->
+      <div class="quality-badge-container scale-in">
+        <div class="quality-badge quality-${overallQuality.level}">
+          <div class="quality-icon">${overallQuality.icon}</div>
+          <div class="quality-message">${overallQuality.message}</div>
+          <div class="quality-metric">Avg Error: ${Utils.formatNumber(
+            avgError,
+            4
+          )}</div>
+        </div>
+      </div>
+
+      <div class="error-analysis-enhanced slide-up">
+        <h4 class="error-title"><i class="fas fa-chart-line"></i> Error Analysis</h4>
+        <div class="error-metrics-grid">${errorCards}</div>
+      </div>
+
+      <div class="performance-insights slide-up">
+        <h4 class="insights-title"><i class="fas fa-lightbulb"></i> Performance Insights</h4>
+        <div class="insights-content">
+          <div class="insight-item"><strong>Prediction Type:</strong> ${
+            scenario_info.name
+          }</div>
+          <div class="insight-item"><strong>Confidence Level:</strong> ${confidenceLevel}</div>
+          <div class="insight-item">
+            <strong>Overall Assessment:</strong> 
+            <span style="color: ${overallQuality.color}; font-weight: 600;">${
+    overallQuality.level.charAt(0).toUpperCase() + overallQuality.level.slice(1)
+  }</span>
+          </div>
+        </div>
+      </div>
+      
+      ${detailedResultsSection}
+    </div>`;
+}
+
+/**
+ * Renders the results for the 'Equation Verification' scenario.
+ * @param {object} details - The structured details object from the backend.
+ * @returns {string} - The complete HTML string for the results section.
+ */
+function renderVerificationResults(details, confidences) {
+  const {
+    equation_parts,
+    predicted_values,
+    actual_values,
+    error_metrics,
+    labels,
+  } = details;
+  const equation = Utils.formatQuadraticEquation(
+    equation_parts.a,
+    equation_parts.b,
+    equation_parts.c
+  );
+  const actualError = actual_values["Actual Error"];
+  const errorQuality = getQualityLevel(actualError, true); // Use verification mode
+
+  return `
+    <div class="prediction-results-container fade-in">
+      <div class="equation-display-section slide-up">
+        <h3 class="section-subtitle"><i class="fas fa-function"></i> Equation Under Test</h3>
+        <div class="equation-display animated-equation">${equation}</div>
+        <div class="equation-display-roots">
+            <span>Roots:</span>
+            <span>x₁ = ${Utils.formatNumber(equation_parts.x1, 4)}</span>
+            <span>x₂ = ${Utils.formatNumber(equation_parts.x2, 4)}</span>
+        </div>
+      </div>
+
+      <div class="quality-badge-container scale-in">
+        <div class="quality-badge quality-${
+          errorQuality.level
+        }" style="background-color: ${errorQuality.color}20; color: ${
+    errorQuality.color
+  }; border: 1px solid ${errorQuality.color};">
+          <div class="quality-icon">${errorQuality.icon}</div>
+          <div class="quality-message">${errorQuality.message}</div>
+          <div class="quality-metric">Actual Error: ${Utils.formatNumber(
+            actualError,
+            4
+          )}</div>
+        </div>
+      </div>
+
+      <div class="error-analysis-enhanced slide-up">
+        <h4 class="error-title"><i class="fas fa-tasks"></i> Verification Analysis</h4>
+        <div class="error-metrics-grid">
+            <div class="error-metric-card">
+              <div class="metric-label">${labels.predicted}</div>
+              <div class="metric-value">${Utils.formatNumber(
+                predicted_values["Predicted Error"],
+                6
+              )}</div>
+            </div>
+            <div class="error-metric-card">
+              <div class="metric-label">${labels.actual}</div>
+              <div class="metric-value">${Utils.formatNumber(
+                actual_values["Actual Error"],
+                6
+              )}</div>
+            </div>
+            <div class="error-metric-card">
+              <div class="metric-label">Prediction Deviation</div>
+              <div class="metric-value">${Utils.formatNumber(
+                error_metrics["Prediction Deviation"],
+                6
+              )}</div>
+            </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+/**
+ * Reusable utility to get a quality level based on error magnitude.
+ * @param {number} error - The error value.
+ * @param {boolean} isVerification - If true, low error is 'Excellent'.
+ * @returns {object} - An object with level, color, message, and icon.
+ */
+function getQualityLevel(error, isVerification = false) {
+  const excellent = {
+    level: "excellent",
+    color: "var(--success-color)",
+    message: "Excellent Match",
+    icon: "🎯",
+  };
+  const good = {
+    level: "good",
+    color: "var(--primary-color)",
+    message: "Good Match",
+    icon: "👍",
+  };
+  const fair = {
+    level: "fair",
+    color: "var(--warning-color)",
+    message: "Fair Match",
+    icon: "🤔",
+  };
+  const poor = {
+    level: "poor",
+    color: "var(--error-color)",
+    message: "Needs Improvement!",
+    icon: "😅",
+  };
+
+  if (isVerification) {
+    if (error < 0.01) return { ...excellent, message: "Highly Consistent" };
+    if (error < 0.5) return { ...good, message: "Largely Consistent" };
+    if (error < 2.0) return { ...fair, message: "Minor Inconsistency" };
+    return { ...poor, message: "Significant Inconsistency", icon: "⚠️" };
+  }
+
+  if (error < 0.1) return excellent;
+  if (error < 0.5) return good;
+  if (error < 1.0) return fair;
+  return poor;
 }
 
 async function generateAnalysis() {

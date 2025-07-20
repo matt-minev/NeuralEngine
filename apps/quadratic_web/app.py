@@ -207,33 +207,35 @@ def make_prediction():
         data = request.get_json()
         scenario_key = data.get('scenario')
         input_values = data.get('inputs', [])
-        
+
         if scenario_key not in app_state['predictors']:
-            return jsonify({'error': f'Model for scenario not trained'}), 400
-        
+            return jsonify({'error': f'Model for scenario "{scenario_key}" not trained'}), 400
         if not input_values:
             return jsonify({'error': 'No input values provided'}), 400
-        
+
         # Make prediction
         predictor = app_state['predictors'][scenario_key]
         input_array = np.array(input_values).reshape(1, -1)
         predictions, confidences = predictor.predict(input_array, return_confidence=True)
-        
-        # Calculate actual solutions if possible
-        actual_solutions = None
-        if scenario_key == 'coeff_to_roots':
-            actual_solutions = _calculate_quadratic_solutions(input_values)
-        
+
+        # NEW: Get detailed analysis for the frontend
+        prediction_details = _get_prediction_details(
+            scenario_key, 
+            input_values, 
+            predictions[0], 
+            app_state['scenarios'][scenario_key]
+        )
+
         return jsonify({
             'success': True,
             'predictions': predictions[0].tolist(),
-            'confidences': confidences[0].tolist(),
-            'actual_solutions': actual_solutions,
+            'confidences': confidences[0].tolist() if confidences is not None else [],
             'scenario': app_state['scenarios'][scenario_key].name,
-            'target_features': app_state['scenarios'][scenario_key].target_features
+            'target_features': app_state['scenarios'][scenario_key].target_features,
+            'details': prediction_details  # NEW structured data
         })
-        
     except Exception as e:
+        traceback.print_exc()
         return jsonify({'error': f'Prediction failed: {str(e)}'}), 500
 
 @app.route('/api/results')
@@ -1013,30 +1015,38 @@ def _log_training(message):
     if len(app_state['training_status']['logs']) > 100:
         app_state['training_status']['logs'] = app_state['training_status']['logs'][-100:]
 
-def _calculate_quadratic_solutions(inputs):
-    """Calculate actual quadratic solutions"""
-    try:
-        a, b, c = inputs
-        
-        if abs(a) < 1e-10:
-            if abs(b) < 1e-10:
-                return None
-            else:
-                root = -c / b
-                return [root, root]
-        
-        discriminant = b**2 - 4*a*c
-        if discriminant < 0:
-            return None
-        
-        sqrt_discriminant = np.sqrt(discriminant)
-        x1 = (-b + sqrt_discriminant) / (2*a)
-        x2 = (-b - sqrt_discriminant) / (2*a)
-        
-        return [x1, x2]
-        
-    except Exception:
-        return None
+def _calculate_quadratic_solutions(inputs, return_type=False):
+    """
+    Calculate actual solutions for quadratic equation ax² + bx + c = 0.
+    Now returns a dictionary for richer information.
+    """
+    a, b, c = inputs
+    if abs(a) < 1e-9:
+        if abs(b) < 1e-9:
+            return {'type': 'invalid', 'roots': None, 'message': 'Not a valid equation (a and b are zero)'}
+        root = -c / b
+        return {'type': 'linear', 'roots': [root], 'message': 'Linear equation, one root found'}
+
+    discriminant = b**2 - 4*a*c
+
+    if discriminant < 0:
+        return {'type': 'complex', 'roots': None, 'message': 'No real solutions (complex roots)'}
+    
+    if abs(discriminant) < 1e-9:
+        root = -b / (2*a)
+        return {'type': 'repeated', 'roots': [root], 'message': 'One repeated real root'}
+
+    sqrt_discriminant = np.sqrt(discriminant)
+    x1 = (-b + sqrt_discriminant) / (2*a)
+    x2 = (-b - sqrt_discriminant) / (2*a)
+    
+    # Sort roots for consistency
+    roots = tuple(sorted((x1, x2)))
+    
+    if return_type:
+      return {'type': 'distinct', 'roots': roots, 'message': 'Two distinct real roots'}
+    
+    return roots
 
 def validate_dataset_file(filepath):
     """Validate that a dataset file is properly formatted"""
@@ -1061,6 +1071,141 @@ def validate_dataset_file(filepath):
         
     except Exception as e:
         return False, f"File validation error: {str(e)}"
+
+def _get_prediction_details(scenario_key, inputs, predictions, scenario_info):
+    """
+    Calculates actual values and error metrics for a given prediction scenario.
+    This allows the frontend to display a rich comparison for any model type.
+    """
+    details = {
+        'scenario_key': scenario_key,
+        'scenario_info': {
+            'name': scenario_info.name,
+            'description': scenario_info.description,
+            'input_features': scenario_info.input_features,
+            'target_features': scenario_info.target_features
+        },
+        'equation_parts': {},
+        'predicted_values': {},
+        'actual_values': {},
+        'error_metrics': {},
+        'analysis': {},
+        'labels': {
+            'predicted': 'Neural Network Prediction',
+            'actual': 'Calculated Ground Truth',
+            'error': 'Prediction Error'
+        }
+    }
+
+    try:
+        # --- FIX: Renamed 'partial_coeff' to match the key from the error message ---
+        if scenario_key == 'partial_coeff_to_missing': 
+            # This logic was previously under 'partial_coeff'
+            a, b, x1 = inputs
+            c_pred, x2_pred = predictions
+            
+            details['equation_parts'] = {'a': a, 'b': b, 'x₁': x1}
+            details['predicted_values'] = {'c': c_pred, 'x₂': x2_pred}
+            
+            c_actual = -a * (x1**2) - b * x1
+            x2_actual = (-b / a) - x1 if a != 0 else 0
+            details['actual_values'] = {'c': c_actual, 'x₂': x2_actual}
+            
+            errors = {'c Error': abs(c_pred - c_actual), 'x₂ Error': abs(x2_pred - x2_actual)}
+            errors['Average Error'] = sum(errors.values()) / 2
+            details['error_metrics'] = errors
+
+        elif scenario_key == 'coeff_to_roots':
+            a, b, c = inputs
+            x1_pred, x2_pred = predictions
+            
+            details['equation_parts'] = {'a': a, 'b': b, 'c': c}
+            details['predicted_values'] = {'x₁': x1_pred, 'x₂': x2_pred}
+            
+            actual_sols_result = _calculate_quadratic_solutions(inputs, return_type=True)
+            details['analysis']['actual_solution_type'] = actual_sols_result['type']
+            
+            if actual_sols_result['roots']:
+                x1_actual, x2_actual = sorted(actual_sols_result['roots'])
+                details['actual_values'] = {'x₁': x1_actual, 'x₂': x2_actual}
+                
+                err1 = abs(x1_pred - x1_actual) + abs(x2_pred - x2_actual)
+                err2 = abs(x1_pred - x2_actual) + abs(x2_pred - x1_actual)
+                
+                if err1 <= err2:
+                    errors = {'x₁ Error': abs(x1_pred - x1_actual), 'x₂ Error': abs(x2_pred - x2_actual)}
+                else:
+                    errors = {'x₁ Error': abs(x1_pred - x2_actual), 'x₂ Error': abs(x2_pred - x1_actual)}
+                
+                errors['Average Error'] = sum(errors.values()) / 2
+                details['error_metrics'] = errors
+            else:
+                details['analysis']['actual_solution_message'] = actual_sols_result['message']
+
+        elif scenario_key == 'roots_to_coeff':
+            x1, x2 = inputs
+            a_pred, b_pred, c_pred = predictions
+            
+            details['equation_parts'] = {'x₁': x1, 'x₂': x2}
+            details['predicted_values'] = {'a': a_pred, 'b': b_pred, 'c': c_pred}
+            
+            a_actual = 1.0 # Normalize to a=1 for ground truth
+            b_actual = -a_actual * (x1 + x2)
+            c_actual = a_actual * (x1 * x2)
+            
+            # Scale ground truth to match predicted 'a' for fair comparison
+            scale_factor = a_pred / a_actual if abs(a_actual) > 1e-6 else 0
+            details['actual_values'] = {
+                'a': a_actual * scale_factor, 
+                'b': b_actual * scale_factor, 
+                'c': c_actual * scale_factor
+            }
+            
+            errors = {
+                'a Error': abs(a_pred - details['actual_values']['a']),
+                'b Error': abs(b_pred - details['actual_values']['b']),
+                'c Error': abs(c_pred - details['actual_values']['c'])
+            }
+            errors['Average Error'] = sum(errors.values()) / 3
+            details['error_metrics'] = errors
+
+        elif scenario_key == 'single_missing':
+            a, b, c, x1 = inputs
+            x2_pred, = predictions
+            
+            details['equation_parts'] = {'a': a, 'b': b, 'c': c, 'x₁': x1}
+            details['predicted_values'] = {'x₂': x2_pred}
+            
+            x2_actual = (-b / a) - x1 if a != 0 else 0
+            details['actual_values'] = {'x₂': x2_actual}
+            
+            errors = {'x₂ Error': abs(x2_pred - x2_actual)}
+            errors['Average Error'] = errors['x₂ Error']
+            details['error_metrics'] = errors
+
+        elif scenario_key == 'verify_equation':
+            a, b, c, x1, x2 = inputs
+            error_pred, = predictions
+            
+            details['display_type'] = 'error_verification'
+            details['equation_parts'] = {'a': a, 'b': b, 'c': c, 'x₁': x1, 'x₂': x2}
+            details['predicted_values'] = {'Predicted Error': error_pred}
+            
+            residual1 = abs(a * (x1**2) + b * x1 + c)
+            residual2 = abs(a * (x2**2) + b * x2 + c)
+            error_actual = (residual1 + residual2) / 2.0
+            details['actual_values'] = {'Actual Error': error_actual}
+            
+            errors = {'Prediction Deviation': abs(error_pred - error_actual)}
+            details['error_metrics'] = errors
+            details['labels']['predicted'] = 'NN Predicted Error'
+            details['labels']['actual'] = 'Calculated Actual Error'
+
+    except Exception as e:
+        # traceback.print_exc() # Uncomment for debugging
+        return { 'scenario_key': scenario_key, 'display_type': 'error', 'message': str(e) }
+
+    return details
 
 def cleanup_old_uploads():
     """Clean up old uploaded files on startup"""
