@@ -933,6 +933,10 @@ MODEL MANAGEMENT SECTION - FIXED LAYOUT
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-light);
   margin-bottom: 32px;
+  /* animation */
+  opacity: 0;
+  transform: translateY(20px);
+  animation: cardSlideIn 0.6s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
 }
 
 #modelSaveSection h4 {
@@ -1168,6 +1172,10 @@ MODEL MANAGEMENT SECTION - FIXED LAYOUT
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-light);
   margin-bottom: 24px;
+
+  opacity: 0;
+  transform: translateY(20px);
+  animation: cardSlideIn 0.6s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
 }
 
 #model-management .card-header {
