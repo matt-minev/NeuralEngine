@@ -3520,8 +3520,10 @@ function renderComparisonResults(details, confidences) {
 }
 
 /**
- * Renders the results for the 'Equation Verification' scenario.
+ * Renders the results for the 'Equation Verification' scenario with corrected
+ * root display and enhanced styling.
  * @param {object} details - The structured details object from the backend.
+ * @param {Array<number>} confidences - The array of confidence values.
  * @returns {string} - The complete HTML string for the results section.
  */
 function renderVerificationResults(details, confidences) {
@@ -3543,12 +3545,25 @@ function renderVerificationResults(details, confidences) {
   return `
     <div class="prediction-results-container fade-in">
       <div class="equation-display-section slide-up">
-        <h3 class="section-subtitle"><i class="fas fa-function"></i> Equation Under Test</h3>
+        <h3 class="section-subtitle"><i class="fas fa-check-double"></i> Equation Under Test</h3>
         <div class="equation-display animated-equation">${equation}</div>
-        <div class="equation-display-roots">
-            <span>Roots:</span>
-            <span>x₁ = ${Utils.formatNumber(equation_parts.x1, 4)}</span>
-            <span>x₂ = ${Utils.formatNumber(equation_parts.x2, 4)}</span>
+        
+        <!-- FIX: Corrected and restyled root display -->
+        <div class="equation-display-roots" style="margin-top: 16px;">
+            <div class="solution-value">
+                <span class="solution-label">Provided Root x₁ =</span>
+                <span class="solution-number actual-solution">${Utils.formatNumber(
+                  equation_parts["x₁"],
+                  4
+                )}</span>
+            </div>
+            <div class="solution-value">
+                <span class="solution-label">Provided Root x₂ =</span>
+                <span class="solution-number actual-solution">${Utils.formatNumber(
+                  equation_parts["x₂"],
+                  4
+                )}</span>
+            </div>
         </div>
       </div>
 
