@@ -2875,7 +2875,7 @@ setInterval(async () => {
         document.getElementById("stop-training-btn").style.display = "none";
         Utils.showNotification("Training completed!", "success");
 
-        // ✅ FIX: Fetch results and update save section
+        // Fetch results and update save section
         try {
           const results = await ApiClient.request(API.results);
           AppState.results = results;

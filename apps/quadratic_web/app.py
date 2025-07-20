@@ -802,8 +802,13 @@ def _train_models_background(selected_scenarios, epochs, learning_rate):
     try:
         app_state['training_status']['is_training'] = True
         app_state['training_status']['logs'] = []
-        app_state['predictors'].clear()
-        app_state['results'].clear()
+        
+        # Only clear models that will be retrained, preserve loaded models from other scenarios
+        for scenario_key in selected_scenarios:
+            if scenario_key in app_state['predictors']:
+                del app_state['predictors'][scenario_key]
+            if scenario_key in app_state['results']:
+                del app_state['results'][scenario_key]
         
         _log_training('🎯 Starting training session...')
         _log_training(f'Selected scenarios: {len(selected_scenarios)}')
@@ -812,7 +817,7 @@ def _train_models_background(selected_scenarios, epochs, learning_rate):
         for i, scenario_key in enumerate(selected_scenarios):
             if not app_state['training_status']['is_training']:
                 break
-            
+                
             scenario = app_state['scenarios'][scenario_key]
             app_state['training_status']['current_scenario'] = scenario.name
             app_state['training_status']['progress'] = (i / len(selected_scenarios)) * 100
