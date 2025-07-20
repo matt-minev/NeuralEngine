@@ -1160,6 +1160,25 @@ const ModelSection = {
       return;
     }
 
+    // --- VALIDATION FOR DUPLICATE MODEL TYPES ---
+    const selectedScenarios = new Set();
+    for (const modelId of modelIds) {
+      // Find the full model object from the application state[1]
+      const model = AppState.savedModels.find((m) => m.model_id === modelId);
+      if (model) {
+        // Check if a model for this scenario has already been selected[1]
+        if (selectedScenarios.has(model.scenario_key)) {
+          Utils.showNotification(
+            `Duplicate model type: You can only load one model for the "${model.scenario_name}" scenario at a time.`,
+            "error"
+          );
+          return; // Stop the loading process
+        }
+        selectedScenarios.add(model.scenario_key);
+      }
+    }
+    // --- END OF VALIDATION ---
+
     try {
       const loadingMessage =
         modelIds.length === 1
@@ -1172,7 +1191,7 @@ const ModelSection = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model_ids: modelIds, // Send array for batch loading
+          model_ids: modelIds, // Send array for batch loading[2]
         }),
       });
 
