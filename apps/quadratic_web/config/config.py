@@ -66,9 +66,12 @@ class Config:
     MAX_CONCURRENT_TRAININGS = 1
     
     # Model Configuration
-    MODEL_SAVE_PATH = 'models'
-    MODEL_BACKUP_PATH = 'models/backups'
-    MAX_MODEL_SIZE = 100 * 1024 * 1024  # 100MB
+    MODEL_SAVE_PATH = 'saved_models'  # Change from 'models' to be more specific
+    MODEL_BACKUP_PATH = 'saved_models/backups'  # Keep but update path
+    MAX_MODEL_SIZE = 100 * 1024 * 1024  # 100MB - Keep this useful limit
+    MODEL_METADATA_FILE = 'model_metadata.json'  # Add - needed for model management
+    MAX_SAVED_MODELS = 50  # Add - prevents unlimited model accumulation
+    MODEL_NAME_MAX_LENGTH = 50  # Add - for form validation
     
     # Data Processing Configuration
     MAX_DATASET_SIZE = 1000000  # 1M equations max
@@ -99,7 +102,7 @@ class Config:
     RATELIMIT_DEFAULT = "100 per hour"
     
     # Neural Engine Specific Configuration
-    NEURAL_ENGINE_PATH = str(parent_dir)
+    NEURAL_ENGINE_PATH = str(neural_engine_root)
     USE_CUSTOM_NEURAL_ENGINE = True
     
     # Default Network Architectures
@@ -300,39 +303,11 @@ class TestingConfig(Config):
         Config.init_app(app)
         app.logger.info("🧪 Running in TESTING mode")
 
-
-class DockerConfig(ProductionConfig):
-    """Docker container configuration"""
-    
-    # Docker-specific settings
-    HOST = '0.0.0.0'
-    PORT = int(os.environ.get('PORT', 5000))
-    
-    # Use environment variables for configuration
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        'postgresql://user:password@db:5432/quadratic'
-    
-    # Redis for caching in Docker
-    CACHE_TYPE = 'redis'
-    CACHE_REDIS_URL = os.environ.get('REDIS_URL') or 'redis://redis:6379/0'
-    
-    # Docker volume paths
-    UPLOAD_FOLDER = '/app/uploads'
-    MODEL_SAVE_PATH = '/app/models'
-    
-    @staticmethod
-    def init_app(app):
-        """Initialize Docker configuration"""
-        ProductionConfig.init_app(app)
-        app.logger.info("🐳 Running in DOCKER mode")
-
-
 # Configuration dictionary
 config = {
     'development': DevelopmentConfig,
     'production': ProductionConfig,
     'testing': TestingConfig,
-    'docker': DockerConfig,
     'default': DevelopmentConfig
 }
 
@@ -343,7 +318,7 @@ def get_config():
 # Neural Engine Integration Settings
 NEURAL_ENGINE_SETTINGS = {
     'use_custom_engine': True,
-    'engine_path': str(parent_dir),
+    'engine_path': str(neural_engine_root),
     'required_modules': [
         'nn_core',
         'autodiff',

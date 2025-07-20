@@ -87,6 +87,12 @@
               </a>
             </li>
             <li class="nav-item">
+              <a class="nav-link" data-section="model-management">
+                <i class="fas fa-box"></i>
+                <span>Model Management</span>
+              </a>
+            </li>
+            <li class="nav-item">
               <a class="nav-link" data-section="prediction">
                 <i class="fas fa-magic"></i>
                 <span>Prediction</span>
@@ -484,6 +490,126 @@
                 >
                   <div style="color: var(--text-secondary)">
                     Training logs will appear here...
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Model Management Section -->
+          <section id="model-management" class="content-section">
+            <div class="container">
+              <div class="section-header">
+                <h2 class="section-title">
+                  <i class="fas fa-database"></i>
+                  Model Management
+                </h2>
+                <p>Save and load trained neural network models</p>
+              </div>
+
+              <!-- Save Model Section -->
+              <div class="card" id="modelSaveSection" style="display: none">
+                <div class="card-header">
+                  <h3 class="card-title">
+                    <i class="fas fa-save"></i>
+                    Save Trained Model
+                  </h3>
+                </div>
+                <div class="card-content">
+                  <div class="model-save-form">
+                    <div class="form-group">
+                      <label class="form-label" for="modelNameInput"
+                        >Model Name:</label
+                      >
+                      <input
+                        type="text"
+                        id="modelNameInput"
+                        placeholder="Enter a descriptive name..."
+                        maxlength="50"
+                        class="form-input"
+                      />
+                      <small class="form-help"
+                        >Choose a memorable name for your trained model</small
+                      >
+                    </div>
+
+                    <div class="form-group">
+                      <label class="form-label" for="scenarioSelect"
+                        >Select Scenario:</label
+                      >
+                      <select id="scenarioSelect" class="form-select">
+                        <option value="">Choose scenario to save...</option>
+                      </select>
+                      <small class="form-help"
+                        >Only trained scenarios are available</small
+                      >
+                    </div>
+
+                    <div class="model-actions-grid">
+                      <button
+                        id="saveModelBtn"
+                        class="btn btn-primary btn-large"
+                      >
+                        <i class="fas fa-save"></i>
+                        Save Model
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Load Model Section -->
+              <div class="card">
+                <div class="card-header">
+                  <h3 class="card-title">
+                    <i class="fas fa-folder-open"></i>
+                    Load Saved Model
+                  </h3>
+                </div>
+                <div class="card-content">
+                  <div class="model-load-form">
+                    <div class="form-group">
+                      <label class="form-label" for="savedModelsSelect"
+                        >Saved Models:</label
+                      >
+                      <select id="savedModelsSelect" class="form-select">
+                        <option value="">Select a saved model...</option>
+                      </select>
+                      <small class="form-help"
+                        >Models are sorted by creation date (newest
+                        first)</small
+                      >
+                    </div>
+
+                    <div class="model-actions-grid">
+                      <button id="loadModelBtn" class="btn btn-secondary">
+                        <i class="fas fa-upload"></i>
+                        Load Model
+                      </button>
+                      <button id="deleteModelBtn" class="btn btn-danger">
+                        <i class="fas fa-trash-alt"></i>
+                        Delete Model
+                      </button>
+                      <button id="refreshModelsBtn" class="btn btn-outline">
+                        <i class="fas fa-sync-alt"></i>
+                        Refresh List
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Model Info Display -->
+              <div class="card" id="modelInfoDisplay" style="display: none">
+                <div class="card-header">
+                  <h3 class="card-title">
+                    <i class="fas fa-info-circle"></i>
+                    Model Information
+                  </h3>
+                </div>
+                <div class="card-content">
+                  <div id="modelInfoContent" class="model-info-grid">
+                    <!-- Model details will be populated here -->
                   </div>
                 </div>
               </div>

@@ -34,6 +34,7 @@ try:
     from core.predictor import QuadraticPredictor
     from config.scenarios import get_default_scenarios
     from core.helpers import format_number, assess_performance, get_confidence_level
+    from core.model_manager import ModelManager
 except ImportError as e:
     print(f"Error importing components: {e}")
     print("Please ensure all required modules are available.")
@@ -58,6 +59,9 @@ app_state = {
         'logs': []
     }
 }
+
+# Initialize Model Manager
+model_manager = ModelManager()
 
 # Ensure upload directory exists
 UPLOAD_FOLDER = 'uploads'
@@ -646,6 +650,138 @@ def clear_dataset():
         
     except Exception as e:
         return jsonify({'error': f'Failed to clear dataset: {str(e)}'}), 500
+
+@app.route('/api/models/save', methods=['POST'])
+def save_model():
+    """Save a trained model"""
+    try:
+        data = request.get_json()
+        scenario_key = data.get('scenario_key')
+        model_name = data.get('model_name', '').strip()
+        
+        if not model_name:
+            return jsonify({'error': 'Model name is required'}), 400
+        
+        if len(model_name) > 50:
+            return jsonify({'error': 'Model name too long (max 50 characters)'}), 400
+        
+        if scenario_key not in app_state['predictors']:
+            return jsonify({'error': 'No trained model found for this scenario'}), 400
+        
+        # Get dataset info
+        dataset_info = {
+            'total_equations': len(app_state['data_processor'].data) if app_state['data_processor'].data is not None else 0,
+            'stats': app_state['data_processor'].get_stats()
+        }
+        
+        # Save the model
+        predictor = app_state['predictors'][scenario_key]
+        model_id = model_manager.save_model(
+            predictor, scenario_key, model_name, dataset_info
+        )
+        
+        return jsonify({
+            'success': True,
+            'model_id': model_id,
+            'message': f'Model "{model_name}" saved successfully'
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'Failed to save model: {str(e)}'}), 500
+
+@app.route('/api/models/load', methods=['POST'])
+def load_model():
+    """Load a saved model"""
+    try:
+        data = request.get_json()
+        model_id = data.get('model_id')
+        
+        if not model_id:
+            return jsonify({'error': 'Model ID is required'}), 400
+        
+        # Load the model
+        predictor = model_manager.load_model(
+            model_id, app_state['data_processor'], app_state['scenarios']
+        )
+        
+        if predictor is None:
+            return jsonify({'error': 'Model not found'}), 404
+        
+        # Get model info
+        model_info = model_manager.get_model_info(model_id)
+        
+        if model_info:
+            scenario_key = model_info['scenario_key']
+            
+            # Store in application state
+            app_state['predictors'][scenario_key] = predictor
+            app_state['results'][scenario_key] = predictor.performance_stats
+            
+            return jsonify({
+                'success': True,
+                'message': f'Model "{model_info["model_name"]}" loaded successfully',
+                'model_info': model_info,
+                'scenario_key': scenario_key
+            })
+        else:
+            return jsonify({'error': 'Model metadata not found'}), 404
+            
+    except Exception as e:
+        return jsonify({'error': f'Failed to load model: {str(e)}'}), 500
+
+@app.route('/api/models/list')
+def list_saved_models():
+    """Get list of saved models"""
+    try:
+        models = model_manager.get_saved_models()
+        
+        return jsonify({
+            'success': True,
+            'models': models
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'Failed to list models: {str(e)}'}), 500
+
+@app.route('/api/models/delete', methods=['DELETE'])
+def delete_saved_model():
+    """Delete a saved model"""
+    try:
+        data = request.get_json()
+        model_id = data.get('model_id')
+        
+        if not model_id:
+            return jsonify({'error': 'Model ID is required'}), 400
+        
+        success = model_manager.delete_model(model_id)
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': 'Model deleted successfully'
+            })
+        else:
+            return jsonify({'error': 'Model not found'}), 404
+            
+    except Exception as e:
+        return jsonify({'error': f'Failed to delete model: {str(e)}'}), 500
+
+@app.route('/api/models/info/<model_id>')
+def get_model_info(model_id):
+    """Get detailed model information"""
+    try:
+        model_info = model_manager.get_model_info(model_id)
+        
+        if model_info:
+            return jsonify({
+                'success': True,
+                'model_info': model_info
+            })
+        else:
+            return jsonify({'error': 'Model not found'}), 404
+            
+    except Exception as e:
+        return jsonify({'error': f'Failed to get model info: {str(e)}'}), 500
 
 def _train_models_background(selected_scenarios, epochs, learning_rate):
     """Background training function"""

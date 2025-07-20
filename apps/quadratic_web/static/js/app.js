@@ -16,6 +16,7 @@ const AppState = {
   dataLoaded: false,
   scenarios: {},
   results: {},
+  savedModels: [],
   trainingInterval: null,
   autoLoadDataset: null,
   charts: {
@@ -39,6 +40,11 @@ const API = {
   predict: "/api/predict",
   results: "/api/results",
   performanceAnalysis: "/api/analysis/performance",
+  modelsList: "/api/models/list",
+  modelsSave: "/api/models/save",
+  modelsLoad: "/api/models/load",
+  modelsDelete: "/api/models/delete",
+  modelsInfo: "/api/models/info",
 };
 
 // Utility functions
@@ -419,6 +425,9 @@ const Navigation = {
       case "training":
         TrainingSection.refresh();
         break;
+      case "model-management":
+        ModelSection.refresh();
+        break;
       case "prediction":
         PredictionSection.refresh();
         break;
@@ -740,6 +749,255 @@ const TrainingSection = {
       return;
     }
     await this.loadScenarios();
+  },
+};
+
+// Model Manager functionality
+const ModelSection = {
+  init() {
+    this.setupEventListeners();
+  },
+
+  refresh() {
+    this.loadSavedModelsList();
+    this.updateSaveSection();
+  },
+
+  setupEventListeners() {
+    const saveBtn = document.getElementById("saveModelBtn");
+    const loadBtn = document.getElementById("loadModelBtn");
+    const deleteBtn = document.getElementById("deleteModelBtn");
+    const refreshBtn = document.getElementById("refreshModelsBtn");
+    const modelsSelect = document.getElementById("savedModelsSelect");
+
+    if (saveBtn) saveBtn.addEventListener("click", this.saveModel.bind(this));
+    if (loadBtn) loadBtn.addEventListener("click", this.loadModel.bind(this));
+    if (deleteBtn)
+      deleteBtn.addEventListener("click", this.deleteModel.bind(this));
+    if (refreshBtn)
+      refreshBtn.addEventListener("click", this.loadSavedModelsList.bind(this));
+    if (modelsSelect)
+      modelsSelect.addEventListener("change", this.onModelSelect.bind(this));
+  },
+
+  async loadSavedModelsList() {
+    try {
+      const response = await fetch(API.modelsList);
+      const data = await response.json();
+
+      if (data.success) {
+        AppState.savedModels = data.models;
+        this.updateModelsDropdown();
+      }
+    } catch (error) {
+      console.error("Failed to load saved models:", error);
+    }
+  },
+
+  updateModelsDropdown() {
+    const select = document.getElementById("savedModelsSelect");
+    if (!select) return;
+
+    select.innerHTML = '<option value="">Select a saved model...</option>';
+
+    if (AppState.savedModels) {
+      AppState.savedModels.forEach((model) => {
+        const option = document.createElement("option");
+        option.value = model.model_id;
+        option.textContent = `${model.model_name} (${
+          model.scenario_name
+        }) - ${new Date(model.created_date).toLocaleDateString()}`;
+        select.appendChild(option);
+      });
+    }
+  },
+
+  updateSaveSection() {
+    const section = document.getElementById("modelSaveSection");
+    const select = document.getElementById("scenarioSelect");
+
+    if (!section || !select) return;
+
+    // Check if any models are trained
+    const trainedScenarios = Object.keys(AppState.results || {});
+
+    if (trainedScenarios.length > 0) {
+      section.style.display = "block";
+
+      // Update scenario dropdown
+      select.innerHTML = '<option value="">Choose scenario to save...</option>';
+      trainedScenarios.forEach((key) => {
+        const scenario = AppState.scenarios[key];
+        if (scenario) {
+          const option = document.createElement("option");
+          option.value = key;
+          option.textContent = scenario.name;
+          select.appendChild(option);
+        }
+      });
+    } else {
+      section.style.display = "none";
+    }
+  },
+
+  async saveModel() {
+    const modelName = document.getElementById("modelNameInput").value.trim();
+    const scenarioKey = document.getElementById("scenarioSelect").value;
+
+    if (!modelName) {
+      Utils.showNotification("Please enter a model name", "error");
+      return;
+    }
+
+    if (!scenarioKey) {
+      Utils.showNotification("Please select a scenario", "error");
+      return;
+    }
+
+    try {
+      const response = await fetch(API.modelsSave, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model_name: modelName,
+          scenario_key: scenarioKey,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        Utils.showNotification(data.message, "success");
+        document.getElementById("modelNameInput").value = "";
+        this.loadSavedModelsList();
+      } else {
+        Utils.showNotification(data.error, "error");
+      }
+    } catch (error) {
+      Utils.showNotification("Failed to save model", "error");
+      console.error("Save model error:", error);
+    }
+  },
+
+  async loadModel() {
+    const modelId = document.getElementById("savedModelsSelect").value;
+
+    if (!modelId) {
+      Utils.showNotification("Please select a model to load", "error");
+      return;
+    }
+
+    try {
+      const response = await fetch(API.modelsLoad, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ model_id: modelId }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        Utils.showNotification(data.message, "success");
+        this.displayModelInfo(data.model_info);
+
+        // Refresh results display if it exists
+        if (typeof AnalysisSection !== "undefined" && AnalysisSection.refresh) {
+          AnalysisSection.refresh();
+        }
+      } else {
+        Utils.showNotification(data.error, "error");
+      }
+    } catch (error) {
+      Utils.showNotification("Failed to load model", "error");
+      console.error("Load model error:", error);
+    }
+  },
+
+  async deleteModel() {
+    const modelId = document.getElementById("savedModelsSelect").value;
+
+    if (!modelId) {
+      Utils.showNotification("Please select a model to delete", "error");
+      return;
+    }
+
+    if (
+      !confirm(
+        "Are you sure you want to delete this model? This action cannot be undone."
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const response = await fetch(API.modelsDelete, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ model_id: modelId }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        Utils.showNotification(data.message, "success");
+        this.loadSavedModelsList();
+        document.getElementById("modelInfoDisplay").style.display = "none";
+      } else {
+        Utils.showNotification(data.error, "error");
+      }
+    } catch (error) {
+      Utils.showNotification("Failed to delete model", "error");
+      console.error("Delete model error:", error);
+    }
+  },
+
+  onModelSelect() {
+    const modelId = document.getElementById("savedModelsSelect").value;
+    const model = AppState.savedModels?.find((m) => m.model_id === modelId);
+
+    if (model) {
+      this.displayModelInfo(model);
+    } else {
+      document.getElementById("modelInfoDisplay").style.display = "none";
+    }
+  },
+
+  displayModelInfo(model) {
+    const display = document.getElementById("modelInfoDisplay");
+    const content = document.getElementById("modelInfoContent");
+
+    if (!display || !content) return;
+
+    const createdDate = new Date(model.created_date).toLocaleString();
+    const r2Score = model.performance_metrics?.r2 || 0;
+
+    content.innerHTML = `
+      <div class="model-meta-item">
+        <strong>Name:</strong><br><span>${model.model_name}</span>
+      </div>
+      <div class="model-meta-item">
+        <strong>Scenario:</strong><br><span>${model.scenario_name}</span>
+      </div>
+      <div class="model-meta-item">
+        <strong>Dataset Size:</strong><br><span>${model.dataset_size.toLocaleString()} equations</span>
+      </div>
+      <div class="model-meta-item">
+        <strong>Created:</strong><br><span>${createdDate}</span>
+      </div>
+      <div class="model-meta-item">
+        <strong>R² Score:</strong><br><span>${Utils.formatNumber(
+          r2Score,
+          4
+        )}</span>
+      </div>
+      <div class="model-meta-item">
+        <strong>Training Time:</strong><br><span>${
+          model.performance_metrics?.training_time?.toFixed(2) || "N/A"
+        }s</span>
+      </div>
+    `;
+
+    display.style.display = "block";
   },
 };
 
@@ -2482,6 +2740,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   Navigation.init();
   DataSection.init();
   TrainingSection.init();
+  ModelSection.init();
   PredictionSection.init();
   AnalysisSection.init();
   ComparisonSection.init();
@@ -2518,6 +2777,18 @@ setInterval(async () => {
         document.getElementById("start-training-btn").disabled = false;
         document.getElementById("stop-training-btn").style.display = "none";
         Utils.showNotification("Training completed!", "success");
+
+        // ✅ FIX: Fetch results and update save section
+        try {
+          const results = await ApiClient.request(API.results);
+          AppState.results = results;
+          console.log("✅ Results loaded:", AppState.results);
+
+          // Update save section to show trained models
+          ModelSection.updateSaveSection();
+        } catch (error) {
+          console.error("Failed to load results after training:", error);
+        }
       }
     } catch (error) {
       console.error("Failed to check training status:", error);
