@@ -745,10 +745,15 @@ const TrainingSection = {
   },
 
   async refresh() {
-    if (!AppState.dataLoaded) {
+    // Only show dataset warning when explicitly navigating to training section
+    // Don't show it when refreshing due to model loading
+    const isTrainingTabActive = AppState.currentSection === "training";
+
+    if (!AppState.dataLoaded && isTrainingTabActive) {
       Utils.showNotification("Please load a dataset first", "warning");
       return;
     }
+
     await this.loadScenarios();
   },
 };
