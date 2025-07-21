@@ -616,10 +616,10 @@ if __name__ == '__main__':
         load_test_dataset()
         
         print(f"🌐 Starting web server...")
-        print(f"📱 Main app: http://localhost:5000")
-        print(f"🎯 Dataset showcase: http://localhost:5000/showcase")
+        print(f"📱 Main app: http://localhost:8000")
+        print(f"🎯 Dataset showcase: http://localhost:8000/showcase")
         print(f"🤖 Model ready for digit recognition!")
         
-        app.run(debug=True, host='0.0.0.0', port=5000)
+        app.run(debug=True, host='0.0.0.0', port=8000)
     else:
         print("❌ Failed to start - model could not be loaded")
