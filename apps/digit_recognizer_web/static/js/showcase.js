@@ -20,6 +20,11 @@ class DatasetShowcase {
     this.firstLoadComplete = false;
     this.advancedGraph = null;
 
+    // Demo mode properties
+    this.demoMode = false;
+    this.maxDemoAttempts = 100;
+    this.demoAttemptCount = 0;
+
     // Network architecture (matching your real model)
     this.networkArchitecture = {
       inputSize: 784,
@@ -35,6 +40,33 @@ class DatasetShowcase {
     window.datasetShowcase = this;
 
     console.log("🎨 Enhanced Dataset Showcase initialized");
+  }
+
+  setupConsoleCommands() {
+    window.enableDemoMode = (enabled = true) => this.enableDemoMode(enabled);
+    window.disableDemoMode = () => this.enableDemoMode(false);
+
+    window.showcaseHelp = () => {
+      console.log("🎨 Neural Network Showcase Console Commands:");
+      console.log(
+        "  enableDemoMode() or enableDemoMode(true) - Enable demo mode"
+      );
+      console.log(
+        "  disableDemoMode() or enableDemoMode(false) - Disable demo mode"
+      );
+      console.log("  datasetShowcase - Access the main showcase instance");
+      console.log("");
+      console.log(
+        "🎭 Demo Mode: Only shows samples where the model predicts correctly"
+      );
+      console.log("  - User will never see incorrect predictions");
+      console.log("  - Seamlessly skips wrong answers behind the scenes");
+      return "Commands registered successfully!";
+    };
+
+    console.log(
+      "🎮 Console commands registered! Type showcaseHelp() for available commands."
+    );
   }
 
   initializeShowcase() {
@@ -56,6 +88,9 @@ class DatasetShowcase {
 
     // Setup model selector
     this.setupModelSelector();
+
+    // Setup console commands
+    this.setupConsoleCommands();
   }
 
   setupEventListeners() {
@@ -278,17 +313,143 @@ class DatasetShowcase {
     }
   }
 
+  enableDemoMode(enabled = true) {
+    this.demoMode = enabled;
+    const status = enabled ? "enabled" : "disabled";
+    console.log(
+      `🎭 Demo Mode ${status} - ${
+        enabled
+          ? "Only correct predictions will be shown"
+          : "Normal mode restored"
+      }`
+    );
+
+    if (enabled) {
+      console.log("📝 Demo mode will seamlessly skip incorrect predictions.");
+      console.log("🔄 Use enableDemoMode(false) to disable demo mode.");
+    }
+
+    return `Demo mode ${status}`;
+  }
+
   async loadNextSample() {
     if (!this.firstLoadComplete) return;
 
     this.showLoading();
+    this.demoAttemptCount = 0;
+
     try {
-      await this.loadSampleFromDataset();
+      if (this.demoMode) {
+        await this.loadSampleWithDemoMode();
+      } else {
+        await this.loadSampleFromDataset();
+      }
     } catch (error) {
       console.error("Failed to load sample:", error);
       this.showError("Failed to load sample");
     } finally {
       this.hideLoading();
+    }
+  }
+
+  async loadSampleWithDemoMode() {
+    if (this.currentModel !== "enhanced_digit_model.pkl") {
+      // If not using the enhanced model, just load sample normally
+      await this.loadSampleFromDataset();
+      return;
+    }
+
+    let foundCorrectPrediction = false;
+    this.demoAttemptCount = 0;
+    let tempSample = null;
+    let tempPrediction = null;
+
+    while (
+      !foundCorrectPrediction &&
+      this.demoAttemptCount < this.maxDemoAttempts
+    ) {
+      this.demoAttemptCount++;
+
+      try {
+        if (this.useSyntheticData) {
+          const sampleData = await this.generateSampleData();
+          tempSample = sampleData;
+
+          const predictionData = await this.simulatePrediction(sampleData);
+          tempPrediction = predictionData;
+
+          const predictedDigit = predictionData.predicted_digit?.toString();
+          const actualLabel = sampleData.label?.toString();
+
+          if (predictedDigit === actualLabel) {
+            foundCorrectPrediction = true;
+          }
+        } else {
+          const response = await fetch("/api/dataset/sample");
+          const data = await response.json();
+
+          if (data.error) {
+            throw new Error(data.error);
+          }
+
+          tempSample = data.sample;
+          tempPrediction = data.prediction;
+
+          const predictedDigit = data.prediction.predicted_digit?.toString();
+          const actualLabel = data.sample.actual_label?.toString();
+
+          if (predictedDigit === actualLabel) {
+            foundCorrectPrediction = true;
+          }
+        }
+      } catch (error) {
+        console.error(
+          `Demo mode attempt ${this.demoAttemptCount} failed:`,
+          error
+        );
+        continue;
+      }
+    }
+
+    if (foundCorrectPrediction && tempSample && tempPrediction) {
+      this.currentSample = tempSample;
+      this.currentPrediction = tempPrediction;
+      this.sampleCount++;
+
+      document.getElementById("sampleCounter").textContent = this.sampleCount;
+
+      if (this.useSyntheticData) {
+        this.displaySample(tempSample);
+        this.updatePredictionDisplay(
+          tempPrediction.predicted_digit,
+          tempPrediction.confidence,
+          tempSample.label
+        );
+      } else {
+        this.displaySampleFromAPI(tempSample);
+        this.updatePredictionDisplay(
+          tempPrediction.predicted_digit,
+          tempPrediction.confidence,
+          tempSample.actual_label
+        );
+      }
+
+      this.announceChange(
+        `Loaded ${this.useSyntheticData ? "synthetic" : "real"} sample ${
+          this.sampleCount
+        }, predicted digit ${tempPrediction.predicted_digit}`
+      );
+
+      console.log(
+        `🎯 Demo Mode: Found correct prediction after ${this.demoAttemptCount} attempt(s)`
+      );
+    } else {
+      console.warn(
+        `⚠️ Demo Mode: Could not find correct prediction after ${this.maxDemoAttempts} attempts.`
+      );
+      this.showError(
+        `Demo mode: No correct prediction found in ${this.maxDemoAttempts} attempts`
+      );
     }
   }
 
