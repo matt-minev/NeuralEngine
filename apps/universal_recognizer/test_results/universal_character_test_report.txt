@@ -6,45 +6,45 @@ MODEL INFORMATION:
 ----------------------------------------
 Architecture: [784, 512, 256, 128, 62]
 Total Parameters: 574,142
-Training Accuracy: 79.12%
-Training Time: 70.0 minutes
+Training Accuracy: 81.45%
+Training Time: 70.6 minutes
 Classes: 62 (0-9, A-Z, a-z)
 
 TEST PERFORMANCE SUMMARY:
 ----------------------------------------
-Test Accuracy: 79.11%
-Test Loss: 0.6796
-Average Confidence: 76.0%
+Test Accuracy: 81.45%
+Test Loss: 0.5748
+Average Confidence: 80.0%
 Random Baseline: 1.61%
-Improvement over Random: 49.1x
+Improvement over Random: 50.5x
 
 CHARACTER TYPE PERFORMANCE:
 ----------------------------------------
-Digits (0-9): 91.7% accuracy, 83.3% confidence
-Uppercase (A-Z): 70.7% accuracy, 66.1% confidence
-Lowercase (a-z): 61.8% accuracy, 72.0% confidence
+Digits (0-9): 92.6% accuracy, 86.1% confidence
+Uppercase (A-Z): 75.1% accuracy, 71.4% confidence
+Lowercase (a-z): 64.9% accuracy, 77.1% confidence
 
 WORST 20 PERFORMING CHARACTERS:
 ----------------------------------------
 Char | Type      | Accuracy | Samples | Confidence
 --------------------------------------------------
- 'o' | Lowercase |    0.0% |     466 |     59.8%
- 's' | Lowercase |    0.0% |     437 |     68.5%
- 'c' | Lowercase |    2.1% |     432 |     63.4%
- 'u' | Lowercase |    5.4% |     482 |     62.2%
- 'f' | Lowercase |    6.5% |     400 |     58.7%
- 'm' | Lowercase |    6.9% |     464 |     67.2%
- 'y' | Lowercase |   12.1% |     381 |     54.1%
- 'l' | Lowercase |   13.6% |    2535 |     56.5%
- 'q' | Lowercase |   14.9% |     505 |     64.5%
- 'g' | Lowercase |   17.7% |     589 |     57.5%
- 'i' | Lowercase |   19.9% |     427 |     47.7%
- 'p' | Lowercase |   21.5% |     368 |     57.2%
- 'v' | Lowercase |   30.3% |     468 |     51.1%
- 'k' | Lowercase |   35.2% |     466 |     49.3%
- 'z' | Lowercase |   37.9% |     451 |     59.6%
- 'Z' | Uppercase |   38.4% |     464 |     59.5%
- 'I' | Uppercase |   39.6% |    2048 |     55.9%
- 'x' | Lowercase |   48.7% |     470 |     51.0%
- 'j' | Lowercase |   52.4% |     317 |     49.8%
- 'O' | Uppercase |   53.2% |    4156 |     64.2%
+ 'o' | Lowercase |    0.0% |     466 |     62.4%
+ 's' | Lowercase |    0.0% |     437 |     70.6%
+ 'c' | Lowercase |    5.6% |     432 |     66.0%
+ 'u' | Lowercase |    7.1% |     482 |     65.9%
+ 'm' | Lowercase |   10.3% |     464 |     66.8%
+ 'f' | Lowercase |   13.2% |     400 |     64.4%
+ 'l' | Lowercase |   17.9% |    2535 |     58.8%
+ 'q' | Lowercase |   19.2% |     505 |     64.9%
+ 'y' | Lowercase |   21.0% |     381 |     58.0%
+ 'p' | Lowercase |   22.0% |     368 |     61.7%
+ 'g' | Lowercase |   23.6% |     589 |     60.3%
+ 'i' | Lowercase |   28.6% |     427 |     60.1%
+ 'v' | Lowercase |   31.2% |     468 |     56.5%
+ 'z' | Lowercase |   39.5% |     451 |     63.7%
+ 'I' | Uppercase |   46.1% |    2048 |     59.5%
+ 'k' | Lowercase |   46.6% |     466 |     57.1%
+ 'Z' | Uppercase |   51.7% |     464 |     64.8%
+ 'j' | Lowercase |   53.3% |     317 |     62.6%
+ 'x' | Lowercase |   54.3% |     470 |     56.9%
+ 'O' | Uppercase |   54.7% |    4156 |     65.7%
