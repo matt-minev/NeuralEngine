@@ -1277,25 +1277,23 @@ def _get_prediction_details(scenario_key, inputs, predictions, scenario_info):
         elif scenario_key == 'coeff_to_roots':
             a, b, c = inputs
             x1_pred, x2_pred = predictions
-            
             details['equation_parts'] = {'a': a, 'b': b, 'c': c}
-            details['predicted_values'] = {'x₁': x1_pred, 'x₂': x2_pred}
+            
+            # FIXED: Sort predicted roots for consistency
+            x1_pred_sorted, x2_pred_sorted = sorted([x1_pred, x2_pred])
+            details['predicted_values'] = {'x₁': x1_pred_sorted, 'x₂': x2_pred_sorted}
             
             actual_sols_result = _calculate_quadratic_solutions(inputs, return_type=True)
             details['analysis']['actual_solution_type'] = actual_sols_result['type']
-            
             if actual_sols_result['roots']:
                 x1_actual, x2_actual = sorted(actual_sols_result['roots'])
                 details['actual_values'] = {'x₁': x1_actual, 'x₂': x2_actual}
                 
-                err1 = abs(x1_pred - x1_actual) + abs(x2_pred - x2_actual)
-                err2 = abs(x1_pred - x2_actual) + abs(x2_pred - x1_actual)
-                
-                if err1 <= err2:
-                    errors = {'x₁ Error': abs(x1_pred - x1_actual), 'x₂ Error': abs(x2_pred - x2_actual)}
-                else:
-                    errors = {'x₁ Error': abs(x1_pred - x2_actual), 'x₂ Error': abs(x2_pred - x1_actual)}
-                
+                # Calculate errors with sorted values
+                errors = {
+                    'x₁ Error': abs(x1_pred_sorted - x1_actual), 
+                    'x₂ Error': abs(x2_pred_sorted - x2_actual)
+                }
                 errors['Average Error'] = sum(errors.values()) / 2
                 details['error_metrics'] = errors
             else:

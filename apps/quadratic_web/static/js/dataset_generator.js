@@ -234,7 +234,7 @@ const DatasetGenerator = {
       // Validate inputs
       if (
         this.currentConfig.num_equations < 100 ||
-        this.currentConfig.num_equations > 100000
+        this.currentConfig.num_equations > 10000000
       ) {
         throw new Error("Number of equations must be between 100 and 100,000");
       }

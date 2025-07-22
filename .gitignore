@@ -169,3 +169,6 @@ figures/
 *.backup
 *.old
 apps/universal_recognizer/models/old_universal_character_model.pkl
+
+# Documentation
+documentation/
