@@ -15,7 +15,8 @@
 \usepackage{caption}
 \usepackage{hyperref}
 \usepackage{float}
-\usepackage{natbib}
+%\usepackage{natbib}
+\usepackage[numbers]{natbib}
 
 \usepackage{research-style}
 
@@ -113,21 +114,21 @@ Key contributions include numerically stable implementations, automatic differen
 
 \chapter{Theoretical Foundations}
 
-Neural networks form the cornerstone of modern artificial intelligence, representing sophisticated mathematical models capable of learning complex patterns from data. This chapter establishes the theoretical foundations underlying the Neural Network Engine, exploring both the fundamental principles of neural computation and the mathematical frameworks enabling efficient optimization. The theoretical understanding presented here provides the essential groundwork for comprehending the advanced implementation details and practical applications documented in subsequent chapters.
+Neural networks form the cornerstone of modern artificial intelligence, representing sophisticated mathematical models capable of learning complex patterns from data[1][2]. This chapter establishes the theoretical foundations underlying the Neural Network Engine, exploring both the fundamental principles of neural computation and the mathematical frameworks enabling efficient optimization. The theoretical understanding presented here provides the essential groundwork for comprehending the advanced implementation details and practical applications documented in subsequent chapters.
 
 \section{Neural Networks Fundamentals}
 
 \subsection{Historical Context and Biological Inspiration}
 
-Neural networks draw inspiration from biological neural systems, where interconnected neurons process and transmit information through electrochemical signals. The mathematical formalization of these concepts began with McCulloch and Pitts in 1943, who demonstrated that networks of simple artificial neurons could perform logical operations. This foundational work established the theoretical basis for modern neural computation, proving that appropriately connected networks of binary threshold units could compute any logical function.
+Neural networks draw inspiration from biological neural systems, where interconnected neurons process and transmit information through electrochemical signals. The mathematical formalization of these concepts began with McCulloch and Pitts in 1943, who demonstrated that networks of simple artificial neurons could perform logical operations[3][4]. This foundational work established the theoretical basis for modern neural computation, proving that appropriately connected networks of binary threshold units could compute any logical function.
 
-In artificial neural networks, this biological concept translates to computational models composed of interconnected processing units called \textbf{neurons} or \textbf{nodes}, each performing simple mathematical operations while collectively enabling complex pattern recognition and function approximation. The fundamental principle underlying neural networks is the concept of \textbf{distributed representation}, where information is encoded across multiple neurons rather than within individual units. This approach enables robust learning, generalization to unseen data, and fault tolerance—characteristics that make neural networks particularly effective for real-world applications.
+In artificial neural networks, this biological concept translates to computational models composed of interconnected processing units called \textbf{neurons} or \textbf{nodes}, each performing simple mathematical operations while collectively enabling complex pattern recognition and function approximation[5]. The fundamental principle underlying neural networks is the concept of \textbf{distributed representation}, where information is encoded across multiple neurons rather than within individual units. This approach enables robust learning, generalization to unseen data, and fault tolerance—characteristics that make neural networks particularly effective for real-world applications.
 
-The theoretical foundation for neural networks' computational power rests on several key mathematical principles. First, the \textbf{superposition principle} allows complex functions to be represented as weighted combinations of simpler functions. Second, the concept of \textbf{hierarchical feature learning} enables networks to automatically discover increasingly abstract representations through multiple layers of transformation. Third, the \textbf{non-linear composition} of simple operations creates systems capable of approximating arbitrarily complex mappings between input and output spaces.
+The theoretical foundation for neural networks' computational power rests on several key mathematical principles[6]. First, the \textbf{superposition principle} allows complex functions to be represented as weighted combinations of simpler functions. Second, the concept of \textbf{hierarchical feature learning} enables networks to automatically discover increasingly abstract representations through multiple layers of transformation. Third, the \textbf{non-linear composition} of simple operations creates systems capable of approximating arbitrarily complex mappings between input and output spaces.
 
 \subsection{Network Architecture and Mathematical Structure}
 
-A neural network consists of multiple \textbf{layers} of interconnected neurons, typically organized in a feedforward architecture. The mathematical structure of these networks can be precisely defined through a series of transformations operating on vector spaces.
+A neural network consists of multiple \textbf{layers} of interconnected neurons, typically organized in a feedforward architecture[7]. The mathematical structure of these networks can be precisely defined through a series of transformations operating on vector spaces.
 
 \textbf{Input Layer}: Receives raw data features, with each neuron corresponding to a specific input dimension. For a dataset with $n$ features, the input layer contains $n$ neurons representing the feature vector $\mathbf{x} = [x_1, x_2, \ldots, x_n]^T \in \mathbb{R}^n$.
 
@@ -159,7 +160,7 @@ with dimensionality:
 
 \subsection{Forward Propagation Mechanics and Mathematical Framework}
 
-Forward propagation represents the process by which input data flows through the network to produce predictions. This process can be mathematically described as a composition of affine transformations followed by non-linear activations.
+Forward propagation represents the process by which input data flows through the network to produce predictions[8]. This process can be mathematically described as a composition of affine transformations followed by non-linear activations.
 
 For a layer $l$ with input $\mathbf{a}^{(l-1)}$, the computation proceeds in two distinct stages:
 
@@ -182,7 +183,7 @@ The complete forward pass can be expressed as a composition of functions:
 \hat{\mathbf{y}} = f^{(L)}(\mathbf{W}^{(L)} f^{(L-1)}(\mathbf{W}^{(L-1)} \cdots f^{(1)}(\mathbf{W}^{(1)} \mathbf{x} + \mathbf{b}^{(1)}) \cdots + \mathbf{b}^{(L-1)}) + \mathbf{b}^{(L)})
 \end{equation}
 
-The activation function enables neural networks to approximate nonlinear relationships, as composition of linear transformations alone can only represent linear functions regardless of network depth. The mathematical necessity of nonlinearity can be proven: without activation functions, any deep network reduces to:
+The activation function enables neural networks to approximate nonlinear relationships, as composition of linear transformations alone can only represent linear functions regardless of network depth[9]. The mathematical necessity of nonlinearity can be proven: without activation functions, any deep network reduces to:
 \begin{equation}
 \mathbf{y} = \left(\prod_{l=1}^{L} \mathbf{W}^{(l)}\right) \mathbf{x} + \mathbf{b}_{combined}
 \end{equation}
@@ -191,21 +192,21 @@ which is equivalent to a single-layer linear model.
 
 \subsection{Universal Approximation Theory}
 
-Neural networks function as \textbf{universal function approximators}, capable of approximating any continuous function to arbitrary precision given sufficient neurons and appropriate activation functions. This theoretical foundation, established by multiple formulations of the Universal Approximation Theorem, provides the mathematical justification for neural networks' effectiveness across diverse domains.
+Neural networks function as \textbf{universal function approximators}, capable of approximating any continuous function to arbitrary precision given sufficient neurons and appropriate activation functions[10][11]. This theoretical foundation, established by multiple formulations of the Universal Approximation Theorem, provides the mathematical justification for neural networks' effectiveness across diverse domains.
 
 \textbf{Cybenko's Theorem (1989)}: Let $\sigma$ be a continuous, bounded, and non-constant activation function. Then finite linear combinations of the form:
 \begin{equation}
 G(x) = \sum_{j=1}^{N} \alpha_j \sigma(\mathbf{w}_j^T \mathbf{x} + b_j)
 \end{equation}
-are dense in $C(I_n)$, the space of continuous functions on the unit hypercube $I_n = [0,1]^n$, with respect to the uniform norm.
+are dense in $C(I_n)$, the space of continuous functions on the unit hypercube $I_n = [0,1\relax]^n$, with respect to the uniform norm[12].
 
-\textbf{Hornik's Generalization (1991)}: The universal approximation property holds for any bounded, non-constant activation function that is not a polynomial. This significantly broadens the class of admissible activation functions.
+\textbf{Hornik's Generalization (1991)}: The universal approximation property holds for any bounded, non-constant activation function that is not a polynomial[13]. This significantly broadens the class of admissible activation functions.
 
-\textbf{Modern Formulations}: Recent work has extended these results to provide explicit bounds on approximation errors and required network width. For a function $f: [0,1]^n \rightarrow \mathbb{R}$ with bounded variation, there exists a neural network with one hidden layer containing at most $\mathcal{O}(\epsilon^{-n})$ neurons that approximates $f$ within error $\epsilon$.
+\textbf{Modern Formulations}: Recent work has extended these results to provide explicit bounds on approximation errors and required network width[14][15]. For a function $f: [0,1\relax]^n \rightarrow \mathbb{R}$ with bounded variation, there exists a neural network with one hidden layer containing at most $\mathcal{O}(\epsilon^{-n})$ neurons that approximates $f$ within error $\epsilon$.
 
 The practical implications of these theorems are profound:
 - \textbf{Existence Guarantee}: For any continuous function on a compact domain, there exists a neural network that can approximate it arbitrarily well.
-- \textbf{Architecture Independence}: The approximation property depends primarily on width rather than depth for universal approximation.
+- \textbf{Architecture Independence}: The approximation property depends primarily on width rather than depth for universal approximation[16].
 - \textbf{Activation Function Requirements}: The activation function must be non-polynomial and non-constant for universal approximation to hold.
 
 However, these theorems do not address:
@@ -215,7 +216,7 @@ However, these theorems do not address:
 
 \subsection{Loss Functions and Learning Objectives}
 
-The learning process involves optimizing a \textbf{loss function} $L(\mathbf{y}, \hat{\mathbf{y}})$ that measures the discrepancy between predicted outputs $\hat{\mathbf{y}}$ and true targets $\mathbf{y}$. The choice of loss function fundamentally shapes the learning dynamics and determines what aspects of the data the model emphasizes during training.
+The learning process involves optimizing a \textbf{loss function} $L(\mathbf{y}, \hat{\mathbf{y}})$ that measures the discrepancy between predicted outputs $\hat{\mathbf{y}}$ and true targets $\mathbf{y}$[17]. The choice of loss function fundamentally shapes the learning dynamics and determines what aspects of the data the model emphasizes during training.
 
 \textbf{Mean Squared Error (MSE)} for regression tasks:
 \begin{equation}
@@ -245,7 +246,7 @@ where $R(\Theta)$ is a regularization term and $\lambda$ controls the regulariza
 
 \subsection{Activation Functions and Their Mathematical Properties}
 
-Activation functions serve as the nonlinear elements that enable neural networks to learn complex patterns. Each activation function has distinct mathematical properties that affect network behavior, training dynamics, and representational capacity.
+Activation functions serve as the nonlinear elements that enable neural networks to learn complex patterns[18]. Each activation function has distinct mathematical properties that affect network behavior, training dynamics, and representational capacity.
 
 \textbf{Sigmoid Function}:
 \begin{equation}
@@ -268,17 +269,17 @@ Tanh maps inputs to $(-1, 1)$ and is zero-centered, which can improve convergenc
 
 ReLU addresses the vanishing gradient problem by providing a constant gradient of 1 for positive inputs. However, it can suffer from "dying ReLU" problem, where neurons become permanently inactive.
 
-Advanced activation functions implemented in Neural Engine are detailed in Section 2.2, where we explore the mathematical properties and implementation considerations of various activation functions including ELU, Swish, and GELU variants.
+Advanced activation functions implemented in Neural Engine are detailed in Section 2.2, where we explore the mathematical properties and implementation considerations of various activation functions including ELU, Swish[19][20], and GELU variants[21].
 
 \subsection{Applications in Modern AI and Computational Complexity}
 
-Neural networks have revolutionized numerous domains through their ability to learn complex patterns from data. The theoretical foundations established above enable practical applications across diverse fields:
+Neural networks have revolutionized numerous domains through their ability to learn complex patterns from data[2]. The theoretical foundations established above enable practical applications across diverse fields:
 
-\textbf{Computer Vision}: Convolutional neural networks leverage translation equivariance and local connectivity to achieve superhuman performance in image recognition, object detection, and medical image analysis. The theoretical basis lies in the approximation of locally-varying functions through spatially-structured weight sharing.
+\textbf{Computer Vision}: Convolutional neural networks leverage translation equivariance and local connectivity to achieve superhuman performance in image recognition, object detection, and medical image analysis[22]. The theoretical basis lies in the approximation of locally-varying functions through spatially-structured weight sharing.
 
 \textbf{Natural Language Processing}: Transformer architectures have transformed language understanding through self-attention mechanisms that enable parallel computation of sequential dependencies. The mathematical foundation involves multi-head attention as learned similarity metrics in high-dimensional spaces.
 
-\textbf{Scientific Computing}: Neural networks increasingly solve complex scientific problems, from protein folding prediction to climate modeling and quantum chemistry. Physics-informed neural networks (PINNs) incorporate differential equations directly into the loss function, enabling principled solutions to partial differential equations.
+\textbf{Scientific Computing}: Neural networks increasingly solve complex scientific problems, from protein folding prediction to climate modeling and quantum chemistry[23][24]. Physics-informed neural networks (PINNs) incorporate differential equations directly into the loss function, enabling principled solutions to partial differential equations.
 
 \textbf{Control Systems}: Deep reinforcement learning enables autonomous systems in robotics, game playing, and resource optimization through the marriage of neural function approximation with dynamic programming principles.
 
@@ -288,11 +289,11 @@ The computational complexity of neural network training scales as $\mathcal{O}(|
 
 \subsection{Mathematical Foundations and Historical Development}
 
-Automatic differentiation forms the computational backbone of neural network training, enabling efficient calculation of gradients necessary for optimization algorithms. Unlike numerical differentiation, which suffers from approximation errors and requires $\mathcal{O}(n)$ function evaluations for $n$ variables, automatic differentiation provides exact gradients with computational complexity proportional to the original function evaluation.
+Automatic differentiation forms the computational backbone of neural network training, enabling efficient calculation of gradients necessary for optimization algorithms[25][26]. Unlike numerical differentiation, which suffers from approximation errors and requires $\mathcal{O}(n)$ function evaluations for $n$ variables, automatic differentiation provides exact gradients with computational complexity proportional to the original function evaluation.
 
 The fundamental principle relies on the mathematical fact that any computer program can be decomposed into a sequence of elementary mathematical operations (addition, multiplication, exponential, logarithm, etc.), each with known derivatives. By systematically applying the chain rule to these elementary operations, automatic differentiation computes exact derivatives efficiently.
 
-Automatic differentiation exploits the structure of computational graphs to achieve this efficiency. Every function computed by a program can be represented as a directed acyclic graph where:
+Automatic differentiation exploits the structure of computational graphs to achieve this efficiency[27]. Every function computed by a program can be represented as a directed acyclic graph where:
 - \textbf{Vertices} represent variables (inputs, intermediates, outputs)  
 - \textbf{Edges} represent elementary operations
 - \textbf{Forward evaluation} computes function values
@@ -305,7 +306,7 @@ The theoretical foundation rests on the chain rule of multivariable calculus. Fo
 
 \subsection{Forward Mode vs. Reverse Mode Automatic Differentiation}
 
-Two distinct modes of automatic differentiation exist, each with different computational characteristics and optimal use cases.
+Two distinct modes of automatic differentiation exist, each with different computational characteristics and optimal use cases[28].
 
 \textbf{Forward Mode Automatic Differentiation} computes directional derivatives by propagating derivative information forward through the computational graph. For a function $f: \mathbb{R}^n \rightarrow \mathbb{R}^m$, forward mode computes the Jacobian-vector product $\mathbf{J}\mathbf{v}$ where $\mathbf{v} \in \mathbb{R}^n$ is a direction vector.
 
@@ -319,7 +320,7 @@ The mathematical relationship between forward and reverse mode can be understood
 
 \subsection{The Chain Rule and Computational Graph Theory}
 
-The chain rule provides the mathematical foundation for backpropagation, enabling gradient computation through composite functions. For a composite function $f(g(\mathbf{x}))$, the derivative with respect to $\mathbf{x}$ is:
+The chain rule provides the mathematical foundation for backpropagation, enabling gradient computation through composite functions[29]. For a composite function $f(g(\mathbf{x}))$, the derivative with respect to $\mathbf{x}$ is:
 
 \begin{equation}
 \frac{\partial f}{\partial \mathbf{x}} = \frac{\partial f}{\partial g} \cdot \frac{\partial g}{\partial \mathbf{x}}
@@ -333,7 +334,7 @@ In neural networks, this extends to multiple variables and layers. For a loss fu
 
 where $L$ denotes the output layer and the chain of partial derivatives represents the gradient flow through the network.
 
-The computational graph representation enables systematic application of the chain rule. Each node in the graph corresponds to an elementary operation with known local derivatives. The global derivative is computed by traversing the graph and applying the chain rule at each node.
+The computational graph representation enables systematic application of the chain rule[30]. Each node in the graph corresponds to an elementary operation with known local derivatives. The global derivative is computed by traversing the graph and applying the chain rule at each node.
 
 \textbf{Graph Topology Considerations}: The structure of the computational graph affects both memory requirements and computational efficiency. Linear graphs (sequential operations) require minimal memory but may be computationally inefficient. Tree-like structures enable parallel computation but require careful memory management. Cycles in the graph (as in recurrent networks) require special handling through techniques like backpropagation through time.
 
@@ -346,7 +347,7 @@ The computational graph representation enables systematic application of the cha
 
 \subsection{Backpropagation Algorithm: Mathematical Derivation and Implementation}
 
-Backpropagation represents the practical implementation of automatic differentiation for neural networks, computing gradients by traversing the network in reverse order. The algorithm proceeds in two phases with rigorous mathematical foundations.
+Backpropagation represents the practical implementation of automatic differentiation for neural networks, computing gradients by traversing the network in reverse order[31]. The algorithm proceeds in two phases with rigorous mathematical foundations.
 
 \textbf{Forward Pass}: Compute activations for all layers:
 \begin{align}
@@ -382,11 +383,11 @@ Finally, parameter gradients are computed as:
 
 \subsection{Optimization Landscapes and Mathematical Challenges}
 
-Neural network optimization presents unique mathematical challenges due to the high-dimensional, non-convex nature of the loss landscape. Understanding these challenges is crucial for developing effective training strategies.
+Neural network optimization presents unique mathematical challenges due to the high-dimensional, non-convex nature of the loss landscape[32]. Understanding these challenges is crucial for developing effective training strategies.
 
 \textbf{Local Minima}: The loss function may contain numerous local minima, potentially trapping optimization algorithms away from the global optimum. However, recent theoretical work suggests that in sufficiently wide networks, most local minima are nearly as good as the global minimum due to the loss landscape's structure.
 
-\textbf{Saddle Points}: High-dimensional spaces contain exponentially more saddle points than local minima, where gradients vanish but the point is not optimal. The prevalence of saddle points follows from random matrix theory: in an $n$-dimensional space, the probability that all eigenvalues of the Hessian are positive (indicating a local minimum) decreases exponentially with $n$.
+\textbf{Saddle Points}: High-dimensional spaces contain exponentially more saddle points than local minima, where gradients vanish but the point is not optimal[33]. The prevalence of saddle points follows from random matrix theory: in an $n$-dimensional space, the probability that all eigenvalues of the Hessian are positive (indicating a local minimum) decreases exponentially with $n$.
 
 \textbf{Vanishing Gradients}: In deep networks, gradients may become exponentially small in early layers, hindering learning of lower-level features. This occurs when the product of derivatives through many layers becomes very small:
 \begin{equation}
@@ -413,7 +414,7 @@ where $\sigma_{\max}$ is the maximum singular value and $f'_{\max}$ is the maxim
 
 \subsection{Advanced Topics in Automatic Differentiation}
 
-Modern implementations of automatic differentiation incorporate several advanced techniques to address computational and numerical challenges.
+Modern implementations of automatic differentiation incorporate several advanced techniques to address computational and numerical challenges[34].
 
 \textbf{Checkpointing and Memory Optimization}: Training large networks requires careful memory management during backpropagation. Gradient checkpointing trades computation for memory by recomputing certain forward pass values during the backward pass rather than storing them. The optimal checkpointing strategy minimizes total computational cost subject to memory constraints.
 
@@ -428,7 +429,7 @@ This requires two passes: a forward pass to compute $\nabla f(\mathbf{x})$, then
 
 \subsection{Computational Efficiency and Implementation Considerations}
 
-Efficient automatic differentiation requires careful consideration of computational and memory complexity, particularly in modern deep learning frameworks.
+Efficient automatic differentiation requires careful consideration of computational and memory complexity, particularly in modern deep learning frameworks[35].
 
 \textbf{Forward vs. Reverse Mode Selection}: The choice between forward and reverse mode depends on the computational graph structure:
 - Forward mode: optimal when $n_{\text{inputs}} \ll n_{\text{outputs}}$
@@ -1439,7 +1440,7 @@ The application ecosystem includes a baseline MNIST implementation with iterativ
 
 The primary digit recognizer implementation utilizes the Modified National Institute of Standards and Technology (MNIST) dataset, accessed through Kaggle's CSV format for simplified integration with the Neural Engine's data processing pipeline. The dataset comprises 60,000 training images and 10,000 test images of handwritten digits from 0 to 9, each represented as 28×28 pixel grayscale images.
 
-The data preprocessing pipeline implements several critical transformations to optimize neural network training performance. Input normalization scales pixel values from the original [0, 255] range to [0, 1] through division by 255, ensuring numerical stability during gradient computation and preventing activation saturation in early training stages. The one-dimensional CSV representation is reshaped into the canonical 784-dimensional input vector (28×28 = 784), matching the Neural Engine's expected input format.
+The data preprocessing pipeline implements several critical transformations to optimize neural network training performance. Input normalization scales pixel values from the original $[0, 255]$ range to $[0, 1]$ through division by 255, ensuring numerical stability during gradient computation and preventing activation saturation in early training stages. The one-dimensional CSV representation is reshaped into the canonical 784-dimensional input vector (28×28 = 784), matching the Neural Engine's expected input format.
 
 Label encoding transforms the categorical digit labels into one-hot encoded vectors, creating a 10-dimensional output representation where each position corresponds to a specific digit class. This encoding facilitates the use of softmax activation in the output layer and cross-entropy loss for optimal classification performance.
 
