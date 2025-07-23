@@ -824,6 +824,7 @@ Linear activation preserves input values unchanged:
 \centering
 \caption{Comprehensive comparison of activation functions implemented in the Neural Engine.}
 \label{tab:activation_comparison}
+\begin{autotable}[0.95]
 \begin{tabular}{lccccc}
 \toprule
 Function & Range & Computational Cost & Gradient Issues & Primary Use Case & Smoothness \\
@@ -839,6 +840,7 @@ Softmax & $(0, 1)$ & High & None & Classification & Smooth \\
 Linear & $(-\infty, \infty)$ & Very Low & None & Regression & Linear \\
 \bottomrule
 \end{tabular}
+\end{autotable}
 \end{table}
 
 \begin{figure}[H]
@@ -1063,6 +1065,7 @@ v_t &= \beta v_{t-1} + (1 - \beta) g_t^2 \\
 \centering
 \caption{Detailed comparison of optimization algorithms in the Neural Engine.}
 \label{tab:optimizer_comparison}
+\begin{autotable}[0.95]
 \begin{tabular}{lccccc}
 \toprule
 Optimizer & Memory & Computation & Hyperparams & Convergence & Best Use Case \\
@@ -1073,6 +1076,7 @@ Adam & $O(3|\theta|)$ & $O(|\theta|)$ & 4 & Fast & Complex landscapes \\
 RMSprop & $O(2|\theta|)$ & $O(|\theta|)$ & 3 & Medium/Fast & RNNs/Sparse \\
 \bottomrule
 \end{tabular}
+\end{autotable}
 \end{table}
 
 \begin{figure}[H]
@@ -1302,6 +1306,7 @@ Architecture & Batch=1 & Batch=32 & Batch=128 & Batch=512 & Optimal Batch \\
 \centering
 \caption{Memory consumption during training for different optimizers and network sizes (MNIST, batch\_size=128).}
 \label{tab:memory_analysis}
+\begin{autotable}[0.95]
 \begin{tabular}{lcccc}
 \toprule
 Architecture & SGD (MB) & SGD+Momentum (MB) & Adam (MB) & Memory Overhead \\
@@ -1311,6 +1316,7 @@ Architecture & SGD (MB) & SGD+Momentum (MB) & Adam (MB) & Memory Overhead \\
 784-512-256-128-10 & 465 & 545 & 725 & +56\% (Adam vs SGD) \\
 \bottomrule
 \end{tabular}
+\end{autotable}
 \end{table}
 
 \subsubsection{Numerical Stability Assessment}
@@ -1391,6 +1397,7 @@ Wine Classification & 94.74\% & 94.74\% & 95.26\% & 0.5\% \\
 \centering
 \caption{Recommended configurations for different problem types.}
 \label{tab:configuration_recommendations}
+\begin{autotable}[0.95]
 \begin{tabular}{lcccc}
 \toprule
 Problem Type & Architecture & Activation & Optimizer & Learning Rate \\
@@ -1401,6 +1408,7 @@ Multi-class & [n, 256, 128, k] & ReLU, Softmax & Adam & 0.001 \\
 Function Approximation & [n, 512, 256, 128, 1] & Swish, Linear & Adam & 0.0005 \\
 \bottomrule
 \end{tabular}
+\end{autotable}
 \end{table}
 
 \begin{figure}[H]
@@ -1619,6 +1627,7 @@ Training time analysis shows predictable scaling with parameter count, with the 
 \centering
 \caption{Comprehensive comparison of all digit recognizer models showing architecture, performance metrics, and computational characteristics based on actual training results.}
 \label{tab:digit_model_comparison}
+\begin{autotable}[0.95]
 \begin{tabular}{lccccc}
 \toprule
 Model Version & Architecture & Test Accuracy & Parameters & Training Dataset & Performance Tier \\
@@ -1629,6 +1638,7 @@ Advanced Model & [784, 512, 256, 128, 10] & 97.29\% & 567,434 & MNIST & High Per
 Enhanced Model & [784, 512, 256, 128, 10] & 98.33\% & 567,434 & EMNIST & Superior \\
 \bottomrule
 \end{tabular}
+\end{autotable}
 \end{table}
 
 The digit recognizer application successfully demonstrates the Neural Network Engine's capabilities across multiple implementation paradigms and architectural complexities. The four-model progression from Basic to Enhanced illustrates fundamental principles of neural network scaling, the impact of architectural design decisions, and the crucial role of training data quality. The comprehensive performance analysis provides detailed insights into the trade-offs between model complexity, computational efficiency, and prediction accuracy that inform practical deployment decisions across educational and production environments.
