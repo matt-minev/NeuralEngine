@@ -172,3 +172,41 @@ apps/universal_recognizer/models/old_universal_character_model.pkl
 
 # Documentation
 documentation/prompts
+
+# LaTeX
+
+# LaTeX auxiliary files
+*.aux
+*.bbl
+*.blg
+*.lof
+*.log
+*.lot
+*.fls
+*.out
+*.toc
+*.fmt
+*.fot
+*.cb
+*.cb2
+*.lb
+*.fdb_latexmk
+*.synctex.gz
+*.nav
+*.snm
+
+# Intermediate and temporary files
+*.dvi
+*.idx
+*.ilg
+*.ind
+*.maf
+*.mtc
+*.mtc1
+*.tui
+*.vrb
+
+# Backup files
+*~
+*.swp
+*.tmp
