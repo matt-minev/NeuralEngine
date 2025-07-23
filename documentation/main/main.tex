@@ -15,6 +15,7 @@
 \usepackage{caption}
 \usepackage{hyperref}
 \usepackage{float}
+\usepackage{natbib}
 
 \usepackage{research-style}
 
@@ -1469,7 +1470,7 @@ MNIST models utilize adapted training strategies based on their architectural co
 
 The model architecture design demonstrates systematic exploration from basic implementations to sophisticated configurations optimized for different performance requirements. Four distinct architectures showcase the progression from educational baselines to production-ready implementations:
 
-The Basic Model [784, 128, 64, 10] serves as an educational baseline with minimal complexity, the Optimized Model [784, 256, 128, 64, 10] provides improved performance with moderate complexity, the Advanced Model [784, 512, 256, 128, 10] offers high performance with substantial capacity, and the Enhanced Model uses the same architecture as Advanced but trained on the superior EMNIST dataset.
+The Basic Model $784 \rightarrow 128 \rightarrow 64 \rightarrow 10$ serves as an educational baseline with minimal complexity, the Optimized Model $784 \rightarrow 256 \rightarrow 128 \rightarrow 64 \rightarrow 10$ provides improved performance with moderate complexity, the Advanced Model $784 \rightarrow 512 \rightarrow 256 \rightarrow 128 \rightarrow 10$ offers high performance with substantial capacity, and the Enhanced Model uses the same architecture as Advanced but trained on the superior EMNIST dataset.
 
 \subsection{Implementation Versions}
 
@@ -1510,7 +1511,7 @@ The web application's most innovative feature is the interactive neural network 
 
 Users can click on individual neurons to examine their activation values, weights, and contribution to the final prediction. The visualization updates dynamically as different models are selected, showing how architectural differences between the four models affect the internal representation and processing of input data.
 
-The implementation supports four distinct model visualizations, each accurately reflecting the unique architecture and training characteristics: Basic [784, 128, 64, 10], Optimized [784, 256, 128, 64, 10], Advanced [784, 512, 256, 128, 10], and Enhanced [784, 512, 256, 128, 10]. Color coding indicates activation strength, with pink output neurons where intensity corresponds to predicted probability values.
+The implementation supports four distinct model visualizations, each accurately reflecting the unique architecture and training characteristics: Basic $784 \rightarrow 128 \rightarrow 64 \rightarrow 10$, Optimized $784 \rightarrow 256 \rightarrow 128 \rightarrow 64 \rightarrow 10$, Advanced $784 \rightarrow 512 \rightarrow 256 \rightarrow 128 \rightarrow 10$, and Enhanced $784 \rightarrow 512 \rightarrow 256 \rightarrow 128 \rightarrow 10$. Color coding indicates activation strength, with pink output neurons where intensity corresponds to predicted probability values.
 
 \subsubsection{Animated Prediction Process}
 
@@ -1569,7 +1570,7 @@ The Basic Model serves as an educational baseline with 109,386 parameters, demon
 
 The Enhanced Model demonstrates the significant impact of superior training data while maintaining the same architectural complexity as the Advanced Model. Using the EMNIST dataset with 4× more training samples, the Enhanced Model achieves 98.33\% test accuracy, representing a substantial improvement over MNIST-trained variants.
 
-The Enhanced Model utilizes the [784, 512, 256, 128, 10] architecture with 567,434 parameters, identical to the Advanced Model, but trained on 240,000 EMNIST samples compared to 60,000 MNIST samples. This demonstrates how dataset quality and quantity can significantly impact final performance even with identical network architectures.
+The Enhanced Model utilizes the $784 \rightarrow 512 \rightarrow 256 \rightarrow 128 \rightarrow 10$ architecture with 567,434 parameters, identical to the Advanced Model, but trained on 240,000 EMNIST samples compared to 60,000 MNIST samples. This demonstrates how dataset quality and quantity can significantly impact final performance even with identical network architectures.
 
 Performance benchmarking shows superior accuracy and confidence characteristics across all digit classes, with particularly notable improvements in challenging recognition cases that benefit from the enhanced training data diversity.
 
@@ -1673,7 +1674,7 @@ The transition from 10-class digit recognition to 62-class character recognition
 
 \subsubsection{Architecture and Training Methodology}
 
-The Universal Character Recognizer employs a sophisticated neural network architecture specifically designed to handle the complexity of 62-class character recognition. The model utilizes a [784, 512, 256, 128, 62] layer configuration with 574,142 total parameters, representing a careful balance between model capacity and computational efficiency.
+The Universal Character Recognizer employs a sophisticated neural network architecture specifically designed to handle the complexity of 62-class character recognition. The model utilizes a $784 \rightarrow 512 \rightarrow 256 \rightarrow 128 \rightarrow 62$ layer configuration with 574,142 total parameters, representing a careful balance between model capacity and computational efficiency.
 
 The architecture progression follows a systematic feature extraction hierarchy: the input layer processes the 784-dimensional flattened image representation, the first hidden layer (512 neurons) captures low-level edge and stroke features, the second hidden layer (256 neurons) combines features into character components, the third hidden layer (128 neurons) integrates components into character-level representations, and the output layer (62 neurons) produces probability distributions across all character classes.
 
@@ -2144,5 +2145,10 @@ Section 1 distilled decades of neural-network research into a coherent theoretic
 Collectively, these contributions demonstrate that transparent, from-scratch implementations can achieve both didactic clarity and high-performance execution. The Neural Network Engine not only demystifies the inner workings of deep learning but also provides an extensible platform for future research—whether that entails experimenting with novel activation functions, integrating second-order optimization, or deploying the engine in edge-computing environments.
 
 As the field accelerates towards ever larger models and specialized hardware, the principles embodied here remain constant: mathematical rigor, thoughtful abstraction, and relentless attention to numerical detail. With this foundation in place, the Neural Network Engine is prepared to evolve alongside the next generation of neural-network innovations, empowering researchers, students, and practitioners to push the boundaries of what intelligent systems can achieve.
+
+\newpage
+\nocite{*}
+\bibliographystyle{plainnat}
+\bibliography{references}
 
 \end{document}
