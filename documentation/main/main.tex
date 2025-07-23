@@ -16,8 +16,10 @@
 \usepackage{hyperref}
 \usepackage{float}
 
+\usepackage{research-style}
+
 % Set image paths for all section folders
-\graphicspath{{assets/section1/}{assets/section2/}{assets/section3/}{assets/}}
+\graphicspath{{assets/section1/}{assets/section2/}{assets/section3/}{assets/images}}
 
 % Code listing configuration
 \lstset{
@@ -39,22 +41,63 @@
     urlcolor=cyan
 }
 
-\title{
-    \Huge\textbf{Neural Network Engine} \\
-    \Large A Comprehensive Deep Learning Framework with Automatic Differentiation \\
-    \large and Research Software for Neural Network Education \& Experimentation
-}
-\author{
-    \textbf{Matt Minev} \\
-    \textit{Varna, Bulgaria} \\
-    \texttt{matt.minev@gmail.com}
-}
-\date{\today}
-
 \begin{document}
 
-\maketitle
+% Custom title page layout
 \thispagestyle{empty}
+
+% Logo at full width (stays at top)
+\noindent
+\includegraphics[width=\textwidth]{uchimi_logo.jpg}
+
+% Use flexible space to center the remaining content
+\vspace*{\fill}
+
+% Center all content below logo
+\begin{center}
+
+% Summer Research School text - bigger
+{\Large\textbf{Summer Research School 2025}}
+
+\vspace{1.5em}
+
+% Main title
+{\Huge\textbf{Neural Network Engine}} \\[0.5em]
+{\Large A Comprehensive Deep Learning Framework with Automatic Differentiation} \\[0.3em]
+{\large and Research Software for Neural Network Education \& Experimentation}
+
+\vspace{2.5em}
+
+% Author section - larger with bold name and institution
+{\large
+\textbf{Author(s):} \\[1em]
+\textbf{Matt Minev}\\
+\textbf{PMPG "St. Kliment Ohridski", Montana, Bulgaria}\\
+\texttt{matt.minev@gmail.com}
+}
+
+\vspace{2.5em}
+
+% Scientific Advisor section - institution split to two lines
+{\large
+\textbf{Scientific Advisor(s):} \\[0.5em]
+\textbf{Emil Kelevedjiev}\\
+\textbf{Institute of Mathematics and Informatics,} \\
+\textbf{Bulgarian Academy of Sciences}\\
+\texttt{keleved@gmail.com}
+}
+
+\vspace{2.5em}
+
+% Date at the bottom - bigger
+{\large\today}
+
+\end{center}
+
+% Flexible space to balance the page
+\vspace*{\fill}
+
+\newpage
 
 \begin{abstract}
 The Neural Network Engine is a comprehensive machine learning framework built from first principles, implementing core deep learning concepts through practical, educational code. The engine features nine activation functions including ReLU, Sigmoid, Tanh, and advanced variants like Swish and GELU, paired with robust optimization algorithms including SGD with momentum and Adam optimizer.
