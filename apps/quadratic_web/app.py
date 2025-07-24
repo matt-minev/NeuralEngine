@@ -569,163 +569,91 @@ def generate_quadratic_dataset(equation_type, num_equations, coefficient_range, 
     
     return np.array(dataset)
 
-def generate_school_grade_equation(coefficient_range, root_type, max_attempts=50):
-    """
-    ULTIMATE quadratic equation generator for 10M unique equations
-    Optimized for neural network training with coefficient range -100 to 100
-    """
-    import numpy as np
-    import math
-    from fractions import Fraction
-    
+def generate_school_grade_equation(coefficient_range, root_type):
+    """Generate school-grade quadratic equations with nice solutions - FIXED VERSION"""
     min_coeff = coefficient_range['min']
     max_coeff = coefficient_range['max']
     
-    # EXPANDED ROOTS for maximum diversity (targeting 10M equations)
-    integer_roots = list(range(-75, 76))  # 151 integer options
+    # Define nice root values with better distribution
+    integer_roots = list(range(-8, 9))  # Reduced range for better coefficients
+    fractional_roots = [-5/2, -3/2, -1/2, -1/3, -1/4, 1/4, 1/3, 1/2, 3/2, 5/2, 
+                       -4/3, -2/3, 2/3, 4/3, -3/4, -5/4, 3/4, 5/4]
     
-    # COMPREHENSIVE fractional roots - optimized for uniqueness
-    fractional_roots = []
-    denominators = [2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 16, 18, 20, 24, 25, 30, 32, 36, 40]
-    for denom in denominators:
-        for num in range(-120, 121):  # Extended range for more combinations
-            if num != 0:  # Include zero as a root - important for neural network edge cases
-                frac = num / denom
-                if abs(frac) <= 60:  # Reasonable upper bound
-                    fractional_roots.append(frac)
-    
-    # Add special mathematical constants for edge case training
-    special_roots = [0, 0.1, -0.1, 0.25, -0.25, 0.5, -0.5, 0.75, -0.75,
-                    math.sqrt(2), -math.sqrt(2), math.sqrt(3), -math.sqrt(3),
-                    math.sqrt(5), -math.sqrt(5), math.pi/4, -math.pi/4]
-    
-    fractional_roots.extend(special_roots)
-    fractional_roots = sorted(list(set(fractional_roots)))  # Remove duplicates
-    
-    # Configure root selection based on type
     if root_type == 'integers':
         possible_roots = integer_roots
     elif root_type == 'fractions':
         possible_roots = fractional_roots
-    else:  # mixed - MAXIMUM DIVERSITY
+    else:  # mixed
         possible_roots = integer_roots + fractional_roots
     
-    # ENHANCED generation algorithm
-    max_attempts = max(max_attempts, 300)  # Increase for better success rate
+    # Remove roots that are too large (causes coefficient boundary issues)
+    max_root = min(8, abs(max_coeff) // 2)
+    possible_roots = [r for r in possible_roots if abs(r) <= max_root and r != 0]
     
-    for attempt in range(max_attempts):
-        # SMART root selection strategy
-        if attempt < max_attempts * 0.4:
-            # 40%: Prefer smaller roots for numerical stability
-            smaller_roots = [r for r in possible_roots if abs(r) <= 15]
-            pool = smaller_roots if smaller_roots and np.random.random() < 0.75 else possible_roots
-        elif attempt < max_attempts * 0.8:
-            # 40%: Medium-sized roots for good coverage
-            medium_roots = [r for r in possible_roots if 5 <= abs(r) <= 35]
-            pool = medium_roots if medium_roots and np.random.random() < 0.6 else possible_roots
-        else:
-            # 20%: Any roots for maximum diversity
-            pool = possible_roots
-        
-        x1 = np.random.choice(pool)
-        x2 = np.random.choice(pool)
-        
-        try:
-            # ROBUST fractional arithmetic with overflow protection
-            sum_roots = Fraction(x1).limit_denominator(2000) + Fraction(x2).limit_denominator(2000)
-            product_roots = Fraction(x1).limit_denominator(2000) * Fraction(x2).limit_denominator(2000)
-            
-            # Safe LCM calculation
-            try:
-                lcm_denom = math.lcm(sum_roots.denominator, product_roots.denominator)
-            except (ValueError, OverflowError):
-                # Fallback for very large denominators
-                lcm_denom = sum_roots.denominator * product_roots.denominator
-                if lcm_denom > 10000:  # Cap for safety
-                    lcm_denom = min(sum_roots.denominator, product_roots.denominator)
-            
-            # OPTIMAL coefficient range handling for -100 to 100
-            max_range = min(abs(max_coeff), abs(min_coeff))
-            
-            # Intelligent lcm_denom capping
-            if lcm_denom > max_range // 3:
-                lcm_denom = min(lcm_denom, max_range // 3)
-            
-            max_a_multiple = max_range // max(lcm_denom, 1)
-            if max_a_multiple == 0:
-                max_a_multiple = 1
-            
-            # Generate 'a' candidates with excellent distribution
-            a_candidates = []
-            for mult in range(1, min(max_a_multiple + 1, 50)):  # Cap for performance
-                pos_a = mult * lcm_denom
-                neg_a = -mult * lcm_denom
-                if abs(pos_a) <= max_range:
-                    a_candidates.append(pos_a)
-                if abs(neg_a) <= max_range:
-                    a_candidates.append(neg_a)
-            
-            if not a_candidates:
-                continue
-            
-            # WEIGHTED selection optimized for neural network training
-            weights = []
-            for a_val in a_candidates:
-                # Balanced weighting: favor smaller but allow larger
-                if abs(a_val) <= 10:
-                    weight = 3.0  # High weight for small coefficients
-                elif abs(a_val) <= 25:
-                    weight = 2.0  # Medium weight
-                elif abs(a_val) <= 50:
-                    weight = 1.0  # Normal weight
-                else:
-                    weight = 0.5  # Lower weight for large coefficients
-                weights.append(weight)
-            
-            weights = np.array(weights)
-            a = np.random.choice(a_candidates, p=weights / weights.sum())
-            
-            # Calculate coefficients with proper rounding
-            b = int(round(-a * float(sum_roots)))
-            c = int(round(a * float(product_roots)))
-            
-            # STRICT boundary checking
-            if (min_coeff <= a <= max_coeff and 
-                min_coeff <= b <= max_coeff and 
-                min_coeff <= c <= max_coeff):
-                
-                # FINAL verification and root calculation
-                discriminant = b**2 - 4*a*c
-                if discriminant >= 0:
-                    sqrt_disc = math.sqrt(discriminant)
-                    x1_calc = (-b + sqrt_disc) / (2*a)
-                    x2_calc = (-b - sqrt_disc) / (2*a)
-                else:
-                    # For complex cases, return intended roots
-                    x1_calc = x1
-                    x2_calc = x2
-                
-                return [float(a), float(b), float(c), float(x1_calc), float(x2_calc)]
-                    
-        except (ZeroDivisionError, ValueError, OverflowError, TypeError):
-            continue
+    if not possible_roots:
+        possible_roots = [-2, -1, 1, 2]  # Fallback
     
-    # ENHANCED fallback system
-    for _ in range(50):
-        a = np.random.choice([-5, -4, -3, -2, -1, 1, 2, 3, 4, 5])
-        x1 = np.random.choice([-6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6])
-        x2 = np.random.choice([-6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6])
-        
-        b = -a * (x1 + x2)
-        c = a * x1 * x2
-        
-        if (min_coeff <= a <= max_coeff and 
-            min_coeff <= b <= max_coeff and 
-            min_coeff <= c <= max_coeff):
-            return [float(a), float(b), float(c), float(x1), float(x2)]
+    # Choose two roots
+    x1 = np.random.choice(possible_roots)
+    x2 = np.random.choice(possible_roots)
     
-    # Ultimate fallback - guaranteed to work
-    return [1.0, -1.0, 0.0, 0.0, 1.0]  # x(x-1) = 0
+    # Generate 'a' with bias toward smaller values to avoid boundary issues
+    a_range = min(abs(max_coeff), abs(min_coeff), 8)  # Cap at 8
+    weights = [1/(abs(i)+1) for i in range(-a_range, a_range+1) if i != 0]  # Bias toward smaller values
+    a_candidates = [i for i in range(-a_range, a_range+1) if i != 0]
+    a = np.random.choice(a_candidates, p=np.array(weights)/sum(weights))
+    
+    # Calculate b and c using Vieta's formulas
+    sum_roots = x1 + x2
+    product_roots = x1 * x2
+    
+    # Handle fractional roots properly
+    from fractions import Fraction
+    sum_frac = Fraction(sum_roots).limit_denominator(100)
+    prod_frac = Fraction(product_roots).limit_denominator(100)
+    
+    # Scale 'a' to make b and c integers when possible
+    lcm_denom = np.lcm(sum_frac.denominator, prod_frac.denominator)
+    a_scaled = a * lcm_denom
+    
+    b = -a_scaled * sum_roots
+    c = a_scaled * product_roots
+    
+    # Check if scaled coefficients fit in range
+    max_scaled_coeff = max(abs(a_scaled), abs(b), abs(c))
+    if max_scaled_coeff > max(abs(max_coeff), abs(min_coeff)):
+        # Scale down proportionally instead of hitting boundaries
+        scale_factor = max(abs(max_coeff), abs(min_coeff)) * 0.8 / max_scaled_coeff  # 0.8 for safety margin
+        a_scaled *= scale_factor
+        b *= scale_factor
+        c *= scale_factor
+    
+    # Round to remove floating point errors
+    a_final = round(a_scaled)
+    b_final = round(b)
+    c_final = round(c)
+    
+    # Ensure 'a' is not zero
+    if a_final == 0:
+        a_final = 1 if a > 0 else -1
+    
+    # Final boundary check - regenerate if still at boundaries
+    if (abs(a_final) >= abs(max_coeff) or abs(b_final) >= abs(max_coeff) or 
+        abs(c_final) >= abs(max_coeff)):
+        return generate_school_grade_equation(coefficient_range, root_type)
+    
+    # Recalculate roots with final coefficients
+    discriminant = b_final**2 - 4*a_final*c_final
+    if discriminant >= 0:
+        sqrt_disc = np.sqrt(discriminant)
+        x1_calc = (-b_final + sqrt_disc) / (2*a_final)
+        x2_calc = (-b_final - sqrt_disc) / (2*a_final)
+    else:
+        # Fallback for edge cases
+        x1_calc = x1
+        x2_calc = x2
+    
+    return [float(a_final), float(b_final), float(c_final), float(x1_calc), float(x2_calc)]
 
 def generate_random_equation(coefficient_range, allow_complex):
     """Generate random quadratic equations"""
