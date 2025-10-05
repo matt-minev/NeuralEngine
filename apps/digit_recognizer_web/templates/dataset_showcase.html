@@ -4,27 +4,33 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dataset Showcase - NeuralEngine</title>
+
+    <!-- main styles -->
     <link rel="stylesheet" href="static/css/showcase.css" />
+
+    <!-- google fonts for better typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
-    <!-- Apple-like Favicon -->
+    <!-- using svg as favicon, quick and easy -->
     <link
       rel="icon"
       type="image/svg+xml"
       href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✨</text></svg>"
     />
 
+    <!-- inter font looks clean -->
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
 
-    <!-- D3.js Library - REQUIRED for advanced neural graph -->
+    <!-- d3.js needed for the network graph visualization -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
   </head>
 
   <body>
+    <!-- animated background with floating shapes -->
     <div class="animated-background">
       <div class="floating-shapes">
         <div class="shape shape-1"></div>
@@ -36,7 +42,7 @@
     </div>
 
     <div class="showcase-container">
-      <!-- Header -->
+      <!-- main header section -->
       <header class="showcase-header">
         <div class="header-content">
           <h1 class="showcase-title">NeuralEngine Dataset Showcase</h1>
@@ -44,7 +50,10 @@
             Explore real-time neural network predictions on dataset samples
           </p>
         </div>
+
+        <!-- controls in the header -->
         <div class="header-controls">
+          <!-- toggle for switching between real and synthetic data -->
           <div class="data-source-toggle">
             <label class="toggle-label">
               <span class="toggle-text">Real Data</span>
@@ -59,6 +68,8 @@
               <span class="toggle-text">Synthetic</span>
             </label>
           </div>
+
+          <!-- back button to go to drawing mode -->
           <button
             id="backToDrawBtn"
             class="btn btn-secondary"
@@ -70,11 +81,11 @@
         </div>
       </header>
 
-      <!-- Main Content -->
       <main class="showcase-main">
-        <!-- Sample Display Section -->
+        <!-- section where we display the current sample -->
         <section class="sample-section">
           <div class="sample-container">
+            <!-- canvas for drawing the digit sample -->
             <div class="sample-image-wrapper">
               <canvas
                 id="sampleCanvas"
@@ -83,15 +94,20 @@
                 aria-label="Dataset sample digit"
                 title="Click to load next sample"
               ></canvas>
+
+              <!-- loading overlay shows while fetching data -->
               <div class="sample-overlay loading" id="sampleOverlay">
                 <div class="loading-spinner"></div>
                 <p>Loading sample...</p>
               </div>
+
+              <!-- hint to tell users they can click -->
               <div class="click-hint" id="clickHint">
                 <span>Click to load next sample</span>
               </div>
             </div>
 
+            <!-- prediction results display -->
             <div class="prediction-display">
               <div
                 class="predicted-digit"
@@ -100,6 +116,8 @@
               >
                 -
               </div>
+
+              <!-- shows confidence and actual label -->
               <div class="prediction-details">
                 <div class="confidence-display">
                   <span class="confidence-label">Confidence</span>
@@ -114,9 +132,10 @@
           </div>
         </section>
 
-        <!-- Sample Controls Section (Updated with Model Dropdown) -->
+        <!-- controls for loading samples and switching models -->
         <section class="sample-controls-section">
           <div class="controls-container">
+            <!-- main button to load next sample -->
             <button
               id="nextSampleBtn"
               class="btn btn-primary btn-large"
@@ -126,18 +145,21 @@
               Next Sample
             </button>
 
+            <!-- stats and model selector -->
             <div class="sample-stats">
+              <!-- counter showing which sample we're on -->
               <div class="sample-counter">
                 <span class="counter-label">Sample</span>
                 <span class="counter-value" id="sampleCounter">1</span>
               </div>
 
+              <!-- display model accuracy -->
               <div class="accuracy-display">
                 <span class="accuracy-label">Model Accuracy</span>
                 <span class="accuracy-value" id="modelAccuracy">--%</span>
               </div>
 
-              <!-- Model Selector Dropdown -->
+              <!-- dropdown to select different models -->
               <div class="model-selector-container">
                 <label class="model-selector-label">Neural Model</label>
                 <div class="model-selector-wrapper">
@@ -146,6 +168,7 @@
                     class="model-selector"
                     aria-label="Select neural network model"
                   >
+                    <!-- available model options -->
                     <option value="enhanced_digit_model.pkl">
                       Enhanced Model
                     </option>
@@ -157,6 +180,8 @@
                       Advanced Model
                     </option>
                   </select>
+
+                  <!-- dropdown arrow icon -->
                   <div class="model-selector-icon">
                     <svg width="12" height="8" viewBox="0 0 12 8" fill="none">
                       <path
@@ -174,11 +199,13 @@
           </div>
         </section>
 
-        <!-- Neural Network Visualization Section -->
+        <!-- neural network visualization using d3.js -->
         <section class="network-section">
           <div class="network-container">
             <div class="network-header">
               <h2>Advanced Neural Network Visualization</h2>
+
+              <!-- controls for the network animation -->
               <div class="network-controls">
                 <button
                   id="playAnimationBtn"
@@ -188,6 +215,8 @@
                   <span class="btn-icon">▶️</span>
                   Play Animation
                 </button>
+
+                <!-- reset button to clear the network -->
                 <button
                   id="resetNetworkBtn"
                   class="btn btn-secondary"
@@ -196,6 +225,8 @@
                   <span class="btn-icon">🔄</span>
                   Reset
                 </button>
+
+                <!-- speed selector for animation -->
                 <div class="speed-control">
                   <label for="animationSpeed">Speed:</label>
                   <select id="animationSpeed">
@@ -208,10 +239,12 @@
               </div>
             </div>
 
+            <!-- container where d3 renders the network graph -->
             <div class="network-visualization" id="advancedNetworkContainer">
-              <!-- Advanced network will be rendered here -->
+              <!-- network visualization gets rendered here by js -->
             </div>
 
+            <!-- info panel with instructions -->
             <div class="network-info-panel">
               <div class="info-item">
                 <span class="info-label">Click neurons</span>
@@ -230,7 +263,7 @@
         </section>
       </main>
 
-      <!-- Floating 3D Footer -->
+      <!-- footer with branding -->
       <footer class="floating-footer">
         <div class="footer-content">
           <div class="footer-brand">
@@ -245,7 +278,7 @@
         <div class="footer-glow"></div>
       </footer>
 
-      <!-- Model Info Modal -->
+      <!-- modal for showing model details -->
       <div class="modal-overlay" id="modelInfoModal" aria-hidden="true">
         <div class="modal-content" role="dialog" aria-labelledby="modalTitle">
           <div class="modal-header">
@@ -258,19 +291,21 @@
               ×
             </button>
           </div>
+
+          <!-- modal body gets populated dynamicaly -->
           <div class="modal-body" id="modelInfoContent">
-            <!-- Model info will be populated dynamically -->
+            <!-- content added by javascript -->
           </div>
         </div>
       </div>
 
-      <!-- Animation Progress Indicator -->
+      <!-- progress bar for animations -->
       <div class="progress-indicator" id="progressIndicator">
         <div class="progress-bar" id="progressBar"></div>
         <span class="progress-text" id="progressText">Preparing...</span>
       </div>
 
-      <!-- Model Switch Toast -->
+      <!-- toast notification for model switching -->
       <div class="model-switch-toast" id="modelSwitchToast">
         <div class="toast-content">
           <span class="toast-icon">🔄</span>
@@ -280,11 +315,13 @@
         </div>
       </div>
 
-      <!-- Accessibility announcements -->
+      <!-- screen reader announcements for accesibility -->
       <div class="sr-only" aria-live="polite" id="announcements"></div>
     </div>
 
+    <!-- load the network visualization script first -->
     <script src="static/js/advanced_neural_graph.js"></script>
+    <!-- main showcase logic -->
     <script src="static/js/showcase.js"></script>
   </body>
 </html>

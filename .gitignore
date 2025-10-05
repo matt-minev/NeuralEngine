@@ -210,3 +210,4 @@ documentation/prompts
 *~
 *.swp
 *.tmp
+*.js2

@@ -5,40 +5,48 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NeuralEngine • Digit Recognizer</title>
 
-    <!-- Apple-like Favicon -->
+    <!-- using emoji as favicon, simple and effective -->
     <link
       rel="icon"
       type="image/svg+xml"
       href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔢</text></svg>"
     />
 
+    <!-- main stylesheet -->
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='css/style.css') }}"
     />
   </head>
+
   <body>
     <div class="container">
-      <!-- Header -->
+      <!-- header section with title -->
       <header class="header">
         <h1 class="title">🧠 NeuralEngine</h1>
         <p class="subtitle">Neural Network Digit Recognition</p>
       </header>
 
-      <!-- Main Content -->
+      <!-- main content area -->
       <main class="main-content">
-        <!-- Left Column -->
+        <!-- left side has drawing canvas and model selector -->
         <div class="left-column">
-          <!-- Drawing Section -->
+          <!-- drawing canvas section -->
           <section class="drawing-section">
             <div class="card glass-card">
               <h2>✏️ Draw a Digit</h2>
+
+              <!-- canvas where users draw digits -->
               <div class="canvas-container">
                 <canvas id="drawingCanvas" width="280" height="280"></canvas>
+
+                <!-- overlay with instructions, shown on first load -->
                 <div class="canvas-overlay show">
                   <div class="instructions">Draw a digit (0-9)</div>
                 </div>
               </div>
+
+              <!-- brush size slider and clear button -->
               <div class="controls">
                 <div class="brush-control">
                   <label for="brushSize">Brush Size:</label>
@@ -58,14 +66,17 @@
             </div>
           </section>
 
-          <!-- Model Selection -->
+          <!-- model selection dropdown -->
           <section class="model-selection-section">
             <div class="card glass-card">
               <h2>🤖 Model Selection</h2>
               <div class="model-selector">
                 <label for="modelSelect">Choose Model:</label>
+
+                <!-- custom styled dropdown with different model options -->
                 <div class="custom-select">
                   <select id="modelSelect">
+                    <!-- available models, enhanced is default -->
                     <option value="enhanced_digit_model.pkl">
                       Enhanced Model
                     </option>
@@ -77,6 +88,8 @@
                     </option>
                     <option value="digit_model.pkl">Basic Model</option>
                   </select>
+
+                  <!-- custom dropdown arrow -->
                   <div class="select-arrow">
                     <svg width="12" height="8" viewBox="0 0 12 8">
                       <path
@@ -93,29 +106,34 @@
           </section>
         </div>
 
-        <!-- Prediction Section -->
+        <!-- right side shows prediction results -->
         <section class="prediction-section">
           <div class="card glass-card">
             <h2>🎯 Prediction</h2>
-            <!-- Top Prediction -->
+
+            <!-- main prediction display -->
             <div class="top-prediction">
               <div class="predicted-digit" id="predictedDigit">?</div>
               <div class="confidence" id="confidence">Confidence: --%</div>
               <div class="prediction-time" id="predictionTime">--ms</div>
             </div>
-            <!-- Confidence Bars -->
+
+            <!-- confidence bars for all 10 digits -->
             <div class="confidence-bars">
               <h3>Confidence Levels</h3>
+              <!-- bars get generated dynamicaly by js -->
               <div id="confidenceBars"></div>
             </div>
           </div>
         </section>
       </main>
 
-      <!-- Model Info -->
+      <!-- footer with model details from flask -->
       <footer class="model-info">
         <div class="card glass-card">
           <h3>🤖 Model Information</h3>
+
+          <!-- model stats rendered by jinja2 template -->
           <div class="model-stats">
             <div class="stat">
               <span class="label">Architecture:</span>
@@ -138,7 +156,8 @@
           </div>
         </div>
       </footer>
-      <!-- Pi Easter Egg -->
+
+      <!-- hidden pi easter egg, shows when drawing pi symbol -->
       <div id="piSymbol" class="pi-symbol">
         <div class="pi-content">
           <div class="pi-icon">π</div>
@@ -147,9 +166,11 @@
         </div>
       </div>
 
-      <!-- Confetti Container -->
+      <!-- confetti animation container for easter eggs -->
       <div id="confettiContainer"></div>
     </div>
+
+    <!-- main javascript file -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   </body>
 </html>

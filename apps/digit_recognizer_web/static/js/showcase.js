@@ -1,6 +1,6 @@
 /**
- * NeuralEngine Dataset Showcase - Enhanced Interactive JavaScript
- * Apple-inspired neural network visualization with data source toggle and advanced graph
+ * NeuralEngine dataset showcase - enhanced interactive javascript
+ * neural network visualization with data source toggle
  */
 
 class DatasetShowcase {
@@ -20,12 +20,7 @@ class DatasetShowcase {
     this.firstLoadComplete = false;
     this.advancedGraph = null;
 
-    // Demo mode properties
-    this.demoMode = false;
-    this.maxDemoAttempts = 100;
-    this.demoAttemptCount = 0;
-
-    // Network architecture (matching your real model)
+    // network architecture matching the real model
     this.networkArchitecture = {
       inputSize: 784,
       hiddenLayers: [512, 256, 128],
@@ -37,74 +32,45 @@ class DatasetShowcase {
     this.setupAdvancedNetworkVisualization();
     this.loadFirstSample();
 
+    // make instance available globally for debugging
     window.datasetShowcase = this;
 
-    console.log("🎨 Enhanced Dataset Showcase initialized");
-  }
-
-  setupConsoleCommands() {
-    window.enableDemoMode = (enabled = true) => this.enableDemoMode(enabled);
-    window.disableDemoMode = () => this.enableDemoMode(false);
-
-    window.showcaseHelp = () => {
-      console.log("🎨 Neural Network Showcase Console Commands:");
-      console.log(
-        "  enableDemoMode() or enableDemoMode(true) - Enable demo mode"
-      );
-      console.log(
-        "  disableDemoMode() or enableDemoMode(false) - Disable demo mode"
-      );
-      console.log("  datasetShowcase - Access the main showcase instance");
-      console.log("");
-      console.log(
-        "🎭 Demo Mode: Only shows samples where the model predicts correctly"
-      );
-      console.log("  - User will never see incorrect predictions");
-      console.log("  - Seamlessly skips wrong answers behind the scenes");
-      return "Commands registered successfully!";
-    };
-
-    console.log(
-      "🎮 Console commands registered! Type showcaseHelp() for available commands."
-    );
+    console.log("Dataset showcase initialized");
   }
 
   initializeShowcase() {
-    // Set up canvas for high DPI displays
+    // setup canvas for high DPI displays
     const rect = this.canvas.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
     this.canvas.width = rect.width * dpr;
     this.canvas.height = rect.height * dpr;
     this.ctx.scale(dpr, dpr);
 
-    // Initialize prediction display
+    // initialize prediction display
     this.updatePredictionDisplay("-", 0, "-");
 
-    // Load model info
+    // load model info from backend
     this.loadModelInfo();
 
-    // Set up toggle initial state
+    // set up toggle initial state
     this.updateToggleState();
 
-    // Setup model selector
+    // setup model selector dropdown
     this.setupModelSelector();
-
-    // Setup console commands
-    this.setupConsoleCommands();
   }
 
   setupEventListeners() {
-    // Next sample button
+    // next sample button click
     document.getElementById("nextSampleBtn").addEventListener("click", () => {
       this.loadNextSample();
     });
 
-    // Image click handler
+    // image click handler - also loads next sample
     this.canvas.addEventListener("click", () => {
       this.loadNextSample();
     });
 
-    // Data source toggle
+    // data source toggle switch
     document
       .getElementById("dataSourceToggle")
       .addEventListener("change", (e) => {
@@ -113,12 +79,12 @@ class DatasetShowcase {
         this.loadNextSample();
       });
 
-    // Back to drawing mode
+    // back to drawing mode button
     document.getElementById("backToDrawBtn").addEventListener("click", () => {
       window.location.href = "/";
     });
 
-    // Keyboard shortcuts
+    // keyboard shortcuts for convinience
     document.addEventListener("keydown", (e) => {
       if (e.key === " ") {
         e.preventDefault();
@@ -139,7 +105,7 @@ class DatasetShowcase {
       }
     });
 
-    // Resize handler
+    // resize handler with debounce
     window.addEventListener("resize", () => {
       this.debounce(() => {
         if (this.advancedGraph) {
@@ -152,10 +118,10 @@ class DatasetShowcase {
   setupModelSelector() {
     const modelSelector = document.getElementById("modelSelector");
 
-    // Set initial value
+    // set initial value to current model
     modelSelector.value = this.currentModel;
 
-    // Add change event listener
+    // add change event listener
     modelSelector.addEventListener("change", async (e) => {
       const newModel = e.target.value;
       if (newModel !== this.currentModel && !this.isModelSwitching) {
@@ -163,7 +129,7 @@ class DatasetShowcase {
       }
     });
 
-    // Add visual feedback on focus
+    // add visual feedback on focus
     modelSelector.addEventListener("focus", () => {
       modelSelector.parentElement.classList.add("focused");
     });
@@ -181,7 +147,7 @@ class DatasetShowcase {
       `Switching to ${this.getModelDisplayName(newModelName)}...`
     );
 
-    // Stop any running animations
+    // stop any running animations
     if (this.advancedGraph) {
       this.advancedGraph.reset();
     }
@@ -200,7 +166,7 @@ class DatasetShowcase {
         this.modelAccuracy = result.model_info.accuracy;
         this.updateModelAccuracy();
 
-        // Update network architecture
+        // update network architecture visualization
         if (result.model_info.architecture) {
           this.networkArchitecture = {
             inputSize: result.model_info.architecture[0],
@@ -211,18 +177,18 @@ class DatasetShowcase {
               ],
           };
 
-          // Properly update the visualization
+          // update the graph with new architecture
           if (this.advancedGraph) {
             this.advancedGraph.updateArchitecture(this.networkArchitecture);
           }
         }
 
         this.showModelSwitchToast(
-          `✅ Switched to ${this.getModelDisplayName(newModelName)}`,
+          `Switched to ${this.getModelDisplayName(newModelName)}`,
           "success"
         );
 
-        // Load new sample after brief delay
+        // load new sample after brief delay
         setTimeout(() => {
           this.loadNextSample();
         }, 1000);
@@ -232,9 +198,10 @@ class DatasetShowcase {
     } catch (error) {
       console.error("Model switch failed:", error);
       this.showModelSwitchToast(
-        `❌ Failed to switch model: ${error.message}`,
+        `Failed to switch model: ${error.message}`,
         "error"
       );
+      // revert dropdown to previous model
       document.getElementById("modelSelector").value = this.currentModel;
     } finally {
       this.isModelSwitching = false;
@@ -271,6 +238,7 @@ class DatasetShowcase {
     const toggle = document.getElementById("dataSourceToggle");
     const toggleTexts = document.querySelectorAll(".toggle-text");
 
+    // update text colors based on selected mode
     if (this.useSyntheticData) {
       toggleTexts[0].style.color = "var(--text-secondary)";
       toggleTexts[1].style.color = "var(--text-primary)";
@@ -279,6 +247,7 @@ class DatasetShowcase {
       toggleTexts[1].style.color = "var(--text-secondary)";
     }
 
+    // announce change for accesibility
     this.announceChange(
       `Switched to ${this.useSyntheticData ? "synthetic" : "real"} data`
     );
@@ -313,37 +282,13 @@ class DatasetShowcase {
     }
   }
 
-  enableDemoMode(enabled = true) {
-    this.demoMode = enabled;
-    const status = enabled ? "enabled" : "disabled";
-    console.log(
-      `🎭 Demo Mode ${status} - ${
-        enabled
-          ? "Only correct predictions will be shown"
-          : "Normal mode restored"
-      }`
-    );
-
-    if (enabled) {
-      console.log("📝 Demo mode will seamlessly skip incorrect predictions.");
-      console.log("🔄 Use enableDemoMode(false) to disable demo mode.");
-    }
-
-    return `Demo mode ${status}`;
-  }
-
   async loadNextSample() {
     if (!this.firstLoadComplete) return;
 
     this.showLoading();
-    this.demoAttemptCount = 0;
 
     try {
-      if (this.demoMode) {
-        await this.loadSampleWithDemoMode();
-      } else {
-        await this.loadSampleFromDataset();
-      }
+      await this.loadSampleFromDataset();
     } catch (error) {
       console.error("Failed to load sample:", error);
       this.showError("Failed to load sample");
@@ -352,130 +297,29 @@ class DatasetShowcase {
     }
   }
 
-  async loadSampleWithDemoMode() {
-    if (this.currentModel !== "enhanced_digit_model.pkl") {
-      // If not using the enhanced model, just load sample normally
-      await this.loadSampleFromDataset();
-      return;
-    }
-
-    let foundCorrectPrediction = false;
-    this.demoAttemptCount = 0;
-    let tempSample = null;
-    let tempPrediction = null;
-
-    while (
-      !foundCorrectPrediction &&
-      this.demoAttemptCount < this.maxDemoAttempts
-    ) {
-      this.demoAttemptCount++;
-
-      try {
-        if (this.useSyntheticData) {
-          const sampleData = await this.generateSampleData();
-          tempSample = sampleData;
-
-          const predictionData = await this.simulatePrediction(sampleData);
-          tempPrediction = predictionData;
-
-          const predictedDigit = predictionData.predicted_digit?.toString();
-          const actualLabel = sampleData.label?.toString();
-
-          if (predictedDigit === actualLabel) {
-            foundCorrectPrediction = true;
-          }
-        } else {
-          const response = await fetch("/api/dataset/sample");
-          const data = await response.json();
-
-          if (data.error) {
-            throw new Error(data.error);
-          }
-
-          tempSample = data.sample;
-          tempPrediction = data.prediction;
-
-          const predictedDigit = data.prediction.predicted_digit?.toString();
-          const actualLabel = data.sample.actual_label?.toString();
-
-          if (predictedDigit === actualLabel) {
-            foundCorrectPrediction = true;
-          }
-        }
-      } catch (error) {
-        console.error(
-          `Demo mode attempt ${this.demoAttemptCount} failed:`,
-          error
-        );
-        continue;
-      }
-    }
-
-    if (foundCorrectPrediction && tempSample && tempPrediction) {
-      this.currentSample = tempSample;
-      this.currentPrediction = tempPrediction;
-      this.sampleCount++;
-
-      document.getElementById("sampleCounter").textContent = this.sampleCount;
-
-      if (this.useSyntheticData) {
-        this.displaySample(tempSample);
-        this.updatePredictionDisplay(
-          tempPrediction.predicted_digit,
-          tempPrediction.confidence,
-          tempSample.label
-        );
-      } else {
-        this.displaySampleFromAPI(tempSample);
-        this.updatePredictionDisplay(
-          tempPrediction.predicted_digit,
-          tempPrediction.confidence,
-          tempSample.actual_label
-        );
-      }
-
-      this.announceChange(
-        `Loaded ${this.useSyntheticData ? "synthetic" : "real"} sample ${
-          this.sampleCount
-        }, predicted digit ${tempPrediction.predicted_digit}`
-      );
-
-      console.log(
-        `🎯 Demo Mode: Found correct prediction after ${this.demoAttemptCount} attempt(s)`
-      );
-    } else {
-      console.warn(
-        `⚠️ Demo Mode: Could not find correct prediction after ${this.maxDemoAttempts} attempts.`
-      );
-      this.showError(
-        `Demo mode: No correct prediction found in ${this.maxDemoAttempts} attempts`
-      );
-    }
-  }
-
   async loadSampleFromDataset() {
     try {
       if (this.useSyntheticData) {
-        // Use synthetic data generation
+        // use synthetic data generation
         const sampleData = await this.generateSampleData();
         this.currentSample = sampleData;
         this.sampleCount++;
 
-        // Update sample counter
+        // update sample counter
         document.getElementById("sampleCounter").textContent = this.sampleCount;
 
-        // Display the sample
+        // display the sample
         this.displaySample(sampleData);
 
-        // Make synthetic prediction
+        // make synthetic prediction
         await this.makeSyntheticPrediction(sampleData);
 
-        // Announce to screen readers
+        // announce to screen readers
         this.announceChange(
           `Loaded synthetic sample ${this.sampleCount}, predicted digit ${this.currentPrediction.predicted_digit}`
         );
       } else {
-        // Call the actual backend API for real data
+        // call the backend API for real data
         const response = await fetch("/api/dataset/sample");
         const data = await response.json();
 
@@ -487,20 +331,20 @@ class DatasetShowcase {
         this.currentPrediction = data.prediction;
         this.sampleCount++;
 
-        // Update sample counter
+        // update sample counter
         document.getElementById("sampleCounter").textContent = this.sampleCount;
 
-        // Display the real sample
+        // display the real sample
         this.displaySampleFromAPI(data.sample);
 
-        // Update prediction display with real results
+        // update prediction display with real results
         this.updatePredictionDisplay(
           data.prediction.predicted_digit,
           data.prediction.confidence,
           data.sample.actual_label
         );
 
-        // Announce to screen readers
+        // announce to screen readers
         this.announceChange(
           `Loaded real sample ${this.sampleCount}, predicted digit ${
             data.prediction.predicted_digit
@@ -516,20 +360,21 @@ class DatasetShowcase {
   displaySampleFromAPI(sampleData) {
     const img = new Image();
     img.onload = () => {
-      // Clear canvas
+      // clear canvas with white background
       this.ctx.fillStyle = "#FFFFFF";
       this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-      // Draw the sample image scaled up
+      // draw the sample image scaled up
       const scale =
         Math.min(this.canvas.width / 280, this.canvas.height / 280) * 0.8;
       const x = (this.canvas.width - 280 * scale) / 2;
       const y = (this.canvas.height - 280 * scale) / 2;
 
+      // disable smoothing for pixelated look
       this.ctx.imageSmoothingEnabled = false;
       this.ctx.drawImage(img, x, y, 280 * scale, 280 * scale);
 
-      // Add subtle border
+      // add subtle border around image
       this.ctx.strokeStyle = "#E0E0E0";
       this.ctx.lineWidth = 2;
       this.ctx.strokeRect(x, y, 280 * scale, 280 * scale);
@@ -538,7 +383,7 @@ class DatasetShowcase {
   }
 
   async generateSampleData() {
-    // Generate synthetic dataset sample
+    // generate synthetic dataset sample
     const digit = Math.floor(Math.random() * 10);
     const imageData = this.generateDigitImage(digit);
 
@@ -550,23 +395,23 @@ class DatasetShowcase {
   }
 
   generateDigitImage(digit) {
-    // Generate a more realistic representation of a digit
+    // generate a more realistic representaton of a digit
     const canvas = document.createElement("canvas");
     canvas.width = 28;
     canvas.height = 28;
     const ctx = canvas.getContext("2d");
 
-    // Fill with black background
+    // fill with black background
     ctx.fillStyle = "#000000";
     ctx.fillRect(0, 0, 28, 28);
 
-    // Draw white digit with variations
+    // draw white digit with variations
     ctx.fillStyle = "#FFFFFF";
     ctx.font = "20px Arial";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
-    // Add some noise/variation for realism
+    // add some noise/variation for realism
     const offsetX = (Math.random() - 0.5) * 6;
     const offsetY = (Math.random() - 0.5) * 6;
     const rotation = (Math.random() - 0.5) * 0.4;
@@ -577,7 +422,7 @@ class DatasetShowcase {
     ctx.fillText(digit.toString(), offsetX, offsetY);
     ctx.restore();
 
-    // Add some noise
+    // add some noise to make it look more natural
     const imageData = ctx.getImageData(0, 0, 28, 28);
     const data = imageData.data;
 
@@ -595,11 +440,11 @@ class DatasetShowcase {
   displaySample(sampleData) {
     const img = new Image();
     img.onload = () => {
-      // Clear canvas
+      // clear canvas
       this.ctx.fillStyle = "#FFFFFF";
       this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-      // Draw the sample image scaled up
+      // draw the sample image scaled up
       const scale =
         Math.min(this.canvas.width / 28, this.canvas.height / 28) * 0.8;
       const x = (this.canvas.width - 28 * scale) / 2;
@@ -608,7 +453,7 @@ class DatasetShowcase {
       this.ctx.imageSmoothingEnabled = false;
       this.ctx.drawImage(img, x, y, 28 * scale, 28 * scale);
 
-      // Add subtle border
+      // add subtle border
       this.ctx.strokeStyle = "#E0E0E0";
       this.ctx.lineWidth = 2;
       this.ctx.strokeRect(x, y, 28 * scale, 28 * scale);
@@ -621,7 +466,7 @@ class DatasetShowcase {
       const response = await this.simulatePrediction(sampleData);
       this.currentPrediction = response;
 
-      // Update prediction display
+      // update prediction display
       this.updatePredictionDisplay(
         response.predicted_digit,
         response.confidence,
@@ -634,19 +479,19 @@ class DatasetShowcase {
   }
 
   async simulatePrediction(sampleData) {
-    // Simulate more realistic high-confidence predictions
+    // simulate more realistic high-confidence predictions
     const predictions = Array.from({ length: 10 }, () => Math.random() * 0.1);
 
-    // Add some realistic variation
-    const isCorrect = Math.random() > 0.05; // 95% accuracy simulation
+    // add some realistic variation
+    const isCorrect = Math.random() > 0.05; // 95% accuracy simulaton
     const predictedDigit = isCorrect
       ? sampleData.label
       : (sampleData.label + 1) % 10;
 
-    // Set high confidence for the predicted digit
+    // set high confidence for the predicted digit
     predictions[predictedDigit] = 0.8 + Math.random() * 0.15; // 80-95% confidence
 
-    // Normalize predictions
+    // normalize predictions to sum to 1
     const sum = predictions.reduce((a, b) => a + b, 0);
     const normalizedPredictions = predictions.map((p) => p / sum);
 
@@ -662,7 +507,7 @@ class DatasetShowcase {
     const confidenceElement = document.getElementById("confidenceValue");
     const actualElement = document.getElementById("actualValue");
 
-    // Animate digit change with enhanced effect
+    // animate digit change with scale effect
     digitElement.style.transform = "scale(0.8)";
     digitElement.style.opacity = "0.5";
 
@@ -672,38 +517,38 @@ class DatasetShowcase {
       digitElement.style.opacity = "1";
     }, 150);
 
-    // Update confidence with animation
+    // update confidence with animation
     confidenceElement.textContent = `${confidence.toFixed(1)}%`;
 
-    // Update actual label
+    // update actual label
     actualElement.textContent = actualLabel;
 
-    // Add correct/incorrect styling with enhanced colors
+    // add correct/incorrect styling
     if (digit.toString() === actualLabel.toString()) {
-      digitElement.style.color = "#34C759"; // Success color
+      digitElement.style.color = "#34C759"; // green for correct
       confidenceElement.style.color = "#34C759";
     } else {
-      digitElement.style.color = "#FF3B30"; // Error color
+      digitElement.style.color = "#FF3B30"; // red for incorrect
       confidenceElement.style.color = "#FF3B30";
     }
   }
 
-  // Advanced Network Visualization Setup
+  // advanced network visualization setup
   setupAdvancedNetworkVisualization() {
-    // Check if required dependencies are available
+    // check if required dependencies are available
     if (typeof AdvancedNeuralGraph === "undefined") {
       console.error("AdvancedNeuralGraph class not found");
       return;
     }
 
     try {
-      // Create the advanced network graph
+      // create the advanced network graph
       this.advancedGraph = new AdvancedNeuralGraph(
         "advancedNetworkContainer",
         this.networkArchitecture
       );
 
-      // Setup controls
+      // setup control buttons
       document
         .getElementById("playAnimationBtn")
         .addEventListener("click", () => {
@@ -718,6 +563,7 @@ class DatasetShowcase {
           }
         });
 
+      // setup speed control
       document
         .getElementById("animationSpeed")
         .addEventListener("change", (e) => {
@@ -726,7 +572,7 @@ class DatasetShowcase {
           }
         });
 
-      console.log("✅ Advanced neural graph initialized");
+      console.log("Advanced neural graph initialized");
     } catch (error) {
       console.error("Failed to initialize advanced neural graph:", error);
     }
@@ -734,7 +580,7 @@ class DatasetShowcase {
 
   async playAdvancedAnimation() {
     if (!this.currentSample) {
-      this.showError("No image loaded for visualization");
+      this.showError("No image loaded for visualizaton");
       return;
     }
 
@@ -748,20 +594,20 @@ class DatasetShowcase {
     playBtn.innerHTML = '<span class="btn-icon">⏸️</span>Processing...';
 
     try {
-      // Get real activation data from the current image
+      // get real activation data from the current image
       const activationData = await this.getRealActivationData();
 
       if (!activationData) {
         throw new Error("Failed to get activation data");
       }
 
-      // Show processing context with real data
+      // show processing context with real data
       this.showProcessingContext();
 
-      // Run the animation with real data
+      // run the animation with real data
       await this.advancedGraph.animateForwardPass(activationData);
 
-      // Show final result explanation
+      // show final result explanation
       this.showResultExplanation();
     } catch (error) {
       console.error("Animation error:", error);
@@ -776,7 +622,7 @@ class DatasetShowcase {
     if (!this.currentSample) return null;
 
     try {
-      // Send current image to backend for detailed activation analysis
+      // send current image to backend for detailed activation analysis
       const response = await fetch("/api/neural/activations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -789,7 +635,7 @@ class DatasetShowcase {
       const data = await response.json();
 
       if (data.error) {
-        console.warn("Failed to get real activations, using simulation");
+        console.warn("Failed to get real activations, using simulaton");
         return this.generateRealisticActivationData();
       }
 
@@ -816,17 +662,17 @@ class DatasetShowcase {
 
       for (let j = 0; j < layerSize; j++) {
         if (i === 0) {
-          // Input layer: simulate pixel intensities
+          // input layer: simulate pixel intensities
           activations.push(Math.random() * 0.8 + 0.1);
         } else if (i === layers.length - 1) {
-          // FIXED: Output layer with correct digit having highest activation
+          // output layer with correct digit having highest activation
           if (j === predictedDigit) {
             activations.push(0.85 + Math.random() * 0.1); // 85-95% for predicted digit
           } else {
             activations.push(Math.random() * 0.35 + 0.05); // 5-40% for others
           }
         } else {
-          // Hidden layers: simulate ReLU activations
+          // hidden layers: simulate ReLU activations
           activations.push(Math.max(0, Math.random() * 1.2 - 0.3));
         }
       }
@@ -847,7 +693,7 @@ class DatasetShowcase {
   }
 
   showResultExplanation() {
-    // Remove any existing explanation
+    // remove any existing explanation
     const existing = document.getElementById("resultExplanation");
     if (existing) existing.remove();
 
@@ -875,19 +721,19 @@ class DatasetShowcase {
       this.currentSample?.label || this.currentSample?.actual_label || "?";
 
     explanation.innerHTML = `
-            <strong>🎯 Result:</strong> Predicted digit ${digit} with ${confidence.toFixed(
+            <strong>Result:</strong> Predicted digit ${digit} with ${confidence.toFixed(
       1
     )}% confidence
             ${
               digit.toString() === actual.toString()
-                ? " ✅ Correct!"
-                : ` ❌ (Actual: ${actual})`
+                ? " Correct!"
+                : ` (Actual: ${actual})`
             }
         `;
 
     document.body.appendChild(explanation);
 
-    // Auto-hide after 5 seconds
+    // auto-hide after 5 seconds
     setTimeout(() => {
       if (explanation.parentNode) {
         explanation.remove();
@@ -909,7 +755,7 @@ class DatasetShowcase {
     console.error(message);
     this.announceChange(`Error: ${message}`);
 
-    // Show error toast
+    // show error toast
     const errorToast = document.createElement("div");
     errorToast.style.cssText = `
             position: fixed;
@@ -955,7 +801,7 @@ class DatasetShowcase {
   }
 }
 
-// Initialize the showcase when DOM is loaded
+// initialize the showcase when DOM is loaded
 document.addEventListener("DOMContentLoaded", () => {
   new DatasetShowcase();
 });
