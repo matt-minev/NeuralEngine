@@ -131,10 +131,11 @@ class AdvancedNeuralGraph {
 
     this.neurons = [];
     this.connections = [];
+    const allLayerNeurons = [];
 
     const layerSpacing = this.width / (layers.length + 1);
 
-    // Create neurons
+    // First, create all neurons by layer
     layers.forEach((layerSize, layerIndex) => {
       const layerNeurons = [];
       const maxVisible = Math.min(layerSize, 12);
@@ -154,16 +155,16 @@ class AdvancedNeuralGraph {
           type: this.getNeuronType(layerIndex, layers.length),
           fixed: false,
         };
-
         layerNeurons.push(neuron);
         this.neurons.push(neuron);
       }
-
-      // Create connections
-      if (layerIndex < layers.length - 1) {
-        this.createConnections(layerNeurons, layerIndex);
-      }
+      allLayerNeurons.push(layerNeurons);
     });
+
+    // Now connect!
+    for (let l = 0; l < allLayerNeurons.length - 1; ++l) {
+      this.createConnections(allLayerNeurons[l], allLayerNeurons[l + 1], l);
+    }
 
     this.renderNetwork();
   }
@@ -180,27 +181,25 @@ class AdvancedNeuralGraph {
     return "hidden";
   }
 
-  createConnections(currentLayerNeurons, currentLayerIndex) {
-    const nextLayerNeurons = this.neurons.filter(
-      (n) => n.layer === currentLayerIndex + 1
-    );
-
-    // Create more connections for better visualization
-    const connectionDensity = 0.4;
-
+  createConnections(currentLayerNeurons, nextLayerNeurons, currentLayerIndex) {
     currentLayerNeurons.forEach((sourceNeuron) => {
       nextLayerNeurons.forEach((targetNeuron) => {
-        if (Math.random() < connectionDensity) {
-          this.connections.push({
-            id: `${sourceNeuron.id}_to_${targetNeuron.id}`,
-            source: sourceNeuron,
-            target: targetNeuron,
-            weight: (Math.random() - 0.5) * 2,
-            active: false,
-          });
-        }
+        this.connections.push({
+          id: `${sourceNeuron.id}_to_${targetNeuron.id}`,
+          source: sourceNeuron,
+          target: targetNeuron,
+          weight: (Math.random() - 0.5) * 2,
+          active: false,
+        });
       });
     });
+    console.log(
+      `🔗 Created ${
+        currentLayerNeurons.length * nextLayerNeurons.length
+      } connections between layer ${currentLayerIndex} and ${
+        currentLayerIndex + 1
+      }`
+    );
   }
 
   renderNetwork() {
@@ -363,10 +362,17 @@ class AdvancedNeuralGraph {
       .duration(300)
       .attr("r", (d) => d.radius * 1.3);
 
-    // Find connections
-    const relevantConnections = this.connections.filter(
-      (conn) => conn.source.id === neuron.id || conn.target.id === neuron.id
+    // Find ALL connections (incoming and outgoing)
+    const incomingConnections = this.connections.filter(
+      (conn) => conn.target.id === neuron.id
     );
+    const outgoingConnections = this.connections.filter(
+      (conn) => conn.source.id === neuron.id
+    );
+    const relevantConnections = [
+      ...incomingConnections,
+      ...outgoingConnections,
+    ];
 
     // Get connected neurons
     const connectedNeuronIds = new Set();
@@ -375,6 +381,10 @@ class AdvancedNeuralGraph {
       connectedNeuronIds.add(conn.target.id);
     });
     connectedNeuronIds.delete(neuron.id);
+
+    console.log(
+      `🔍 Neuron ${neuron.id}: ${incomingConnections.length} incoming, ${outgoingConnections.length} outgoing connections`
+    );
 
     // Highlight connected neurons
     this.neuronElements
@@ -492,9 +502,12 @@ class AdvancedNeuralGraph {
             </div>
             
             <div style="margin-bottom: 12px;">
-                <strong>Connections:</strong> ${
-                  connectedNeuronIds.length
-                } neurons
+              <strong>Connections:</strong> ${
+                connectedNeuronIds.length
+              } neurons<br>
+              <small style="color: #aaa;">
+                ${this.getConnectionDetails(neuron)}
+              </small>
             </div>
             
             <div style="background: rgba(255,255,255,0.1); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
@@ -525,6 +538,24 @@ class AdvancedNeuralGraph {
   removeNeuronInfoPanel() {
     const existing = document.getElementById("neuronInfoPanel");
     if (existing) existing.remove();
+  }
+
+  getConnectionDetails(neuron) {
+    const incoming = this.connections.filter(
+      (conn) => conn.target.id === neuron.id
+    ).length;
+    const outgoing = this.connections.filter(
+      (conn) => conn.source.id === neuron.id
+    ).length;
+
+    if (incoming > 0 && outgoing > 0) {
+      return `↓ ${incoming} incoming, → ${outgoing} outgoing`;
+    } else if (incoming > 0) {
+      return `↓ ${incoming} incoming connections`;
+    } else if (outgoing > 0) {
+      return `→ ${outgoing} outgoing connections`;
+    }
+    return "No connections";
   }
 
   getLayerExplanation(layerIndex) {
@@ -740,6 +771,11 @@ class AdvancedNeuralGraph {
   async animateLayer(layerIndex, activations) {
     const layerNeurons = this.neurons.filter((n) => n.layer === layerIndex);
 
+    // Animate connections FROM previous layer TO this layer
+    if (layerIndex > 0) {
+      await this.animateConnections(layerIndex - 1, layerIndex);
+    }
+
     // Update activations with real data
     layerNeurons.forEach((neuron, index) => {
       if (index < activations.length) {
@@ -780,6 +816,35 @@ class AdvancedNeuralGraph {
           this.textContent = interpolate(t).toFixed(2);
         };
       });
+  }
+
+  async animateConnections(fromLayer, toLayer) {
+    // Animate connections between two layers
+    const relevantConnections = this.connections.filter(
+      (conn) => conn.source.layer === fromLayer && conn.target.layer === toLayer
+    );
+
+    // Highlight active connections
+    this.connectionElements.each(function (d) {
+      const isActive = relevantConnections.some(
+        (conn) =>
+          conn.source.id === d.source.id && conn.target.id === d.target.id
+      );
+
+      if (isActive) {
+        d3.select(this)
+          .transition()
+          .duration(400)
+          .style("stroke", "#00f2fe")
+          .style("stroke-width", "2px")
+          .style("opacity", "0.8")
+          .transition()
+          .duration(400)
+          .style("stroke", "rgba(255, 255, 255, 0.15)")
+          .style("stroke-width", "1px")
+          .style("opacity", "0.5");
+      }
+    });
   }
 
   generateFallbackActivations(layerIndex) {
