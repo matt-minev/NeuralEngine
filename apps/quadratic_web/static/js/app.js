@@ -3271,15 +3271,6 @@ function displayPredictionResults(response, inputs) {
  * @returns {object} - An object with level, color, message, and icon.
  */
 function getQualityLevel(error, isVerification = false) {
-  if (_demoMode) {
-    return {
-      level: "excellent",
-      color: "var(--success-color)",
-      message: isVerification ? "Highly Consistent" : "Excellent!",
-      icon: "🎯",
-    };
-  }
-
   const excellent = {
     level: "excellent",
     color: "var(--success-color)",
@@ -3335,9 +3326,6 @@ function renderComparisonResults(details, confidences) {
     analysis,
   } = details;
   avgError = error_metrics["Average Error"] ?? 0;
-  if (_demoMode) {
-    avgError = 0.001;
-  }
   const overallQuality = getQualityLevel(avgError);
 
   const eq = (p) =>
@@ -3628,15 +3616,6 @@ function renderVerificationResults(details, confidences) {
  * @returns {object} - An object with level, color, message, and icon.
  */
 function getQualityLevel(error, isVerification = false) {
-  if (_demoMode) {
-    return {
-      level: "excellent",
-      color: "var(--success-color)",
-      message: isVerification ? "Highly Consistent" : "Excellent!",
-      icon: "🎯",
-    };
-  }
-
   const excellent = {
     level: "excellent",
     color: "var(--success-color)",

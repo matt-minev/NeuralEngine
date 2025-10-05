@@ -1150,8 +1150,11 @@ def _train_models_background(selected_scenarios, epochs, learning_rate):
             except Exception as e:
                 _log_training(f'❌ Failed: {str(e)}')
         
-        app_state['training_status']['progress'] = 100
         _log_training('🎉 Training session completed!')
+        app_state['training_status']['progress'] = 100
+        app_state['training_status']['current_scenario'] = 'Completed'
+
+        time.sleep(1.5)
         
     except Exception as e:
         _log_training(f'❌ Training error: {str(e)}')
