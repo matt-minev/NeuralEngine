@@ -9,7 +9,7 @@ import time
 import warnings
 warnings.filterwarnings('ignore')
 
-# Import your Neural Engine modules
+# Import the Neural Engine modules
 from nn_core import NeuralNetwork, Layer, mean_squared_error
 from autodiff import SGD, Adam, TrainingEngine
 from data_utils import DataPreprocessor, DataSplitter, BatchProcessor
@@ -328,7 +328,7 @@ def create_additional_performance_charts():
     
     # Accuracy comparison
     datasets = ['MNIST', 'Boston\nHousing', 'Iris', 'Wine']
-    engine_accuracy = [98.42, 91.1, 97.33, 94.74]  # From your validation table
+    engine_accuracy = [98.42, 91.1, 97.33, 94.74]  # from validation table
     reference_accuracy = [98.45, 91.3, 97.33, 95.26]
     
     x_pos = np.arange(len(datasets))

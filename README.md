@@ -196,7 +196,7 @@ We welcome contributions! Please see our contributing guidelines.
 
 ```bash
 # Fork the repository and clone it
-git clone https://github.com/YOUR_USERNAME/NeuralEngine.git
+git clone https://github.com/matt-minev/NeuralEngine.git
 cd NeuralEngine
 
 # Install development dependencies

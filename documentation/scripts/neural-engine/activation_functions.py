@@ -9,7 +9,7 @@ import time
 import warnings
 warnings.filterwarnings('ignore')
 
-# Import your Neural Engine modules
+# Import the Neural Engine modules
 from nn_core import NeuralNetwork, Layer, mean_squared_error
 from autodiff import SGD, Adam, TrainingEngine
 from data_utils import DataPreprocessor, DataSplitter, BatchProcessor

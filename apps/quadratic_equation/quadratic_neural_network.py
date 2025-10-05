@@ -29,8 +29,12 @@ from datetime import datetime
 import os
 
 # Import Neural Engine components
+from pathlib import Path
 import sys
-sys.path.append('../../')  # Adjust path to your Neural Engine
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))  # make root highest priority
+
+# Now these resolve to the top-level modules
 from nn_core import NeuralNetwork, mean_squared_error, mean_absolute_error
 from autodiff import TrainingEngine, Adam, SGD
 from data_utils import DataLoader, DataPreprocessor, DataSplitter
@@ -60,6 +64,8 @@ class QuadraticPredictor:
         self.is_trained = False
         self.training_history = {}
         self.performance_stats = {}
+        self.input_scaler = None
+        self.target_scaler = None
         
     def create_network(self):
         """Create neural network for this scenario"""
@@ -77,45 +83,69 @@ class QuadraticPredictor:
         # Extract input and target data
         X = data[:, self.scenario.input_indices]
         y = data[:, self.scenario.target_indices]
-        
-        # Normalize if requested
+
         if normalize:
-            # Create separate scalers for each scenario
-            scaler_key = f"{self.scenario.name}_input_scaler"
-            target_scaler_key = f"{self.scenario.name}_target_scaler"
-            
-            if not hasattr(self.preprocessor, 'scenario_scalers'):
-                self.preprocessor.scenario_scalers = {}
-            
-            if scaler_key not in self.preprocessor.scenario_scalers:
+            # Lazy-create instance scalers
+            try:
                 from sklearn.preprocessing import StandardScaler
-                self.preprocessor.scenario_scalers[scaler_key] = StandardScaler()
-                self.preprocessor.scenario_scalers[target_scaler_key] = StandardScaler()
-                
-            X = self.preprocessor.scenario_scalers[scaler_key].fit_transform(X)
-            y = self.preprocessor.scenario_scalers[target_scaler_key].fit_transform(y)
-        
+            except Exception as e:
+                raise RuntimeError(f"StandardScaler not available: {e}")
+
+            if not hasattr(self, "input_scaler") or self.input_scaler is None:
+                self.input_scaler = StandardScaler()
+            if not hasattr(self, "target_scaler") or self.target_scaler is None:
+                self.target_scaler = StandardScaler()
+
+            # Fit on first normalized call, reuse afterward
+            if not hasattr(self.input_scaler, "n_features_in_"):
+                X = self.input_scaler.fit_transform(X)
+            else:
+                X = self.input_scaler.transform(X)
+
+            if not hasattr(self.target_scaler, "n_features_in_"):
+                y = self.target_scaler.fit_transform(y)
+            else:
+                y = self.target_scaler.transform(y)
+
+            # Ensure preprocessor maps exist and are populated for downstream code
+            if not hasattr(self.preprocessor, "scalers") or self.preprocessor.scalers is None:
+                self.preprocessor.scalers = {}
+            if not hasattr(self.preprocessor, "target_scalers") or self.preprocessor.target_scalers is None:
+                self.preprocessor.target_scalers = {}
+
+            # Global keys used by train/predict/evaluate
+            self.preprocessor.scalers["standard"] = self.input_scaler
+            self.preprocessor.target_scalers["standard"] = self.target_scaler
+
+            # Optional: also keep scenario-specific entries for clarity/debugging
+            if not hasattr(self.preprocessor, "scenario_scalers") or self.preprocessor.scenario_scalers is None:
+                self.preprocessor.scenario_scalers = {}
+            sk_in = f"{self.scenario.name}_input_scaler"
+            sk_tg = f"{self.scenario.name}_target_scaler"
+            self.preprocessor.scenario_scalers[sk_in] = self.input_scaler
+            self.preprocessor.scenario_scalers[sk_tg] = self.target_scaler
+
         return X.astype(np.float32), y.astype(np.float32)
 
+
     
-    def train(self, train_data: np.ndarray, val_data: np.ndarray = None, 
-              epochs: int = 1000, verbose: bool = True):
-        """Train the neural network"""
+    def train(self, train_data: np.ndarray, val_data: np.ndarray = None,
+            epochs: int = 1000, verbose: bool = True):
         if self.network is None:
             self.create_network()
-            
-        # Prepare training data
-        X_train, y_train = self.prepare_data(train_data)
-        
-        # Prepare validation data if provided
+
+        # Train on normalized data (fits scalers on first call)
+        X_train, y_train = self.prepare_data(train_data, normalize=True)
+
+        # Prepare validation data in the same normalized space
         if val_data is not None:
-            X_val, y_val = self.prepare_data(val_data, normalize=False)  # Use same scaler
-            X_val = self.preprocessor.scalers['standard'].transform(X_val)
+            X_val, y_val = self.prepare_data(val_data, normalize=False)
+            X_val = self.input_scaler.transform(X_val)
+            y_val = self.target_scaler.transform(y_val)
             validation_data = (X_val, y_val)
         else:
             validation_data = None
-            
-        # Train the model
+
         start_time = time.time()
         self.training_history = self.trainer.train(
             X_train, y_train,
@@ -124,34 +154,29 @@ class QuadraticPredictor:
             verbose=verbose,
             plot_progress=False
         )
-        
-        training_time = time.time() - start_time
-        self.performance_stats['training_time'] = training_time
+        self.performance_stats['training_time'] = time.time() - start_time
         self.is_trained = True
-        
         if verbose:
-            print(f" {self.scenario.name} trained in {training_time:.2f}s")
+            print(f" {self.scenario.name} trained in {self.performance_stats['training_time']:.2f}s")
+
             
     def predict(self, input_data: np.ndarray, return_confidence: bool = True):
-        """Make predictions with optional confidence estimation"""
         if not self.is_trained:
             raise ValueError("Model must be trained before making predictions")
-            
-        # Prepare input data
+
         if input_data.ndim == 1:
             input_data = input_data.reshape(1, -1)
-            
-        # Normalize input
-        X_normalized = self.preprocessor.scalers['standard'].transform(input_data)
-        
-        # Make predictions
+
+        # Normalize inputs with the fitted input scaler
+        X_normalized = self.input_scaler.transform(input_data)
+
+        # Forward pass in normalized space
         y_pred_normalized = self.network.forward(X_normalized)
-        
-        # Denormalize predictions
-        y_pred = self.preprocessor.inverse_transform(y_pred_normalized, method='standard')
-        
+
+        # Denormalize with the fitted target scaler (2 features for roots)
+        y_pred = self.target_scaler.inverse_transform(y_pred_normalized)
+
         if return_confidence:
-            # Estimate confidence using ensemble of slightly perturbed predictions
             confidences = self._estimate_confidence(X_normalized)
             return y_pred, confidences
         else:
@@ -191,34 +216,40 @@ class QuadraticPredictor:
         confidence = 1.0 / (1.0 + std_pred)
         
         return confidence
-    
+        
     def evaluate(self, test_data: np.ndarray):
         """Evaluate model performance on test data"""
+        # Keep raw first, then normalize with the same fitted scalers
         X_test, y_test = self.prepare_data(test_data, normalize=False)
-        X_test = self.preprocessor.scalers['standard'].transform(X_test)
-        
-        # Make predictions
-        y_pred = self.network.forward(X_test)
-        
-        # Denormalize for evaluation
-        y_test_denorm = self.preprocessor.inverse_transform(y_test, method='standard')
-        y_pred_denorm = self.preprocessor.inverse_transform(y_pred, method='standard')
-        
-        # Calculate metrics
+
+        # Guard: ensure scalers are fitted
+        if self.input_scaler is None or self.target_scaler is None:
+            raise RuntimeError("Scalers are not fitted; train the model before evaluation")
+
+        # Transform inputs and targets into normalized space
+        X_test_norm = self.input_scaler.transform(X_test)
+        y_test_norm = self.target_scaler.transform(y_test)
+
+        # Predict in normalized space
+        y_pred_norm = self.network.forward(X_test_norm)
+
+        # Denormalize both targets and predictions with the target scaler
+        y_test_denorm = self.target_scaler.inverse_transform(y_test_norm)
+        y_pred_denorm = self.target_scaler.inverse_transform(y_pred_norm)
+
+        # Metrics in original space
         mse = np.mean((y_test_denorm - y_pred_denorm) ** 2)
         mae = np.mean(np.abs(y_test_denorm - y_pred_denorm))
         rmse = np.sqrt(mse)
-        
-        # R² score
+
         ss_res = np.sum((y_test_denorm - y_pred_denorm) ** 2)
         ss_tot = np.sum((y_test_denorm - np.mean(y_test_denorm)) ** 2)
         r2 = 1 - (ss_res / ss_tot) if ss_tot != 0 else 0
-        
-        # Accuracy within tolerance (for classification-like evaluation)
+
         tolerance = 0.1  # 10% tolerance
         relative_error = np.abs((y_test_denorm - y_pred_denorm) / (y_test_denorm + 1e-8))
         accuracy = np.mean(relative_error < tolerance) * 100
-        
+
         return {
             'mse': float(mse),
             'mae': float(mae),

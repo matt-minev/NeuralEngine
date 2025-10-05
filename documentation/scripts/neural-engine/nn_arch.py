@@ -75,7 +75,7 @@ def create_detailed_network_architecture():
                fontsize=11, color='#444',
                style='italic')
     
-    # Draw ALL connections - this was the main issue in your original
+    # Draw ALL connections
     connection_colors = ['#34495e', '#7f8c8d', '#95a5a6', '#bdc3c7']
     
     for layer_idx in range(len(layer_sizes)-1):
