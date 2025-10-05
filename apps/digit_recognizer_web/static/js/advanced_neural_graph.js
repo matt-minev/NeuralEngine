@@ -877,18 +877,37 @@ class AdvancedNeuralGraph {
   }
 
   updateArchitecture(newArchitecture) {
+    console.log("🔄 Updating architecture...", newArchitecture);
+
     this.animationInProgress = false;
     this.architecture = newArchitecture;
 
-    // Clear existing
+    // Stop and clear existing simulation
+    if (this.simulation) {
+      this.simulation.stop();
+      this.simulation = null;
+    }
+
+    // Clear existing elements
     if (this.svg) {
       this.svg.selectAll("*").remove();
     }
 
-    // Rebuild
-    this.buildNeuralNetwork();
+    // Clear old data structures
+    this.neurons = [];
+    this.connections = [];
+    this.selectedNeuron = null;
 
-    console.log("✅ Architecture updated");
+    // Remove any existing UI panels
+    this.removeNeuronInfoPanel();
+    this.removeProcessingContext();
+
+    // Rebuild everything in correct order
+    this.setupDefinitions(); // Re-create SVG filters and gradients
+    this.buildNeuralNetwork(); // Create neurons and connections
+    this.setupInteractions(); // Re-attach event listeners (THIS WAS MISSING!)
+
+    console.log("✅ Architecture updated with", this.neurons.length, "neurons");
   }
 
   setAnimationSpeed(speed) {
