@@ -76,7 +76,7 @@ class VisualizationTab:
         ttk.Checkbutton(plot_grid, text="📊 Statistical Summary", 
                        variable=self.show_statistics).grid(row=1, column=0, sticky='w', padx=5, pady=2)
         
-        ttk.Checkbutton(plot_grid, text="✅ Data Quality Metrics", 
+        ttk.Checkbutton(plot_grid, text=" Data Quality Metrics", 
                        variable=self.show_quality_metrics).grid(row=1, column=1, sticky='w', padx=5, pady=2)
         
     def create_plot_options(self, parent):
@@ -571,7 +571,6 @@ class VisualizationTab:
         report.append("QUADRATIC EQUATION DATASET ANALYSIS REPORT")
         report.append("=" * 60)
         report.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        report.append(f"Location: Varna, Bulgaria")
         report.append("")
         
         # Dataset overview
@@ -600,14 +599,14 @@ class VisualizationTab:
         quality_metrics = self.calculate_quality_metrics(df)
         
         if quality_metrics.get('Verified', 0) > 95:
-            report.append("✅ Excellent data quality - all solutions verified")
+            report.append(" Excellent data quality - all solutions verified")
         elif quality_metrics.get('Verified', 0) > 90:
-            report.append("✅ Good data quality - most solutions verified")
+            report.append(" Good data quality - most solutions verified")
         else:
             report.append("⚠️ Some verification issues detected")
             
         if quality_metrics.get('Any Whole', 0) > 50:
-            report.append("✅ Good distribution of whole number solutions")
+            report.append(" Good distribution of whole number solutions")
         else:
             report.append("ℹ️ Consider increasing whole number solution ratio")
             

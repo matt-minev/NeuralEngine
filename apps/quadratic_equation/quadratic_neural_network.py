@@ -130,7 +130,7 @@ class QuadraticPredictor:
         self.is_trained = True
         
         if verbose:
-            print(f"✅ {self.scenario.name} trained in {training_time:.2f}s")
+            print(f" {self.scenario.name} trained in {training_time:.2f}s")
             
     def predict(self, input_data: np.ndarray, return_confidence: bool = True):
         """Make predictions with optional confidence estimation"""
@@ -560,7 +560,7 @@ class QuadraticNeuralNetworkApp:
                 self.update_data_preview()
                 
                 # Update status
-                self.data_status.config(text=f"✅ Loaded {len(self.data)} equations", 
+                self.data_status.config(text=f" Loaded {len(self.data)} equations", 
                                       style='Success.TLabel')
                 
                 messagebox.showinfo("Success", f"Loaded {len(self.data)} quadratic equations!")
@@ -691,12 +691,12 @@ class QuadraticNeuralNetworkApp:
                 self.results[scenario_key] = test_results
                 
                 # Log results
-                self.log_training(f"✅ Completed! MSE: {test_results['mse']:.6f}, R²: {test_results['r2']:.3f}")
+                self.log_training(f" Completed! MSE: {test_results['mse']:.6f}, R²: {test_results['r2']:.3f}")
                 
             self.log_training(f"\n🎉 All training completed!")
             
         except Exception as e:
-            self.log_training(f"❌ Training error: {str(e)}")
+            self.log_training(f" Training error: {str(e)}")
         finally:
             # Stop progress animation
             self.root.after(0, self.training_progress.stop)
@@ -800,7 +800,7 @@ class QuadraticNeuralNetworkApp:
             a, b, c = inputs
             x1, x2 = predictions
             
-            results.append("✅ VERIFICATION:")
+            results.append(" VERIFICATION:")
             error1 = abs(a * x1**2 + b * x1 + c)
             error2 = abs(a * x2**2 + b * x2 + c)
             results.append(f"  Equation check x1: {a:.3f}×({x1:.3f})² + {b:.3f}×{x1:.3f} + {c:.3f} = {error1:.6f}")
@@ -891,7 +891,7 @@ class QuadraticNeuralNetworkApp:
         elif avg_error < 1.0:
             results.append("  ⚠️ Moderate prediction. Some error present.")
         else:
-            results.append("  ❌ Poor prediction. High error.")
+            results.append("   Poor prediction. High error.")
             
         results.append(f"  Average absolute error: {avg_error:.6f}")
         
@@ -947,7 +947,7 @@ class QuadraticNeuralNetworkApp:
                                 fontsize=16, fontweight='bold')
         
         self.analysis_canvas.draw()
-        self.log_analysis("✅ Analysis complete!")
+        self.log_analysis(" Analysis complete!")
 
     def plot_model_comparison(self, ax):
         """Plot model performance comparison"""
@@ -1349,11 +1349,11 @@ class QuadraticNeuralNetworkApp:
         recommendations = []
         
         if best_r2 > 0.9:
-            recommendations.append("✅ Excellent model performance achieved")
+            recommendations.append(" Excellent model performance achieved")
         elif best_r2 > 0.7:
             recommendations.append("⚠️ Consider increasing model complexity or training time")
         else:
-            recommendations.append("❌ Model performance needs significant improvement")
+            recommendations.append(" Model performance needs significant improvement")
         
         recommendations.append(f"🏆 Use '{self.scenarios[best_scenario].name}' for best results")
         recommendations.append("📊 Consider ensemble methods for improved performance")

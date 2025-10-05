@@ -323,14 +323,14 @@ class EditorTab:
                     
             else:
                 self.results_text.insert(tk.END, f"📐 Equation: {a}x² + {b}x + {c} = 0\n")
-                self.results_text.insert(tk.END, "❌ No real solutions exist for this equation.\n")
+                self.results_text.insert(tk.END, " No real solutions exist for this equation.\n")
                 
                 discriminant = b**2 - 4*a*c
                 self.results_text.insert(tk.END, f"ℹ️  Discriminant: {discriminant:.6f} (negative)")
                 
         except Exception as e:
             self.results_text.delete(1.0, tk.END)
-            self.results_text.insert(tk.END, f"❌ Error: {str(e)}")
+            self.results_text.insert(tk.END, f" Error: {str(e)}")
             
     def add_to_dataset(self):
         """Add current equation to the dataset."""
@@ -426,8 +426,8 @@ class EditorTab:
             dialog.destroy()
             self.process_paste_data(data)
             
-        ttk.Button(button_frame, text="✅ Import Data", command=import_data).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="❌ Cancel", command=dialog.destroy).pack(side='left', padx=5)
+        ttk.Button(button_frame, text=" Import Data", command=import_data).pack(side='left', padx=5)
+        ttk.Button(button_frame, text=" Cancel", command=dialog.destroy).pack(side='left', padx=5)
         
     def process_paste_data(self, data: str):
         """Process pasted data and add valid equations."""
@@ -469,9 +469,9 @@ class EditorTab:
                 errors.append(f"Line {line_num}: {str(e)}")
                 
         # Show results
-        result_message = f"Import completed!\n\n✅ Added: {added_count} equations"
+        result_message = f"Import completed!\n\n Added: {added_count} equations"
         if error_count > 0:
-            result_message += f"\n❌ Errors: {error_count} lines"
+            result_message += f"\n Errors: {error_count} lines"
             if len(errors) <= 5:
                 result_message += "\n\nErrors:\n" + "\n".join(errors)
             else:

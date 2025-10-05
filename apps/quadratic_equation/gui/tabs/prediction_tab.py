@@ -300,11 +300,11 @@ class PredictionTab:
                     elif error < 1.0:
                         error_status = "⚠️ MODERATE"
                     else:
-                        error_status = "❌ POOR"
+                        error_status = " POOR"
                         
                     results.append(f"   {feature.upper()}:")
                     results.append(f"     🤖 Predicted:  {predicted:.6f}")
-                    results.append(f"     ✅ Actual:     {actual:.6f}")
+                    results.append(f"      Actual:     {actual:.6f}")
                     results.append(f"     📊 Error:      {error:.6f} ({error_pct:.2f}%) {error_status}")
                     results.append(f"     🎯 Confidence: {confidence_pct:.1f}%")
                     results.append("")
@@ -332,11 +332,11 @@ class PredictionTab:
             if avg_error < 0.01:
                 results.append("   🏆 OUTSTANDING: Neural network is highly accurate!")
             elif avg_error < 0.1:
-                results.append("   ✅ EXCELLENT: Very good predictions with low error")
+                results.append("    EXCELLENT: Very good predictions with low error")
             elif avg_error < 1.0:
                 results.append("   ⚠️ FAIR: Moderate accuracy, needs improvement")
             else:
-                results.append("   ❌ POOR: High error, model needs retraining")
+                results.append("    POOR: High error, model needs retraining")
             
             results.append(f"   Average Error: {avg_error:.6f}")
             
@@ -385,7 +385,7 @@ class PredictionTab:
             elif error < 1.0:
                 error_status = "⚠️ MODERATE"
             else:
-                error_status = "❌ POOR"
+                error_status = " POOR"
             
             results.append(f"   {feature.upper()}:")
             results.append(f"     🤖 Predicted:    {pred:.6f}")
@@ -402,11 +402,11 @@ class PredictionTab:
         if avg_error < 0.01:
             results.append("   🏆 OUTSTANDING: Predictions match dataset very closely!")
         elif avg_error < 0.1:
-            results.append("   ✅ EXCELLENT: Good accuracy on this test sample")
+            results.append("    EXCELLENT: Good accuracy on this test sample")
         elif avg_error < 1.0:
             results.append("   ⚠️ FAIR: Moderate accuracy, room for improvement")
         else:
-            results.append("   ❌ POOR: High error, model may need retraining")
+            results.append("    POOR: High error, model may need retraining")
         
         results.append(f"   Average Absolute Error: {avg_error:.6f}")
         
@@ -485,13 +485,13 @@ class PredictionTab:
         # Overall verification status
         max_pred_error = max(pred_error1, pred_error2)
         if max_pred_error < 0.001:
-            results.append("   ✅ PERFECT: Predicted solutions satisfy the equation!")
+            results.append("    PERFECT: Predicted solutions satisfy the equation!")
         elif max_pred_error < 0.01:
             results.append("   👍 GOOD: Small error in equation satisfaction")
         elif max_pred_error < 1.0:
             results.append("   ⚠️ MODERATE: Noticeable error in equation satisfaction")
         else:
-            results.append("   ❌ POOR: Predicted solutions don't satisfy the equation")
+            results.append("    POOR: Predicted solutions don't satisfy the equation")
 
             
     def clear_results(self):

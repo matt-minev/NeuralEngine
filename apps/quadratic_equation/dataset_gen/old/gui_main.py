@@ -247,7 +247,6 @@ Features:
 Created for neural network training and mathematical research.
 
 Version: 2.0
-Location: Varna, Bulgaria
         """
         
         messagebox.showinfo("About", about_text)

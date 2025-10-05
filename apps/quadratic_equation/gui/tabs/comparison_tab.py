@@ -416,7 +416,6 @@ class ComparisonTab:
         content.append("QUADRATIC NEURAL NETWORK BENCHMARK REPORT")
         content.append("=" * 60)
         content.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        content.append(f"Location: Varna, Bulgaria")
         content.append("")
         
         # Executive Summary
