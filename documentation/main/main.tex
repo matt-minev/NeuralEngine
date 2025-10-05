@@ -1,7 +1,10 @@
 \documentclass[11pt,a4paper]{report}
 
 % Language setting
-\usepackage[english]{babel}
+\usepackage[T1,T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[main=english,bulgarian]{babel}
+\AtBeginDocument{\selectlanguage{english}}
 
 % Page layout
 \usepackage[a4paper,top=2.5cm,bottom=2.5cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
@@ -48,9 +51,11 @@
 % Custom title page layout
 \thispagestyle{empty}
 
-% Logo at full width (stays at top)
+% Logo (stays at top)
 \noindent
-\includegraphics[width=\textwidth]{uchimi_logo.jpg}
+\begin{center}
+\includegraphics[width=0.20\textwidth]{Uchi-BAN.jpg}
+\end{center}
 
 % Use flexible space to center the remaining content
 \vspace*{\fill}
@@ -58,15 +63,36 @@
 % Center all content below logo
 \begin{center}
 
-% Summer Research School text - bigger
-{\Large\textbf{Summer Research School 2025}}
+% Overline
+\begin{center}
+{\Large\bfseries
+Дванадесета Ученическа научна сесия на\\
+Ученическия институт на БАН
+}
+
+\vspace{0.25em}
+
+{\large\mdseries Ноември 2025 г.}
+\end{center}
+
+
 
 \vspace{1.5em}
 
-% Main title
-{\Huge\textbf{Neural Network Engine}} \\[0.5em]
-{\Large A Comprehensive Deep Learning Framework with Automatic Differentiation} \\[0.3em]
-{\large and Research Software for Neural Network Education \& Experimentation}
+% Main title (bilingual)
+{\Huge\textbf{Neural Network Engine}\par}
+{\Large\itshape Платформа за Невронни Мрежи\par}
+
+\vspace{0.4em}
+
+{\Large A Comprehensive Deep Learning Framework with Automatic Differentiation\par}
+
+\vspace{0.2em}
+
+{\large and Research Software for Neural Network Education \& Experimentation\par}
+
+{\large\itshape Цялостно Решение за Дълбоко Обучение с Автоматична Диференциация\par}
+{\normalsize\itshape и научноизследователски софтуер за образование и експерименти по невронни мрежи\par}
 
 \vspace{2.5em}
 
@@ -107,6 +133,22 @@ The Neural Network Engine is a comprehensive machine learning framework built fr
 The framework supports complete neural network workflows from data preprocessing through model training and evaluation. Three applications demonstrate its capabilities: a high-accuracy digit recognition system with interactive visualization, a universal character recognizer handling alphanumeric classification, and an innovative quadratic equation predictor exploring neural networks in mathematical problem-solving.
 
 Key contributions include numerically stable implementations, automatic differentiation for gradient computation, modular architecture enabling rapid experimentation, and comprehensive performance monitoring tools. The engine successfully bridges theoretical understanding with practical implementation, making complex deep learning concepts accessible while providing robust tools for real-world pattern recognition and classification tasks.
+
+\bigskip
+
+% Bulgarian heading + text (babel block; no extra page break)
+\begingroup
+\renewcommand{\languagename}{}% suppress any printed language name
+\begin{otherlanguage*}{bulgarian}
+\begin{center}\textbf{Резюме}\end{center}
+
+Neural Network Engine е цялостно решение за машинно обучение, разработено от първите принципи, което реализира основните идеи на дълбокото обучение чрез практичен, обучителен код. Системата предоставя девет активационни функции, включително ReLU, Sigmoid и Tanh, както и по-напреднали варианти като Swish и GELU, в съчетание с надеждни алгоритми за оптимизация като SGD с инерция и Adam.
+
+Платформата обхваща пълния процес на работа с невронни мрежи от предварителната обработка на данните, през етапите на обучение и валидиране, до финалното оценяване. Три демонстрационни приложения показват възможностите му: система за разпознаване на цифри с висока точност и интерактивна визуализация; универсален разпознавач на знаци за алфанумерична класификация; модул за предсказване на корени и коефициенти на квадратни уравнения, който изследва приложимостта на невронните мрежи при математически задачи.
+
+Ключовите приноси включват числено стабилни реализации, автоматична диференциация за изчисляване на градиенти, модулна архитектура, която улеснява бързото експериментиране, и изчерпателни инструменти за следене на производителността. Системата убедително свързва теорията с практиката, прави сложните концепции на дълбокото обучение по-достъпни и предоставя надеждни средства за реални задачи по разпознаване на образи и класификация.
+\end{otherlanguage*}
+\endgroup
 \end{abstract}
 
 \tableofcontents
