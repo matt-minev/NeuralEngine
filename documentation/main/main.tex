@@ -81,7 +81,7 @@
 
 % Main title (bilingual)
 {\Huge\textbf{Neural Network Engine}\par}
-{\Large\itshape Платформа за Невронни Мрежи\par}
+% {\Large\itshape Платформа за Невронни Мрежи\par}
 
 \vspace{0.4em}
 
@@ -93,6 +93,21 @@
 
 {\large\itshape Цялостно Решение за Дълбоко Обучение с Автоматична Диференциация\par}
 {\normalsize\itshape и научноизследователски софтуер за образование и експерименти по невронни мрежи\par}
+
+\vspace{2.5em}
+
+% Project Website - nice centered hyperlink and description
+\begin{center}
+\textbf{Project Website:}
+
+\href{https://neural.mattmaster.com/}{\texttt{neural.mattmaster.com}}
+
+\vspace{0.3em}
+
+{\small\itshape
+Access the \textbf{Code Repository}, demonstration videos, and additional information.
+}
+\end{center}
 
 \vspace{2.5em}
 
@@ -128,7 +143,7 @@
 \newpage
 
 \begin{abstract}
-The Neural Network Engine is a comprehensive machine learning framework built from first principles, implementing core deep learning concepts through practical, educational code. The engine features nine activation functions including ReLU, Sigmoid, Tanh, and advanced variants like Swish and GELU, paired with robust optimization algorithms including SGD with momentum and Adam optimizer.
+The Neural Network Engine is a comprehensive machine learning framework built from first principles, implementing core deep learning concepts through practical, educational code. The engine features nine activation functions, including ReLU, Sigmoid, Tanh, and advanced variants like Swish and GELU, paired with robust optimization algorithms, including SGD with momentum and the Adam optimizer.
 
 The framework supports complete neural network workflows from data preprocessing through model training and evaluation. Three applications demonstrate its capabilities: a high-accuracy digit recognition system with interactive visualization, a universal character recognizer handling alphanumeric classification, and an innovative quadratic equation predictor exploring neural networks in mathematical problem-solving.
 
@@ -153,6 +168,28 @@ Neural Network Engine е цялостно решение за машинно о�
 
 \tableofcontents
 \newpage
+
+\chapter{Introduction}
+
+The purpose of this research is to develop the \textbf{Neural Network Engine}, a comprehensive machine learning framework built from first principles that integrates core concepts of deep learning, automatic differentiation, and experimental tools for education and research. The principal goals are to:
+\begin{itemize}
+    \item Implement numerically stable neural network architectures and activation functions.
+    \item Provide robust optimization algorithms and automatic differentiation for gradient-based learning.
+    \item Demonstrate practical, educational workflows bridging theory and hands-on experimentation.
+    \item Enable intuitive visualization, performance analysis, and modular extension for further research.
+    \item Make it easy for students and developers to build neural network applications without having to reinvent the wheel.
+    \item Provide sophisticated and well-crafted example applications that highlight the full range of features offered by the engine.
+    \item Explore unconventional applications of neural networks by extending their use beyond traditional tasks and into new domains such as mathematical equation prediction, exemplified by the quadratic equation predictor project.
+\end{itemize}
+
+This document is organized into several chapters, each addressing a key aspect of the project:
+\begin{itemize}
+    \item \textbf{Theoretical Foundations}: Explores the mathematical principles of neural networks, activation functions, optimization, and automatic differentiation, establishing the groundwork for practical implementation.
+    \item \textbf{Framework Architecture}: Details the technical design, implementation strategies, and unique features of the Neural Network Engine, including numerically stable code, modular components, and visualization capabilities.
+    \item \textbf{Applications}: Presents and evaluates three representative projects built using the Engine: a digit recognizer, a universal character recognizer, and a quadratic equation predictor, each demonstrating practical performance and educational value.
+    \item \textbf{Results and Analysis}: Provides empirical evaluation, benchmarking, and comparative analysis of accuracy, efficiency, and scalability across applications and model variants.
+    \item \textbf{Conclusion and Future Directions}: Summarizes achievements, innovations, and lessons learned, and outlines prospects for further research and enhancement of the framework.
+\end{itemize}
 
 \chapter{Theoretical Foundations}
 
@@ -2190,7 +2227,9 @@ Collectively, these contributions demonstrate that transparent, from-scratch imp
 As the field accelerates towards ever larger models and specialized hardware, the principles embodied here remain constant: mathematical rigor, thoughtful abstraction, and relentless attention to numerical detail. With this foundation in place, the Neural Network Engine is prepared to evolve alongside the next generation of neural-network innovations, empowering researchers, students, and practitioners to push the boundaries of what intelligent systems can achieve.
 
 \chapter{Acknowledgments}
-
+% Logo at full width
+\noindent
+\includegraphics[width=\textwidth]{uchimi_logo.jpg}
 I would like to express my sincere gratitude to Emil Kelevedjiev for his invaluable support and mentorship throughout the course of this project. His generous provision of resources, insightful feedback, and expert guidance were instrumental in the successful completion of this work. I am deeply appreciative of his time, expertise, and commitment to this research endeavor.
 
 \newpage
