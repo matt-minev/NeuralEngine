@@ -1,3 +1,6 @@
+"""
+Simple script to clean up cache. 
+"""
 import os
 import shutil
 

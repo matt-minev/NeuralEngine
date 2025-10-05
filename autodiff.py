@@ -1,19 +1,8 @@
 """
-Automatic Differentiation Engine - Optimization & Gradient Computation
-===================================================================
+Automatic differentiation engine for neural network optimization.
 
-This module implements the optimization engine that enables neural network learning:
-- Automatic gradient computation using autograd
-- Multiple optimization algorithms (SGD, Adam, RMSprop)
-- Learning rate scheduling
-- Complete training loops with monitoring
-
-Mathematical Foundation:
-- Gradient Descent: θ_new = θ_old - α × ∇L(θ)
-- Adam: θ_new = θ_old - α × m̂/(√v̂ + ε)
-- Momentum: v_new = β × v_old + (1-β) × ∇L(θ)
-
-The key insight: autograd computes ∇L(θ) automatically for any loss function!
+Implements gradient computation using autograd and various optimizers
+(SGD, Adam, etc.) with training loop management.
 """
 
 import numpy as np
@@ -26,82 +15,43 @@ import time
 
 
 class Optimizer:
-    """
-    Base class for all optimizers.
-    
-    Defines the interface that all optimization algorithms must implement.
-    Each optimizer updates network parameters based on gradients.
-    """
+    """Base optimizer class. All optimizers inherit from this."""
     
     def __init__(self, learning_rate: float = 0.001):
-        """
-        Initialize base optimizer.
-        
-        Args:
-            learning_rate: Step size for parameter updates
-        """
         self.learning_rate = learning_rate
         self.step_count = 0
     
     def update(self, params: List[anp.ndarray], gradients: List[anp.ndarray]) -> List[anp.ndarray]:
-        """
-        Update parameters using gradients.
-        
-        Args:
-            params: Current parameter values
-            gradients: Gradients of loss with respect to parameters
-        
-        Returns:
-            Updated parameters
-        """
+        """Update parameters using gradients."""
         raise NotImplementedError("Subclasses must implement update method")
     
     def zero_grad(self):
-        """Reset any internal state (used by some optimizers)."""
+        """Reset internal state."""
         pass
 
 
 class SGD(Optimizer):
     """
-    Stochastic Gradient Descent optimizer.
+    Stochastic gradient descent with optional momentum.
     
-    Implements: θ_new = θ_old - α × ∇L(θ)
-    
-    This is the fundamental optimization algorithm:
-    - Simple and robust
-    - Good baseline for comparison
-    - Works well with proper learning rate
+    Update rule: theta_new = theta_old - lr * gradient
     """
     
     def __init__(self, learning_rate: float = 0.001, momentum: float = 0.0):
         """
-        Initialize SGD optimizer.
+        Initialize SGD.
         
         Args:
-            learning_rate: Step size for updates
-            momentum: Momentum factor (0 = no momentum, 0.9 = strong momentum)
-        
-        Mathematical Details:
-        - Pure SGD: θ_new = θ_old - α × ∇L(θ)
-        - With momentum: v_new = β × v_old + (1-β) × ∇L(θ)
-                        θ_new = θ_old - α × v_new
+            learning_rate: step size
+            momentum: momentum factor (0.0 to 1.0)
         """
         super().__init__(learning_rate)
         self.momentum = momentum
-        self.velocity = None  # Will be initialized on first update
+        self.velocity = None
     
     def update(self, params: List[anp.ndarray], gradients: List[anp.ndarray]) -> List[anp.ndarray]:
-        """
-        Update parameters using SGD with optional momentum.
-        
-        Args:
-            params: Current parameter values
-            gradients: Gradients of loss with respect to parameters
-        
-        Returns:
-            Updated parameters
-        """
-        # Initialize velocity on first update
+        """Update params with SGD."""
+        # init velocity on first update
         if self.velocity is None:
             self.velocity = [anp.zeros_like(p) for p in params]
         
@@ -109,12 +59,11 @@ class SGD(Optimizer):
         
         for i, (param, grad) in enumerate(zip(params, gradients)):
             if self.momentum > 0:
-                # Update velocity with momentum
+                # update with momentum
                 self.velocity[i] = self.momentum * self.velocity[i] + (1 - self.momentum) * grad
-                # Update parameters using velocity
                 updated_param = param - self.learning_rate * self.velocity[i]
             else:
-                # Pure SGD without momentum
+                # pure SGD
                 updated_param = param - self.learning_rate * grad
             
             updated_params.append(updated_param)
@@ -125,50 +74,32 @@ class SGD(Optimizer):
 
 class Adam(Optimizer):
     """
-    Adam optimizer - Adaptive learning rates with momentum.
+    Adam optimizer - adaptive learning rates with momentum.
     
-    Combines the benefits of:
-    - Momentum (like SGD with momentum)
-    - Adaptive learning rates (like RMSprop)
-    
-    Mathematical Formula:
-    m_t = β₁ × m_{t-1} + (1-β₁) × ∇L(θ)     [momentum]
-    v_t = β₂ × v_{t-1} + (1-β₂) × (∇L(θ))²  [adaptive learning rate]
-    m̂_t = m_t / (1 - β₁^t)                   [bias correction]
-    v̂_t = v_t / (1 - β₂^t)                   [bias correction]
-    θ_new = θ_old - α × m̂_t / (√v̂_t + ε)
+    Combines momentum and adaptive learning rates for faster convergance.
     """
     
     def __init__(self, learning_rate: float = 0.001, beta1: float = 0.9, 
                  beta2: float = 0.999, epsilon: float = 1e-8):
         """
-        Initialize Adam optimizer.
+        Initialize Adam.
         
         Args:
-            learning_rate: Step size for updates
-            beta1: Momentum decay rate (usually 0.9)
-            beta2: Adaptive learning rate decay (usually 0.999)
-            epsilon: Small value to prevent division by zero
+            learning_rate: step size
+            beta1: momentum decay (usually 0.9)
+            beta2: adaptive lr decay (usually 0.999)
+            epsilon: prevent division by zero
         """
         super().__init__(learning_rate)
         self.beta1 = beta1
         self.beta2 = beta2
         self.epsilon = epsilon
-        self.m = None  # First moment estimates
-        self.v = None  # Second moment estimates
+        self.m = None  # first moment
+        self.v = None  # second moment
     
     def update(self, params: List[anp.ndarray], gradients: List[anp.ndarray]) -> List[anp.ndarray]:
-        """
-        Update parameters using Adam optimization.
-        
-        Args:
-            params: Current parameter values
-            gradients: Gradients of loss with respect to parameters
-        
-        Returns:
-            Updated parameters
-        """
-        # Initialize moments on first update
+        """Update params with Adam."""
+        # init moments on first update
         if self.m is None:
             self.m = [anp.zeros_like(p) for p in params]
             self.v = [anp.zeros_like(p) for p in params]
@@ -177,17 +108,17 @@ class Adam(Optimizer):
         updated_params = []
         
         for i, (param, grad) in enumerate(zip(params, gradients)):
-            # Update first moment (momentum)
+            # update first moment (momentum)
             self.m[i] = self.beta1 * self.m[i] + (1 - self.beta1) * grad
             
-            # Update second moment (adaptive learning rate)
+            # update second moment (adaptive lr)
             self.v[i] = self.beta2 * self.v[i] + (1 - self.beta2) * (grad ** 2)
             
-            # Bias correction
+            # bias correction
             m_hat = self.m[i] / (1 - self.beta1 ** self.step_count)
             v_hat = self.v[i] / (1 - self.beta2 ** self.step_count)
             
-            # Update parameters
+            # update parameters
             updated_param = param - self.learning_rate * m_hat / (anp.sqrt(v_hat) + self.epsilon)
             updated_params.append(updated_param)
         
@@ -196,13 +127,9 @@ class Adam(Optimizer):
 
 class TrainingEngine:
     """
-    Complete training engine that orchestrates the learning process.
+    Training engine that handles gradient computation and parameter updates.
     
-    This class handles:
-    - Gradient computation using autograd
-    - Parameter updates using optimizers
-    - Training progress monitoring
-    - Loss tracking and visualization
+    Uses autograd to automatically compute gradients.
     """
     
     def __init__(self, network, optimizer: Optimizer, loss_function: Callable):
@@ -210,83 +137,53 @@ class TrainingEngine:
         Initialize training engine.
         
         Args:
-            network: Neural network to train
-            optimizer: Optimization algorithm to use
-            loss_function: Loss function to minimize
+            network: neural network to train
+            optimizer: optimization algorithm
+            loss_function: loss to minimize
         """
         self.network = network
         self.optimizer = optimizer
         self.loss_function = loss_function
         
-        # Training history
         self.history = defaultdict(list)
         
-        # Create gradient function using autograd
+        # create gradient function using autograd
         self._create_gradient_function()
     
     def _create_gradient_function(self):
         """
         Create automatic gradient computation function.
         
-        This is the magic of autograd: we define a function that computes
-        the loss, and autograd automatically creates a function that
-        computes the gradients!
+        Autograd magically computes gradients for us!
         """
         def loss_with_params(params_flat, X, y_true):
-            """
-            Compute loss given flattened parameters.
-            
-            Args:
-                params_flat: All network parameters as a flat array
-                X: Input data
-                y_true: Target values
-            
-            Returns:
-                Scalar loss value
-            """
-            # Reshape flat parameters back to network structure
+            """Compute loss given flattened params."""
+            # reshape flat params back to network structure
             params_structured = self._unflatten_params(params_flat)
             
-            # Set network parameters
             self.network.set_all_parameters(params_structured)
             
-            # Forward pass
+            # forward pass
             y_pred = self.network.forward(X)
             
-            # Compute loss
+            # compute loss
             loss = self.loss_function(y_true, y_pred)
             
             return loss
         
-        # Create gradient function automatically!
+        # create gradient function automatically
         self.gradient_function = grad(loss_with_params, argnum=0)
     
     def _flatten_params(self, params: List[anp.ndarray]) -> anp.ndarray:
-        """
-        Flatten list of parameter arrays into single array.
-        
-        Args:
-            params: List of parameter arrays
-        
-        Returns:
-            Flattened parameter array
-        """
+        """Flatten parameter list into single array."""
         return anp.concatenate([p.flatten() for p in params])
     
     def _unflatten_params(self, params_flat: anp.ndarray) -> List[anp.ndarray]:
-        """
-        Reshape flattened parameters back to original structure.
-        
-        Args:
-            params_flat: Flattened parameter array
-        
-        Returns:
-            List of parameter arrays with original shapes
-        """
+        """Reshape flattened params back to original structure."""
         params = []
         start_idx = 0
         
-        # Get original parameter shapes
+        # get original param shapes
         original_params = self.network.get_all_parameters()
         
         for original_param in original_params:
@@ -299,28 +196,19 @@ class TrainingEngine:
         return params
     
     def train_step(self, X: anp.ndarray, y_true: anp.ndarray) -> float:
-        """
-        Perform single training step.
-        
-        Args:
-            X: Input data
-            y_true: Target values
-        
-        Returns:
-            Loss value for this step
-        """
-        # Get current parameters
+        """Perform single training step."""
+        # get current params
         current_params = self.network.get_all_parameters()
         params_flat = self._flatten_params(current_params)
         
-        # Compute loss
+        # compute loss
         loss = self.loss_function(y_true, self.network.forward(X))
         
-        # Compute gradients automatically!
+        # compute gradients automatically
         gradients_flat = self.gradient_function(params_flat, X, y_true)
         gradients_structured = self._unflatten_params(gradients_flat)
         
-        # Update parameters
+        # update params
         updated_params = self.optimizer.update(current_params, gradients_structured)
         self.network.set_all_parameters(updated_params)
         
@@ -333,36 +221,33 @@ class TrainingEngine:
         Train the neural network.
         
         Args:
-            X: Training input data
-            y_true: Training target values
-            epochs: Number of training iterations
-            batch_size: Size of mini-batches (None = full batch)
-            validation_data: Optional (X_val, y_val) for validation
-            verbose: Whether to print progress
-            plot_progress: Whether to plot training curves
-        
-        Returns:
-            Training history dictionary
+            X: training inputs
+            y_true: training targets
+            epochs: number of training iterations
+            batch_size: size of mini-batches (None = full batch)
+            validation_data: optional (X_val, y_val) tuple
+            verbose: print progress
+            plot_progress: plot training curves
         """
-        print(f"🚀 Starting Training...")
-        print(f"   Network: {self.network}")
-        print(f"   Optimizer: {self.optimizer.__class__.__name__}")
-        print(f"   Training samples: {X.shape[0]}")
-        print(f"   Epochs: {epochs}")
-        print(f"   Batch size: {batch_size or 'Full batch'}")
+        print(f"Starting training...")
+        print(f"  Network: {self.network}")
+        print(f"  Optimizer: {self.optimizer.__class__.__name__}")
+        print(f"  Training samples: {X.shape[0]}")
+        print(f"  Epochs: {epochs}")
+        print(f"  Batch size: {batch_size or 'Full batch'}")
         
         start_time = time.time()
         
         for epoch in range(epochs):
             epoch_losses = []
             
-            # Handle batching
+            # handle batching
             if batch_size is None:
-                # Full batch training
+                # full batch
                 loss = self.train_step(X, y_true)
                 epoch_losses.append(loss)
             else:
-                # Mini-batch training
+                # mini-batch
                 n_samples = X.shape[0]
                 indices = anp.random.permutation(n_samples)
                 
@@ -374,27 +259,27 @@ class TrainingEngine:
                     loss = self.train_step(X_batch, y_batch)
                     epoch_losses.append(loss)
             
-            # Record training loss
+            # record training loss
             avg_loss = anp.mean(epoch_losses)
             self.history['train_loss'].append(avg_loss)
             
-            # Validation loss
+            # validation loss
             if validation_data is not None:
                 X_val, y_val = validation_data
                 val_pred = self.network.forward(X_val)
                 val_loss = self.loss_function(y_val, val_pred)
                 self.history['val_loss'].append(float(val_loss))
             
-            # Progress reporting
+            # progress reporting
             if verbose and (epoch % (epochs // 10) == 0 or epoch == epochs - 1):
                 elapsed = time.time() - start_time
                 val_text = f", Val Loss: {self.history['val_loss'][-1]:.6f}" if validation_data else ""
-                print(f"   Epoch {epoch:4d}/{epochs}: Loss: {avg_loss:.6f}{val_text} ({elapsed:.1f}s)")
+                print(f"  Epoch {epoch:4d}/{epochs}: Loss: {avg_loss:.6f}{val_text} ({elapsed:.1f}s)")
         
         training_time = time.time() - start_time
-        print(f"✅ Training Complete! ({training_time:.1f}s)")
+        print(f"Training complete! ({training_time:.1f}s)")
         
-        # Plot training progress
+        # plot training progress
         if plot_progress:
             self.plot_training_history()
         
@@ -408,11 +293,11 @@ class TrainingEngine:
         
         plt.figure(figsize=(10, 6))
         
-        # Plot training loss
+        # plot training loss
         epochs = range(1, len(self.history['train_loss']) + 1)
         plt.plot(epochs, self.history['train_loss'], 'b-', label='Training Loss', linewidth=2)
         
-        # Plot validation loss if available
+        # plot validation loss if availabe
         if 'val_loss' in self.history and self.history['val_loss']:
             plt.plot(epochs, self.history['val_loss'], 'r-', label='Validation Loss', linewidth=2)
         
@@ -421,9 +306,9 @@ class TrainingEngine:
         plt.title('Training Progress')
         plt.legend()
         plt.grid(True, alpha=0.3)
-        plt.yscale('log')  # Log scale often better for loss curves
+        plt.yscale('log')  # log scale often better for loss
         
-        # Add annotations
+        # add annotation
         final_loss = self.history['train_loss'][-1]
         plt.annotate(f'Final Loss: {final_loss:.6f}', 
                     xy=(len(epochs), final_loss), 
@@ -437,17 +322,12 @@ class TrainingEngine:
         """
         Evaluate the trained network.
         
-        Args:
-            X: Test input data
-            y_true: Test target values
-        
-        Returns:
-            Dictionary of evaluation metrics
+        Returns dict with loss, mse, mae, predictions, and targets.
         """
         y_pred = self.network.forward(X)
         loss = self.loss_function(y_true, y_pred)
         
-        # Calculate additional metrics
+        # calculate additional metrics
         mse = anp.mean((y_true - y_pred) ** 2)
         mae = anp.mean(anp.abs(y_true - y_pred))
         
@@ -460,9 +340,9 @@ class TrainingEngine:
         }
 
 
-# Learning Rate Schedulers
+# Learning rate schedulers
 class LearningRateScheduler:
-    """Base class for learning rate scheduling."""
+    """Base class for LR scheduling."""
     
     def __init__(self, initial_lr: float):
         self.initial_lr = initial_lr
@@ -473,11 +353,7 @@ class LearningRateScheduler:
 
 
 class StepLR(LearningRateScheduler):
-    """
-    Step-wise learning rate decay.
-    
-    Reduces learning rate by a factor every few epochs.
-    """
+    """Step-wise learning rate decay."""
     
     def __init__(self, initial_lr: float, step_size: int, gamma: float = 0.1):
         super().__init__(initial_lr)
@@ -489,11 +365,7 @@ class StepLR(LearningRateScheduler):
 
 
 class ExponentialLR(LearningRateScheduler):
-    """
-    Exponential learning rate decay.
-    
-    Smoothly reduces learning rate over time.
-    """
+    """Exponential learning rate decay."""
     
     def __init__(self, initial_lr: float, gamma: float = 0.95):
         super().__init__(initial_lr)
@@ -503,34 +375,30 @@ class ExponentialLR(LearningRateScheduler):
         return self.initial_lr * (self.gamma ** epoch)
 
 
-# Example usage and testing
 if __name__ == "__main__":
-    """
-    Test the automatic differentiation engine.
-    """
-    print("🧪 Testing Automatic Differentiation Engine")
+    print("Testing Automatic Differentiation Engine")
     print("=" * 50)
     
-    # Import neural network components
+    # import network components
     import sys
     sys.path.append('.')
     from nn_core import NeuralNetwork, mean_squared_error, create_sample_data
     
-    # Create sample data
+    # create sample data
     X, y = create_sample_data(100)
-    print(f"📊 Sample Data: {X.shape[0]} samples, target: y = 2x₁ + 3x₂ + 1")
+    print(f"Sample data: {X.shape[0]} samples, target: y = 2*x1 + 3*x2 + 1")
     
-    # Create neural network
+    # create network
     network = NeuralNetwork([2, 8, 4, 1], ['relu', 'relu', 'linear'])
     
-    # Test different optimizers
+    # test different optimizers
     optimizers = {
         'SGD': SGD(learning_rate=0.01),
         'SGD+Momentum': SGD(learning_rate=0.01, momentum=0.9),
         'Adam': Adam(learning_rate=0.001)
     }
     
-    # Split data into train/validation
+    # split data
     split_idx = int(0.8 * len(X))
     X_train, X_val = X[:split_idx], X[split_idx:]
     y_train, y_val = y[:split_idx], y[split_idx:]
@@ -538,15 +406,15 @@ if __name__ == "__main__":
     results = {}
     
     for name, optimizer in optimizers.items():
-        print(f"\n🔄 Testing {name} Optimizer...")
+        print(f"\nTesting {name} optimizer...")
         
-        # Create fresh network for each test
+        # fresh network for each test
         test_network = NeuralNetwork([2, 8, 4, 1], ['relu', 'relu', 'linear'])
         
-        # Create training engine
+        # create trainer
         trainer = TrainingEngine(test_network, optimizer, mean_squared_error)
         
-        # Train the network
+        # train
         history = trainer.train(
             X_train, y_train,
             epochs=200,
@@ -555,38 +423,38 @@ if __name__ == "__main__":
             plot_progress=False
         )
         
-        # Evaluate
+        # evaluate
         eval_results = trainer.evaluate(X_val, y_val)
         results[name] = eval_results
         
-        print(f"   Final Loss: {eval_results['loss']:.6f}")
-        print(f"   MSE: {eval_results['mse']:.6f}")
-        print(f"   MAE: {eval_results['mae']:.6f}")
+        print(f"  Final Loss: {eval_results['loss']:.6f}")
+        print(f"  MSE: {eval_results['mse']:.6f}")
+        print(f"  MAE: {eval_results['mae']:.6f}")
     
-    # Compare optimizers
-    print(f"\n📊 Optimizer Comparison:")
+    # compare optimizers
+    print(f"\nOptimizer Comparison:")
     print(f"{'Optimizer':<15} {'Loss':<10} {'MSE':<10} {'MAE':<10}")
     print("-" * 45)
     for name, result in results.items():
         print(f"{name:<15} {result['loss']:<10.6f} {result['mse']:<10.6f} {result['mae']:<10.6f}")
     
-    # Test gradient computation
-    print(f"\n🔬 Testing Gradient Computation...")
+    # test gradient computation
+    print(f"\nTesting gradient computation...")
     network = NeuralNetwork([2, 3, 1])
     optimizer = SGD(learning_rate=0.01)
     trainer = TrainingEngine(network, optimizer, mean_squared_error)
     
-    # Single gradient step
+    # single gradient step
     loss_before = trainer.train_step(X_train[:10], y_train[:10])
     loss_after = mean_squared_error(y_train[:10], network.forward(X_train[:10]))
     
-    print(f"   Loss before step: {loss_before:.6f}")
-    print(f"   Loss after step: {loss_after:.6f}")
-    print(f"   Loss change: {loss_after - loss_before:.6f}")
+    print(f"  Loss before step: {loss_before:.6f}")
+    print(f"  Loss after step: {loss_after:.6f}")
+    print(f"  Loss change: {loss_after - loss_before:.6f}")
     
     if loss_after < loss_before:
-        print("   ✅ Gradient descent working correctly!")
+        print("  Gradient descent working correctly!")
     else:
-        print("   ⚠️  Learning rate might be too high")
+        print("  Learning rate might be too high")
     
-    print(f"\n✅ All tests passed! Automatic differentiation engine is working.")
+    print(f"\nAll tests passed! Autodiff engine is working.")

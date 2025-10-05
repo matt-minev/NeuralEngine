@@ -1,194 +1,137 @@
 """
-Neural Network Engine - Main Entry Point
-========================================
+Neural Network Engine - Demo and overview.
 
-This file demonstrates the core capabilities of our Neural Network Engine.
-The engine solves function approximation problems where:
-- Input: Vector of features (x)
-- Output: Vector of predictions (y)
-- Parameters: Weights and biases (θ) that we optimize
-- Goal: Minimize loss function L(θ) = ||y_true - f(x, θ)||²
-
-Mathematical Background:
-- Function approximation: f(x, θ) ≈ y_true
-- Optimization: θ* = argmin L(θ)
-- Gradient descent: θ_new = θ_old - α * ∇L(θ)
-- Automatic differentiation: ∇L(θ) computed automatically
+Shows capabilities and architecture of the neural network engine.
 """
 
 import numpy as np
 import matplotlib.pyplot as plt
 from typing import List, Tuple, Optional
 
-# Import our custom modules (will be created in subsequent steps)
-# from nn_core import NeuralNetwork, Layer
-# from autodiff import AutoDiffEngine
-# from data_utils import DataLoader, normalize_data
-# from utils import sigmoid, relu, mse_loss
 
 def print_welcome_message():
-    """
-    Print welcome message and mathematical foundations.
-    Explains the core concepts behind our Neural Network Engine.
-    """
+    """Print welcome and overview of the engine."""
     print("=" * 60)
-    print("🧠 NEURAL NETWORK ENGINE")
+    print("NEURAL NETWORK ENGINE")
     print("=" * 60)
     print("\nWelcome to the Neural Network Engine!")
-    print("This engine solves function approximation problems using:")
-    print("\n📚 Mathematical Foundation:")
-    print("   • Input: x ∈ ℝⁿ (vector of features)")
-    print("   • Output: y ∈ ℝᵐ (vector of predictions)")
-    print("   • Parameters: θ (weights and biases to optimize)")
-    print("   • Goal: Find θ* that minimizes Loss(θ)")
-    print("\n🔍 Core Equation:")
-    print("   Loss(θ) = ||y_true - f(x, θ)||²")
-    print("   where f(x, θ) is our neural network")
-    print("\n⚡ Optimization:")
-    print("   θ_new = θ_old - α × ∇Loss(θ)")
-    print("   (Gradient computed via automatic differentiation)")
-    print("\n" + "=" * 60)
+    print("This engine solves function approximation problems using gradient descent.")
+    print("\nCore concepts:")
+    print("  - Input: x (feature vector)")
+    print("  - Output: y (predictions)")
+    print("  - Parameters: theta (weights and biases)")
+    print("  - Goal: Minimize Loss(theta) = ||y_true - f(x, theta)||^2")
+    print("\nOptimization via gradient descent:")
+    print("  theta_new = theta_old - alpha * gradient")
+    print("=" * 60)
+
 
 def demonstrate_basic_concepts():
-    """
-    Demonstrate basic neural network concepts with simple examples.
-    Shows how function approximation works conceptually.
-    """
-    print("\n🎯 DEMONSTRATION: Basic Function Approximation")
+    """Show simple function approximation examples."""
+    print("\nBASIC FUNCTION APPROXIMATION")
     print("-" * 50)
     
-    # Example 1: Simple linear function approximation
-    print("\n1. Linear Function Approximation:")
-    print("   Target: y = 2x + 1")
-    print("   Network: f(x, θ) = w*x + b")
-    print("   Goal: Find w ≈ 2, b ≈ 1")
+    # linear function example
+    print("\n1. Linear Function:")
+    print("  Target: y = 2x + 1")
+    print("  Network learns: f(x) = w*x + b where w~=2, b~=1")
     
-    # Generate sample data for demonstration
     x_sample = np.array([1, 2, 3, 4, 5])
-    y_target = 2 * x_sample + 1  # y = 2x + 1
+    y_target = 2 * x_sample + 1
     
-    print(f"   Sample Input (x): {x_sample}")
-    print(f"   Target Output (y): {y_target}")
-    print("   → This is what our network will learn to approximate!")
+    print(f"  Sample input: {x_sample}")
+    print(f"  Target output: {y_target}")
     
-    # Example 2: Non-linear function approximation
-    print("\n2. Non-linear Function Approximation:")
-    print("   Target: y = sin(x)")
-    print("   Network: Multi-layer with activation functions")
-    print("   Challenge: Requires hidden layers for non-linearity")
+    # non-linear example
+    print("\n2. Non-linear Function:")
+    print("  Target: y = sin(x)")
+    print("  Requires multi-layer network with activations")
     
     x_nonlinear = np.linspace(0, 2*np.pi, 10)
     y_sine = np.sin(x_nonlinear)
     
-    print(f"   Sample Input (x): {x_nonlinear[:5]}...")
-    print(f"   Target Output (y): {y_sine[:5]}...")
-    print("   → This requires the full power of our neural network!")
+    print(f"  Sample input: {x_nonlinear[:5]}...")
+    print(f"  Target output: {y_sine[:5]}...")
+
 
 def explain_automatic_differentiation():
-    """
-    Explain automatic differentiation and why it's crucial for neural networks.
-    Shows the mathematical complexity that autograd handles for us.
-    """
-    print("\n🔬 AUTOMATIC DIFFERENTIATION EXPLAINED")
+    """Explain why autodiff is useful."""
+    print("\nAUTOMATIC DIFFERENTIATION")
     print("-" * 50)
     
-    print("\n❌ Manual Differentiation (Complex & Error-Prone):")
-    print("   For loss L = (y_true - (w*x + b))²")
-    print("   Manual derivatives:")
-    print("   ∂L/∂w = 2(y_true - (w*x + b)) * (-x)")
-    print("   ∂L/∂b = 2(y_true - (w*x + b)) * (-1)")
-    print("   → Gets exponentially complex with more layers!")
+    print("\nManual differentiation (tedious):")
+    print("  For loss L = (y_true - (w*x + b))^2")
+    print("  Need to calculate:")
+    print("    dL/dw = 2(y_true - (w*x + b)) * (-x)")
+    print("    dL/db = 2(y_true - (w*x + b)) * (-1)")
+    print("  Gets complex with more layers!")
     
-    print("\n✅ Automatic Differentiation (Simple & Accurate):")
-    print("   1. Define forward computation: loss = mse(y_true, network(x))")
-    print("   2. Autograd computes gradients automatically")
-    print("   3. Use gradients for optimization: θ = θ - α*∇θ")
-    print("   → Works for ANY network architecture!")
-    
-    print("\n🎯 Key Advantage:")
-    print("   • Write forward pass → Get gradients for free")
-    print("   • No manual derivative calculations")
-    print("   • Scales to deep networks effortlessly")
+    print("\nAutomatic differentiation (easy):")
+    print("  1. Define forward pass: loss = mse(y_true, network(x))")
+    print("  2. Autograd computes all gradients automatically")
+    print("  3. Use gradients: theta = theta - alpha*grad")
+    print("  Works for any architecture!")
+
 
 def show_engine_architecture():
-    """
-    Display the modular architecture of our Neural Network Engine.
-    Shows how different components work together.
-    """
-    print("\n🏗️ ENGINE ARCHITECTURE")
+    """Display module structure of the engine."""
+    print("\nENGINE ARCHITECTURE")
     print("-" * 50)
     
-    print("\n📁 Core Modules:")
-    print("   • nn_core.py     → Neural network layers & forward pass")
-    print("   • autodiff.py    → Gradient computation & optimization")
-    print("   • data_utils.py  → Data loading & preprocessing")
-    print("   • utils.py       → Activation functions & utilities")
+    print("\nCore modules:")
+    print("  - nn_core.py     : layers and forward propagation")
+    print("  - autodiff.py    : gradient computation and optimzation")
+    print("  - data_utils.py  : data loading and preprocessing")
+    print("  - utils.py       : activation functions and helpers")
     
-    print("\n🔄 Processing Flow:")
-    print("   1. Data → data_utils.py → Normalized inputs")
-    print("   2. Input → nn_core.py → Forward pass predictions")
-    print("   3. Loss → autodiff.py → Gradient computation")
-    print("   4. Gradients → autodiff.py → Parameter updates")
-    print("   5. Repeat until convergence!")
+    print("\nProcessing flow:")
+    print("  1. Load data -> normalize")
+    print("  2. Forward pass -> predictions")
+    print("  3. Compute loss -> calculate gradients")
+    print("  4. Update parameters")
+    print("  5. Repeat until convergence")
     
-    print("\n🎮 Mini-Applications:")
-    print("   • number_predictor/ → Simple regression example")
-    print("   • digit_recognizer/ → Image classification with GUI")
+    print("\nExample applications:")
+    print("  - number_predictor/  : regression demo")
+    print("  - digit_recognizer/  : image classification with GUI")
+
 
 def preview_upcoming_features():
-    """
-    Preview the features we'll implement in upcoming modules.
-    Builds excitement for the complete engine.
-    """
-    print("\n🚀 UPCOMING FEATURES")
+    """Overview of planned features."""
+    print("\nUPCOMING FEATURES")
     print("-" * 50)
     
-    print("\n⚙️ Neural Network Core (nn_core.py):")
-    print("   • Configurable layers and neurons")
-    print("   • Forward propagation with any architecture")
-    print("   • Multiple activation functions")
-    print("   • Flexible loss functions")
+    print("\nNeural Network Core:")
+    print("  - Configurable architecture")
+    print("  - Multiple activation functions (ReLU, sigmoid, tanh, etc)")
+    print("  - Flexible loss functions")
     
-    print("\n🔥 Automatic Differentiation (autodiff.py):")
-    print("   • Gradient computation for any network")
-    print("   • Advanced optimizers (SGD, Adam, etc.)")
-    print("   • Learning rate scheduling")
-    print("   • Momentum and regularization")
+    print("\nAutomatic Differentiation:")
+    print("  - Gradient computation for any network")
+    print("  - Optimizers: SGD, Adam, RMSprop")
+    print("  - Learning rate scheduling")
+    print("  - Momentum and regularization")
     
-    print("\n📊 Data Processing (data_utils.py):")
-    print("   • CSV/JSON data loading")
-    print("   • Automatic normalization")
-    print("   • Train/validation/test splits")
-    print("   • Data augmentation tools")
+    print("\nData Processing:")
+    print("  - CSV/JSON loading")
+    print("  - Auto normalization")
+    print("  - Train/val/test splits")
+    print("  - Data augmentation")
     
-    print("\n🎨 Interactive Applications:")
-    print("   • Real-time number prediction")
-    print("   • Draw-and-predict digit recognition")
-    print("   • Training progress visualization")
+    print("\nInteractive Apps:")
+    print("  - Real-time predictions")
+    print("  - Draw-and-predict interface")
+    print("  - Training visualization")
+
 
 def main():
-    """
-    Main function that orchestrates the demonstration.
-    This is the entry point when someone runs: python main.py
-    """
-    # Welcome and mathematical foundations
+    """Main demo orchestrator."""
     print_welcome_message()
-    
-    # Basic concept demonstrations
     demonstrate_basic_concepts()
-    
-    # Explain automatic differentiation
     explain_automatic_differentiation()
-    
-    # Show engine architecture
     show_engine_architecture()
-    
-    # Preview upcoming features
     preview_upcoming_features()
 
+
 if __name__ == "__main__":
-    """
-    This block runs when the file is executed directly.
-    It ensures main() only runs when this file is the entry point.
-    """
     main()
