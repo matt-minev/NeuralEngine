@@ -1,9 +1,8 @@
 """
-Comprehensive MNIST Test Suite with Advanced Visualizations
-=========================================================
+MNIST test suite with visualizations.
 
 Tests trained model on MNIST test data with detailed statistics,
-confidence analysis, and multiple visualization charts.
+confidence analysis, and visualization charts.
 """
 
 import numpy as np
@@ -16,58 +15,60 @@ import sys
 from sklearn.metrics import classification_report, confusion_matrix
 import time
 
-# Import YOUR NeuralEngine
+# import neural engine
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 from nn_core import cross_entropy_loss
 from load_data import load_test_data
 
-# Set up plotting style
+# plotting style
 plt.style.use('default')
 sns.set_palette("husl")
 
+
 def load_trained_model(model_path='models/digit_model_bulletproof.pkl'):
-    """Load the trained model and its metadata."""
-    print(f"🔍 Loading trained model from {model_path}...")
+    """Load trained model and metadata."""
+    print(f"Loading model from {model_path}...")
     
     try:
         with open(model_path, 'rb') as f:
             model_data = pickle.load(f)
         
         model = model_data['model']
-        print(f"✅ Model loaded successfully!")
-        print(f"   Training Accuracy: {model_data.get('accuracy', 'N/A'):.2f}%")
-        print(f"   Architecture: {model.layer_sizes}")
-        print(f"   Parameters: {model.count_parameters():,}")
+        print(f"Model loaded successfully!")
+        print(f"  Training Accuracy: {model_data.get('accuracy', 'N/A'):.2f}%")
+        print(f"  Architecture: {model.layer_sizes}")
+        print(f"  Parameters: {model.count_parameters():,}")
         
         return model, model_data
     
     except FileNotFoundError:
-        print(f"❌ Model file not found: {model_path}")
-        print("   Please train a model first by running train_model.py")
+        print(f"Model file not found: {model_path}")
+        print("Please train a model first by running train_model.py")
         return None, None
 
+
 def comprehensive_test_evaluation(model, X_test, y_test):
-    """Perform comprehensive evaluation on test data."""
-    print(f"\n🔬 COMPREHENSIVE TEST EVALUATION")
+    """Run comprehensive evaluation on test data."""
+    print(f"\nCOMPREHENSIVE TEST EVALUATION")
     print("=" * 50)
     
     start_time = time.time()
     
-    # Get predictions
+    # get predictions
     predictions = model.forward(X_test)
     predicted_classes = np.argmax(predictions, axis=1)
     true_classes = np.argmax(y_test, axis=1)
     
-    # Calculate basic metrics
+    # basic metrics
     accuracy = np.mean(predicted_classes == true_classes) * 100
     test_loss = cross_entropy_loss(y_test, predictions)
     
-    # Confidence analysis
+    # confidence analysis
     confidences = np.max(predictions, axis=1) * 100
     avg_confidence = np.mean(confidences)
     median_confidence = np.median(confidences)
     
-    # Confidence buckets
+    # confidence buckets
     very_high_conf = np.sum(confidences >= 95)
     high_conf = np.sum(confidences >= 85)
     medium_conf = np.sum(confidences >= 70)
@@ -75,20 +76,20 @@ def comprehensive_test_evaluation(model, X_test, y_test):
     
     prediction_time = time.time() - start_time
     
-    # Print summary
-    print(f"📊 OVERALL PERFORMANCE:")
-    print(f"   🎯 Test Accuracy: {accuracy:.2f}%")
-    print(f"   📉 Test Loss: {test_loss:.4f}")
-    print(f"   ⏱️  Prediction Time: {prediction_time:.3f} seconds")
-    print(f"   🚀 Throughput: {len(X_test)/prediction_time:.0f} samples/sec")
+    # print summary
+    print(f"OVERALL PERFORMANCE:")
+    print(f"  Test Accuracy: {accuracy:.2f}%")
+    print(f"  Test Loss: {test_loss:.4f}")
+    print(f"  Prediction Time: {prediction_time:.3f} seconds")
+    print(f"  Throughput: {len(X_test)/prediction_time:.0f} samples/sec")
     
-    print(f"\n🎪 CONFIDENCE DISTRIBUTION:")
-    print(f"   Average: {avg_confidence:.1f}%")
-    print(f"   Median: {median_confidence:.1f}%")
-    print(f"   Very High (95%+): {very_high_conf:,} ({very_high_conf/len(predictions)*100:.1f}%)")
-    print(f"   High (85-94%): {high_conf-very_high_conf:,} ({(high_conf-very_high_conf)/len(predictions)*100:.1f}%)")
-    print(f"   Medium (70-84%): {medium_conf-high_conf:,} ({(medium_conf-high_conf)/len(predictions)*100:.1f}%)")
-    print(f"   Low (<70%): {low_conf:,} ({low_conf/len(predictions)*100:.1f}%)")
+    print(f"\nCONFIDENCE DISTRIBUTION:")
+    print(f"  Average: {avg_confidence:.1f}%")
+    print(f"  Median: {median_confidence:.1f}%")
+    print(f"  Very High (95%+): {very_high_conf:,} ({very_high_conf/len(predictions)*100:.1f}%)")
+    print(f"  High (85-94%): {high_conf-very_high_conf:,} ({(high_conf-very_high_conf)/len(predictions)*100:.1f}%)")
+    print(f"  Medium (70-84%): {medium_conf-high_conf:,} ({(medium_conf-high_conf)/len(predictions)*100:.1f}%)")
+    print(f"  Low (<70%): {low_conf:,} ({low_conf/len(predictions)*100:.1f}%)")
     
     return {
         'predictions': predictions,
@@ -106,9 +107,10 @@ def comprehensive_test_evaluation(model, X_test, y_test):
         }
     }
 
+
 def per_digit_analysis(results):
-    """Analyze performance for each digit class."""
-    print(f"\n🔢 PER-DIGIT ANALYSIS:")
+    """Analyze performace for each digit class."""
+    print(f"\nPER-DIGIT ANALYSIS:")
     print("-" * 60)
     
     predictions = results['predictions']
@@ -118,7 +120,7 @@ def per_digit_analysis(results):
     per_digit_stats = []
     
     for digit in range(10):
-        # Get samples for this digit
+        # get samples for this digit
         digit_mask = (true_classes == digit)
         digit_predictions = predictions[digit_mask]
         digit_predicted = predicted_classes[digit_mask]
@@ -132,7 +134,7 @@ def per_digit_analysis(results):
             digit_min_conf = np.min(np.max(digit_predictions, axis=1)) * 100
             digit_max_conf = np.max(np.max(digit_predictions, axis=1)) * 100
             
-            print(f"   Digit {digit}: {digit_accuracy:5.1f}% accuracy ({digit_correct:3d}/{digit_count:3d}) | "
+            print(f"  Digit {digit}: {digit_accuracy:5.1f}% accuracy ({digit_correct:3d}/{digit_count:3d}) | "
                   f"Conf: {digit_avg_conf:5.1f}% avg, {digit_min_conf:5.1f}%-{digit_max_conf:5.1f}% range")
             
             per_digit_stats.append({
@@ -147,21 +149,22 @@ def per_digit_analysis(results):
     
     return per_digit_stats
 
+
 def create_visualizations(results, per_digit_stats, model_data):
-    """Create comprehensive visualization charts."""
-    print(f"\n📈 CREATING VISUALIZATIONS...")
+    """Create visualization charts."""
+    print(f"\nCreating visualizations...")
     
-    # Create output directory
+    # create output dir
     os.makedirs('test_results', exist_ok=True)
     
-    # Set up the plotting style
+    # plotting style
     plt.rcParams.update({'font.size': 10, 'figure.dpi': 100})
     
-    # 1. CONFUSION MATRIX
+    # 1. confusion matrix
     plt.figure(figsize=(12, 10))
     cm = confusion_matrix(results['true_classes'], results['predicted_classes'])
     
-    # Normalize confusion matrix
+    # normalize confusion matrix
     cm_normalized = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
     
     sns.heatmap(cm_normalized, annot=True, fmt='.2f', cmap='Blues', 
@@ -173,7 +176,7 @@ def create_visualizations(results, per_digit_stats, model_data):
     plt.savefig('test_results/confusion_matrix.png', dpi=300, bbox_inches='tight')
     plt.close()
     
-    # 2. PER-DIGIT ACCURACY BAR CHART
+    # 2. per-digit accuracy bar chart
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
     
     digits = [stat['digit'] for stat in per_digit_stats]
@@ -187,7 +190,7 @@ def create_visualizations(results, per_digit_stats, model_data):
     ax1.set_ylim(0, 100)
     ax1.grid(True, alpha=0.3)
     
-    # Add value labels on bars
+    # add value labels on bars
     for bar, acc in zip(bars1, accuracies):
         height = bar.get_height()
         ax1.text(bar.get_x() + bar.get_width()/2., height + 0.5,
@@ -200,7 +203,7 @@ def create_visualizations(results, per_digit_stats, model_data):
     ax2.set_ylim(0, 100)
     ax2.grid(True, alpha=0.3)
     
-    # Add value labels on bars
+    # add value labels
     for bar, conf in zip(bars2, confidences):
         height = bar.get_height()
         ax2.text(bar.get_x() + bar.get_width()/2., height + 0.5,
@@ -210,7 +213,7 @@ def create_visualizations(results, per_digit_stats, model_data):
     plt.savefig('test_results/per_digit_performance.png', dpi=300, bbox_inches='tight')
     plt.close()
     
-    # 3. CONFIDENCE DISTRIBUTION HISTOGRAM
+    # 3. confidence distribution histogram
     plt.figure(figsize=(12, 8))
     
     plt.subplot(2, 2, 1)
@@ -255,7 +258,7 @@ def create_visualizations(results, per_digit_stats, model_data):
     plt.savefig('test_results/confidence_analysis.png', dpi=300, bbox_inches='tight')
     plt.close()
     
-    # 4. TRAINING HISTORY (if available)
+    # 4. training history (if availible)
     if 'history' in model_data and model_data['history']:
         plt.figure(figsize=(15, 5))
         
@@ -273,7 +276,7 @@ def create_visualizations(results, per_digit_stats, model_data):
         plt.grid(True, alpha=0.3)
         
         plt.subplot(1, 3, 2)
-        # Convert loss to approximate accuracy for visualization
+        # convert loss to approximate accuracy for viz
         approx_train_acc = [(2.3 - loss) / 2.3 * 100 for loss in history['train_loss']]
         plt.plot(epochs, approx_train_acc, 'g-', label='Training Accuracy (est.)', linewidth=2)
         plt.title('Training Progress - Accuracy', fontweight='bold')
@@ -298,7 +301,7 @@ def create_visualizations(results, per_digit_stats, model_data):
         plt.ylabel('Percentage (%)')
         plt.xticks(rotation=45)
         
-        # Add value labels
+        # add value labels
         for bar, value in zip(bars, metrics_values):
             height = bar.get_height()
             plt.text(bar.get_x() + bar.get_width()/2., height + 1,
@@ -308,15 +311,16 @@ def create_visualizations(results, per_digit_stats, model_data):
         plt.savefig('test_results/training_summary.png', dpi=300, bbox_inches='tight')
         plt.close()
     
-    print(f"✅ Visualizations saved to test_results/ directory:")
-    print(f"   📊 confusion_matrix.png - Detailed confusion matrix")
-    print(f"   📈 per_digit_performance.png - Accuracy & confidence by digit")
-    print(f"   📉 confidence_analysis.png - Confidence distribution analysis")
-    print(f"   📋 training_summary.png - Training progress & final metrics")
+    print(f"Visualizations saved to test_results/:")
+    print(f"  confusion_matrix.png - confusion matrix")
+    print(f"  per_digit_performance.png - accuracy & confidence by digit")
+    print(f"  confidence_analysis.png - confidence distribution")
+    print(f"  training_summary.png - training progress & final metrics")
+
 
 def generate_detailed_report(results, per_digit_stats, model_data):
-    """Generate a comprehensive text report."""
-    print(f"\n📝 GENERATING DETAILED REPORT...")
+    """Generate comprehensive text report."""
+    print(f"\nGenerating detailed report...")
     
     report_path = 'test_results/detailed_test_report.txt'
     
@@ -355,42 +359,44 @@ def generate_detailed_report(results, per_digit_stats, model_data):
             f.write(f"  {stat['digit']}   |  {stat['accuracy']:5.1f}%  |  {stat['count']:4d}   |  {stat['correct']:4d}   | "
                    f"{stat['avg_confidence']:5.1f}%  | {stat['min_confidence']:4.1f}%-{stat['max_confidence']:4.1f}%\n")
     
-    print(f"✅ Detailed report saved to {report_path}")
+    print(f"Detailed report saved to {report_path}")
+
 
 def main():
     """Main testing function."""
-    print("🚀 COMPREHENSIVE MNIST TEST SUITE")
+    print("COMPREHENSIVE MNIST TEST SUITE")
     print("=" * 80)
     
-    # Load trained model
+    # load trained model
     model, model_data = load_trained_model()
     if model is None:
         return
     
-    # Load test data
-    print(f"\n📁 Loading test data...")
+    # load test data
+    print(f"\nLoading test data...")
     X_test, y_test = load_test_data()
     
-    print(f"   Test samples: {X_test.shape[0]:,}")
-    print(f"   Feature dimensions: {X_test.shape[1]}")
-    print(f"   Classes: {y_test.shape[1]}")
+    print(f"  Test samples: {X_test.shape[0]:,}")
+    print(f"  Feature dimensions: {X_test.shape[1]}")
+    print(f"  Classes: {y_test.shape[1]}")
     
-    # Run comprehensive evaluation
+    # run comprehensive evaluation
     results = comprehensive_test_evaluation(model, X_test, y_test)
     
-    # Per-digit analysis
+    # per-digit analysis
     per_digit_stats = per_digit_analysis(results)
     
-    # Create visualizations
+    # create visualizations
     create_visualizations(results, per_digit_stats, model_data)
     
-    # Generate detailed report
+    # generate detailed report
     generate_detailed_report(results, per_digit_stats, model_data)
     
-    print(f"\n🎉 COMPREHENSIVE TESTING COMPLETE!")
-    print(f"   📊 Check test_results/ directory for all outputs")
-    print(f"   🎯 Final Test Accuracy: {results['accuracy']:.2f}%")
-    print(f"   🎪 Average Confidence: {results['avg_confidence']:.1f}%")
+    print(f"\nTESTING COMPLETE!")
+    print(f"  Check test_results/ directory for all outputs")
+    print(f"  Final Test Accuracy: {results['accuracy']:.2f}%")
+    print(f"  Average Confidence: {results['avg_confidence']:.1f}%")
+
 
 if __name__ == "__main__":
     main()
