@@ -412,7 +412,6 @@ NeuralEngine Features:
 
 
 Built with NeuralEngine Neural Network Library
-Created by Matt from Varna, Bulgaria
 """
         messagebox.showinfo("NeuralEngine Performance", stats)
 
@@ -439,7 +438,6 @@ Built with NeuralEngine Components:
 • utils.py - Activation functions & utilities
 
 
-Created by: Matt from Varna, Bulgaria
 Engine: NeuralEngine Neural Network Library
 Year: 2025
 
