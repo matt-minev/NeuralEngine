@@ -4,7 +4,6 @@ Quadratic Neural Network Web Application
 Flask Backend API
 
 Author: Matt
-Location: Varna, Bulgaria
 Date: 2025
 
 Beautiful Apple-like web interface for quadratic neural network analysis
@@ -82,8 +81,7 @@ def health_check():
     """Health check endpoint"""
     return jsonify({
         'status': 'healthy',
-        'timestamp': datetime.now().isoformat(),
-        'location': 'Varna, Bulgaria'
+        'timestamp': datetime.now().isoformat()
     })
 
 @app.route('/api/scenarios')
@@ -1391,7 +1389,6 @@ if __name__ == '__main__':
     cleanup_old_uploads()
     
     print("Starting Flask server...")
-    print("Location: Varna, Bulgaria 🇧🇬")
     print("Access the app at: http://localhost:5000")
     print("=" * 50)
     

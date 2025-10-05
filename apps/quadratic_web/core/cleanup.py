@@ -2,10 +2,6 @@
 """
 Dataset Cleanup Script
 Removes uploaded datasets older than specified time
-
-Author: Matt
-Location: Varna, Bulgaria
-Date: July 2025
 """
 
 import os

@@ -269,14 +269,14 @@ class ModelManager:
                         break
         
         if not model_dir or not model_dir.exists():
-            print(f"❌ Model directory not found for model_id: {model_id}")
+            print(f" Model directory not found for model_id: {model_id}")
             return None
 
         try:
             # Load model info
             model_info_file = model_dir / 'model_info.json'
             if not model_info_file.exists():
-                print(f"❌ model_info.json not found in {model_dir}")
+                print(f" model_info.json not found in {model_dir}")
                 return None
                 
             with open(model_info_file, 'r') as f:
@@ -285,7 +285,7 @@ class ModelManager:
             # Load model data
             model_data_file = model_dir / 'model_data.json'
             if not model_data_file.exists():
-                print(f"❌ model_data.json not found in {model_dir}")
+                print(f" model_data.json not found in {model_dir}")
                 return None
                 
             with open(model_data_file, 'r') as f:
@@ -294,7 +294,7 @@ class ModelManager:
             # Load scalers
             scalers_file = model_dir / 'scalers.pkl'
             if not scalers_file.exists():
-                print(f"❌ scalers.pkl not found in {model_dir}")
+                print(f" scalers.pkl not found in {model_dir}")
                 return None
                 
             with open(scalers_file, 'rb') as f:
@@ -303,7 +303,7 @@ class ModelManager:
             # Get scenario
             scenario_key = model_data['scenario_key']
             if scenario_key not in scenarios:
-                print(f"❌ Scenario '{scenario_key}' not found in available scenarios")
+                print(f" Scenario '{scenario_key}' not found in available scenarios")
                 return None
 
             scenario = scenarios[scenario_key]
@@ -338,7 +338,7 @@ class ModelManager:
             return predictor
 
         except Exception as e:
-            print(f"❌ Failed to load model {model_id}: {e}")
+            print(f" Failed to load model {model_id}: {e}")
             raise RuntimeError(f"Failed to load model {model_id}: {e}")
     
     def get_saved_models(self) -> List[Dict]:

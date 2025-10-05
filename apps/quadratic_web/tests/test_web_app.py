@@ -3,10 +3,6 @@
 Quadratic Neural Network Web Application
 Comprehensive Testing Suite
 
-Author: Matt
-Location: Varna, Bulgaria
-Date: July 2025
-
 Complete testing suite for the web application functionality
 """
 

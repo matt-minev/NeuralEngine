@@ -3,10 +3,6 @@
 Quadratic Neural Network Web Application Configuration
 Flask Application Configuration Settings
 
-Author: Matt
-Location: Varna, Bulgaria
-Date: July 2025
-
 Configuration settings for the beautiful Apple-like web interface
 """
 
@@ -30,7 +26,6 @@ class Config:
     APP_NAME = "Quadratic Neural Network"
     APP_VERSION = "2.0.0"
     APP_AUTHOR = "Matt"
-    APP_LOCATION = "Varna, Bulgaria"
     APP_DESCRIPTION = "Advanced neural network analysis for quadratic equations"
     
     # File Upload Configuration
@@ -416,7 +411,6 @@ VERSION_INFO = {
     'version': '2.0.0',
     'release_date': '2025-07-18',
     'author': 'Matt',
-    'location': 'Varna, Bulgaria',
     'description': 'Advanced neural network analysis for quadratic equations',
     'neural_engine_version': '1.0.0',
     'flask_version': '2.3.3'

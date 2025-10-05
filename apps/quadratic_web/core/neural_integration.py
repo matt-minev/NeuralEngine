@@ -3,10 +3,6 @@
 Quadratic Neural Network Web Application
 Neural Engine Integration Layer
 
-Author: Matt
-Location: Varna, Bulgaria
-Date: July 2025
-
 Integration layer between the web application and the existing Neural Engine
 """
 

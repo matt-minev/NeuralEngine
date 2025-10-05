@@ -3,10 +3,6 @@
 Quadratic Neural Network Web Application
 Application Entry Point & Startup Script
 
-Author: Matt
-Location: Varna, Bulgaria
-Date: July 2025
-
 Production-ready startup script for the beautiful Apple-like web interface
 """
 
@@ -71,7 +67,7 @@ def check_neural_engine():
                 __import__(module_name)
                 logger.info(f"✅ Neural Engine module '{module_name}' available")
             except ImportError as e:
-                logger.error(f"❌ Neural Engine module '{module_name}' not found: {e}")
+                logger.error(f" Neural Engine module '{module_name}' not found: {e}")
                 return False
         
         # Test basic functionality
@@ -86,7 +82,7 @@ def check_neural_engine():
         return True
         
     except Exception as e:
-        logger.error(f"❌ Neural Engine verification failed: {e}")
+        logger.error(f" Neural Engine verification failed: {e}")
         return False
 
 def check_dependencies():
@@ -111,7 +107,7 @@ def check_dependencies():
             logger.debug(f"✅ Package '{package}' available")
         except ImportError:
             missing_packages.append(package)
-            logger.error(f"❌ Package '{package}' not found")
+            logger.error(f" Package '{package}' not found")
     
     if missing_packages:
         logger.error("Missing required packages:")
@@ -144,7 +140,7 @@ def create_app():
         return app
         
     except Exception as e:
-        logger.error(f"❌ Failed to create Flask application: {e}")
+        logger.error(f" Failed to create Flask application: {e}")
         return None
 
 def setup_signal_handlers(app):
@@ -170,7 +166,7 @@ def setup_signal_handlers(app):
                 logger.info("🗑️ Cleaned up temporary files")
                 
         except Exception as e:
-            logger.error(f"❌ Error during cleanup: {e}")
+            logger.error(f" Error during cleanup: {e}")
         
         logger.info("👋 Shutdown complete. Goodbye!")
         sys.exit(0)
@@ -268,7 +264,7 @@ def validate_environment():
     # Check Python version
     python_version = sys.version_info
     if python_version < (3, 8):
-        logger.error(f"❌ Python 3.8+ required, found {python_version.major}.{python_version.minor}")
+        logger.error(f" Python 3.8+ required, found {python_version.major}.{python_version.minor}")
         return False
     
     logger.info(f"✅ Python {python_version.major}.{python_version.minor}.{python_version.micro}")
@@ -314,7 +310,7 @@ def run_development_server(app, host='127.0.0.1', port=5000, debug=True, open_br
         app.run(host=host, port=port, debug=debug, use_reloader=False)
         
     except Exception as e:
-        logger.error(f"❌ Server startup failed: {e}")
+        logger.error(f" Server startup failed: {e}")
         return False
     
     return True
@@ -359,10 +355,10 @@ def run_production_server(app, host='0.0.0.0', port=5000, workers=4):
         StandaloneApplication(app, options).run()
         
     except ImportError:
-        logger.error("❌ Gunicorn not available, falling back to development server")
+        logger.error(" Gunicorn not available, falling back to development server")
         return run_development_server(app, host, port, debug=False, open_browser_flag=False)
     except Exception as e:
-        logger.error(f"❌ Production server startup failed: {e}")
+        logger.error(f" Production server startup failed: {e}")
         return False
     
     return True
@@ -395,13 +391,13 @@ def main():
     
     # Validate environment
     if not validate_environment():
-        logger.error("❌ Environment validation failed")
+        logger.error(" Environment validation failed")
         sys.exit(1)
     
     # Create Flask application
     app = create_app()
     if not app:
-        logger.error("❌ Failed to create application")
+        logger.error(" Failed to create application")
         sys.exit(1)
     
     # Run server
@@ -420,13 +416,13 @@ def main():
             )
         
         if not success:
-            logger.error("❌ Server failed to start")
+            logger.error(" Server failed to start")
             sys.exit(1)
             
     except KeyboardInterrupt:
         logger.info("🛑 Server stopped by user")
     except Exception as e:
-        logger.error(f"❌ Unexpected error: {e}")
+        logger.error(f" Unexpected error: {e}")
         sys.exit(1)
 
 if __name__ == '__main__':
