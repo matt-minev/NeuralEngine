@@ -7,9 +7,30 @@
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Code Style](https://img.shields.io/badge/code%20style-educational-orange)](README.md)
 
+### 🌐 [Neural Engine - Official Website](https:/neural.mattmaster.com)
+
+> Explore demonstration videos, technical details, and additional information about Neural Engine.
+
+[![Website](https://img.shields.io/badge/Visit-Website-blue?style=for-the-badge)](https://neural.mattmaster.com)
+<a href="https://neural.mattmaster.com">
+<img src="documentation/presentation/assets/neural-engine-logo.png" alt="Neural Engine Logo" width="200">
+</a>
+
 ## 🎯 Overview
 
 The Neural Network Engine is a powerful yet beginner-friendly library designed to solve **function approximation problems** using neural networks. Built with educational clarity and mathematical rigor, it demonstrates how modern deep learning works under the hood.
+
+## Showcase
+
+### Hand Drawn Digit Recognizer
+
+[![Hand Drawn Digit Recognizer Web Application Video Showcase](documentation/assets/digit_recognizer_web_thubnail_play.png)](https://www.youtube.com/watch?v=kk1jcvemtKw)
+
+### Neural Networks for Quadratic Equations
+
+[![Neural networks for Quadratic Equations Web Application Video Showcase](documentation/assets/quadratic_nn_web_thumbnail_play.png)](https://www.youtube.com/watch?v=m0iJYkEDGsc)
+
+Find additional information on the [Neural Engine Official Website](https://neural.mattmaster.com).
 
 ### 🔬 Core Concept
 
