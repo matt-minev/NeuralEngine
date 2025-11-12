@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NeuralEngine • Universal Character Recognizer</title>
+
+    <!-- Favicon -->
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔤</text></svg>"
+    />
+
+    <!-- Main stylesheet -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+  </head>
+
+  <body>
+    <div class="container">
+      <!-- Header section -->
+      <header class="header">
+        <h1 class="title">🧠 NeuralEngine</h1>
+        <p class="subtitle">Universal Character Recognition • 0-9, A-Z, a-z</p>
+        <p class="accessibility-badge">♿ Accessibility Features Enabled</p>
+      </header>
+
+      <!-- Main content area -->
+      <main class="main-content">
+        <!-- Left side: Drawing canvas -->
+        <div class="left-column">
+          <section class="drawing-section">
+            <div class="card glass-card">
+              <h2>✏️ Draw a Character</h2>
+
+              <!-- Canvas container -->
+              <div class="canvas-container">
+                <canvas id="drawingCanvas" width="280" height="280"></canvas>
+
+                <!-- Overlay with instructions -->
+                <div class="canvas-overlay show" id="canvasOverlay">
+                  <div class="instructions">Draw any character (0-9, A-Z, a-z)</div>
+                </div>
+              </div>
+
+              <!-- Controls -->
+              <div class="controls">
+                <div class="brush-control">
+                  <label for="brushSize">Brush Size:</label>
+                  <input
+                    type="range"
+                    id="brushSize"
+                    min="5"
+                    max="30"
+                    value="15"
+                  />
+                  <span id="brushValue">15</span>
+                </div>
+                <button id="clearBtn" class="btn btn-secondary">
+                  🗑️ Clear
+                </button>
+                <button id="predictBtn" class="btn btn-primary">
+                  🔍 Predict
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- Right side: Predictions and Accessibility -->
+        <div class="right-column">
+          <!-- Prediction Display -->
+          <section class="prediction-section">
+            <div class="card glass-card">
+              <h2>🎯 Prediction</h2>
+
+              <!-- Main prediction -->
+              <div class="top-prediction">
+                <div class="predicted-character" id="predictedCharacter">?</div>
+                <div class="character-type" id="characterType">--</div>
+                <div class="confidence" id="confidence">Confidence: --%</div>
+                <div class="prediction-time" id="predictionTime">--ms</div>
+              </div>
+
+              <!-- Character type tabs -->
+              <div class="character-tabs">
+                <button class="tab-btn active" data-tab="all">All</button>
+                <button class="tab-btn" data-tab="digits">Digits (0-9)</button>
+                <button class="tab-btn" data-tab="uppercase">Uppercase (A-Z)</button>
+                <button class="tab-btn" data-tab="lowercase">Lowercase (a-z)</button>
+              </div>
+
+              <!-- Top predictions display -->
+              <div class="top-predictions" id="topPredictions">
+                <p class="no-prediction">Draw a character to see predictions</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- Accessibility Panel -->
+          <section class="accessibility-section">
+            <div class="card glass-card">
+              <h2>♿ Accessibility</h2>
+              
+              <!-- Mirror Detection -->
+              <div class="accessibility-item" id="mirrorDetection">
+                <h3>🪞 Mirror Detection</h3>
+                <div class="mirror-status" id="mirrorStatus">
+                  <p>No mirror detected</p>
+                </div>
+              </div>
+
+              <!-- Writing Quality -->
+              <div class="accessibility-item" id="writingQuality">
+                <h3>✍️ Writing Quality</h3>
+                <div class="quality-metrics" id="qualityMetrics">
+                  <p>Analyze your writing...</p>
+                </div>
+              </div>
+
+              <!-- Issues and Suggestions -->
+              <div class="accessibility-item" id="suggestions">
+                <h3>💡 Suggestions</h3>
+                <div class="suggestions-list" id="suggestionsList">
+                  <p>No suggestions yet</p>
+                </div>
+              </div>
+
+              <!-- Resources -->
+              <div class="accessibility-item" id="resources">
+                <h3>📚 Resources</h3>
+                <div class="resources-list" id="resourcesList">
+                  <p>Resources will appear here</p>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+
+      <!-- Footer with model info -->
+      <footer class="model-info">
+        <div class="card glass-card">
+          <h3>🤖 Model Information</h3>
+          <div class="model-stats">
+            <div class="stat">
+              <span class="label">Architecture:</span>
+              <span class="value" id="modelArchitecture">
+                {% if model_info %}{{ model_info.layer_sizes | join(' → ') }}{% else %}Loading...{% endif %}
+              </span>
+            </div>
+            <div class="stat">
+              <span class="label">Parameters:</span>
+              <span class="value" id="modelParameters">
+                {% if model_info %}{{ "{:,}".format(model_info.total_parameters) }}{% else %}Loading...{% endif %}
+              </span>
+            </div>
+            <div class="stat">
+              <span class="label">Accuracy:</span>
+              <span class="value" id="modelAccuracy">
+                {% if model_info %}{{ "%.2f" | format(model_info.accuracy) }}%{% else %}Loading...{% endif %}
+              </span>
+            </div>
+            <div class="stat">
+              <span class="label">Classes:</span>
+              <span class="value">62 (0-9, A-Z, a-z)</span>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <!-- JavaScript files -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/accessibility.js') }}"></script>
+  </body>
+</html>
+
