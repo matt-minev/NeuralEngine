@@ -93,50 +93,21 @@ def detect_potential_issues(prediction_result: Dict, mirror_result: Optional[Dic
                 'confused_pair': (predicted_char, confused_char)
             })
     
-    # Writing quality issues
+    # Writing quality issues (optional - only for advanced metrics display)
+    # Quality metrics are calculated by preprocessor but not used for critical decisions
+    # These are kept for optional display in advanced metrics panel
     if quality_metrics:
+        # Only flag very severe quality issues (these are handled automatically by preprocessing)
+        # Most quality issues are resolved automatically by the preprocessing framework
         overall_score = quality_metrics.get('overall_score', 100.0)
-        clarity_score = quality_metrics.get('clarity_score', 100.0)
-        centering_score = quality_metrics.get('centering_score', 100.0)
-        size_score = quality_metrics.get('size_score', 100.0)
         
-        if overall_score < 50.0:
+        # Only flag if quality is extremely poor (preprocessing should handle most cases)
+        if overall_score < 30.0:
             issues.append({
-                'type': 'poor_quality',
-                'severity': 'medium',
-                'message': 'Writing quality could be improved',
-                'suggestion': 'Try making your strokes clearer and keeping the character well-centered'
-            })
-        
-        if clarity_score < 40.0:
-            issues.append({
-                'type': 'low_clarity',
+                'type': 'very_poor_quality',
                 'severity': 'low',
-                'message': 'Strokes could be bolder',
-                'suggestion': 'Press harder or use a thicker brush to make your strokes more visible'
-            })
-        
-        if centering_score < 50.0:
-            issues.append({
-                'type': 'poor_centering',
-                'severity': 'low',
-                'message': 'Character could be better centered',
-                'suggestion': 'Try to draw the character in the center of the canvas'
-            })
-        
-        if size_score < 30.0:
-            issues.append({
-                'type': 'too_small',
-                'severity': 'low',
-                'message': 'Character is quite small',
-                'suggestion': 'Try drawing a larger character that fills more of the canvas'
-            })
-        elif size_score > 90.0:
-            issues.append({
-                'type': 'too_large',
-                'severity': 'low',
-                'message': 'Character is very large',
-                'suggestion': 'Try drawing a slightly smaller character so it fits better'
+                'message': 'Character may be difficult to recognize',
+                'suggestion': 'The preprocessing system will automatically improve your drawing, but try to draw more clearly if possible'
             })
     
     return issues

@@ -4,7 +4,8 @@ class UniversalCharacterRecognizer {
     this.canvas = document.getElementById("drawingCanvas");
     this.ctx = this.canvas.getContext("2d");
     this.isDrawing = false;
-    this.brushSize = 15;
+    // Fixed brush size - adaptive based on canvas size
+    this.brushSize = Math.max(12, Math.min(20, this.canvas.width / 20));
     this.currentTab = 'all';
     this.lastPrediction = null;
 
@@ -54,14 +55,6 @@ class UniversalCharacterRecognizer {
       e.preventDefault();
       const mouseEvent = new MouseEvent("mouseup", {});
       this.canvas.dispatchEvent(mouseEvent);
-    });
-
-    // Brush size
-    const brushSizeSlider = document.getElementById("brushSize");
-    const brushValue = document.getElementById("brushValue");
-    brushSizeSlider.addEventListener("input", (e) => {
-      this.brushSize = parseInt(e.target.value);
-      brushValue.textContent = this.brushSize;
     });
 
     // Clear button
@@ -173,8 +166,12 @@ class UniversalCharacterRecognizer {
     const startTime = performance.now();
 
     try {
+      // Check if debug mode is enabled
+      const debugEnabled = document.getElementById('debugPanelContent')?.style.display !== 'none';
+      
       // Use accessibility endpoint for full analysis
-      const response = await fetch("/predict/accessibility", {
+      const url = debugEnabled ? "/predict?debug=true" : "/predict/accessibility";
+      const response = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -190,6 +187,11 @@ class UniversalCharacterRecognizer {
       this.lastPrediction = result;
       this.displayPrediction(result);
       
+      // Display debug images if available
+      if (result.debug_images) {
+        this.displayDebugImages(result.debug_images, result.debug_images.stats);
+      }
+      
       if (window.updateAccessibilityDisplay) {
         window.updateAccessibilityDisplay(result);
       }
@@ -200,7 +202,8 @@ class UniversalCharacterRecognizer {
   }
 
   displayPrediction(result) {
-    const prediction = result.prediction;
+    // Handle both /predict and /predict/accessibility response formats
+    const prediction = result.prediction || result;
     const predictionTime = result.prediction_time || 0;
 
     // Update main prediction display
@@ -215,12 +218,19 @@ class UniversalCharacterRecognizer {
 
   updatePredictionsDisplay() {
     const container = document.getElementById("topPredictions");
-    if (!this.lastPrediction || !this.lastPrediction.prediction) {
+    if (!this.lastPrediction) {
       container.innerHTML = '<p class="no-prediction">Draw a character to see predictions</p>';
       return;
     }
 
-    const topPredictions = this.lastPrediction.prediction.top_predictions || [];
+    // Handle both /predict and /predict/accessibility response formats
+    const prediction = this.lastPrediction.prediction || this.lastPrediction;
+    if (!prediction) {
+      container.innerHTML = '<p class="no-prediction">Draw a character to see predictions</p>';
+      return;
+    }
+
+    const topPredictions = prediction.top_predictions || [];
     const filtered = this.filterByTab(topPredictions);
 
     if (filtered.length === 0) {
@@ -252,10 +262,334 @@ class UniversalCharacterRecognizer {
     const targetType = typeMap[this.currentTab];
     return predictions.filter(p => p.type === targetType);
   }
+
+  displayDebugImages(debugImages, stats) {
+    const container = document.getElementById('debugImagesContainer');
+    if (!container) return;
+
+    const steps = [
+      { key: 'original', label: 'Original' },
+      { key: 'after_orientation', label: 'After Orientation Fix' },
+      { key: 'after_resize', label: 'After Resize' },
+      { key: 'after_normalize_01', label: 'After Normalize [0,1]' },
+      { key: 'final', label: 'Final (to Model)' }
+    ];
+
+    let html = '<div class="debug-images-grid">';
+    steps.forEach(step => {
+      if (debugImages[step.key]) {
+        html += `
+          <div class="debug-image-item">
+            <div class="debug-image-label">${step.label}</div>
+            <img src="${debugImages[step.key]}" alt="${step.label}" class="debug-image" />
+          </div>
+        `;
+      }
+    });
+    html += '</div>';
+    container.innerHTML = html;
+
+    // Display statistics
+    const statsContainer = document.getElementById('debugStatsContainer');
+    if (statsContainer && stats) {
+      statsContainer.innerHTML = `
+        <div class="debug-stats-grid">
+          <div class="debug-stat-item">
+            <span class="debug-stat-label">Original Range:</span>
+            <span class="debug-stat-value">[${stats.original_min.toFixed(3)}, ${stats.original_max.toFixed(3)}]</span>
+          </div>
+          <div class="debug-stat-item">
+            <span class="debug-stat-label">Original Mean:</span>
+            <span class="debug-stat-value">${stats.original_mean.toFixed(3)}</span>
+          </div>
+          <div class="debug-stat-item">
+            <span class="debug-stat-label">Final Range:</span>
+            <span class="debug-stat-value">[${stats.final_min.toFixed(3)}, ${stats.final_max.toFixed(3)}]</span>
+          </div>
+          <div class="debug-stat-item">
+            <span class="debug-stat-label">Final Mean:</span>
+            <span class="debug-stat-value">${stats.final_mean.toFixed(3)}</span>
+          </div>
+          <div class="debug-stat-item">
+            <span class="debug-stat-label">Final Std:</span>
+            <span class="debug-stat-value">${stats.final_std.toFixed(3)}</span>
+          </div>
+        </div>
+      `;
+    }
+  }
+}
+
+// Test Mode Handler
+class TestModeHandler {
+  constructor() {
+    this.currentView = 'single';
+    this.currentSamples = [];
+    this.setupEventListeners();
+  }
+
+  setupEventListeners() {
+    // View toggle
+    document.getElementById('singleViewBtn').addEventListener('click', () => {
+      this.switchView('single');
+    });
+    document.getElementById('gridViewBtn').addEventListener('click', () => {
+      this.switchView('grid');
+    });
+
+    // Load samples button
+    document.getElementById('loadTestSamples').addEventListener('click', () => {
+      this.loadSamples();
+    });
+  }
+
+  switchView(view) {
+    this.currentView = view;
+    
+    // Update buttons
+    document.querySelectorAll('.view-btn').forEach(btn => {
+      btn.classList.remove('active');
+    });
+    document.getElementById(`${view}ViewBtn`).classList.add('active');
+    
+    // Update views
+    document.getElementById('singleTestView').style.display = view === 'single' ? 'block' : 'none';
+    document.getElementById('gridTestView').style.display = view === 'grid' ? 'block' : 'none';
+    
+    // If grid view and we have samples, display them
+    if (view === 'grid' && this.currentSamples.length > 0) {
+      this.displayGrid();
+    }
+  }
+
+  async loadSamples() {
+    const view = this.currentView;
+    const count = view === 'single' ? 1 : 9; // 1 for single, 9 for grid
+    const character = document.getElementById('characterFilter').value;
+    
+    try {
+      const url = `/api/test/random?count=${count}${character ? `&character=${character}` : ''}`;
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      this.currentSamples = data.samples;
+      
+      if (view === 'single') {
+        this.displaySingle(this.currentSamples[0]);
+      } else {
+        this.displayGrid();
+      }
+    } catch (error) {
+      console.error('Error loading test samples:', error);
+      alert('Failed to load test samples. Please try again.');
+    }
+  }
+
+  async displaySingle(sample) {
+    // Hide placeholder and show content
+    const placeholder = document.getElementById('singleTestPlaceholder');
+    const content = document.getElementById('singleTestSample');
+    if (placeholder) placeholder.style.display = 'none';
+    if (content) content.style.display = 'grid';
+    
+    // Display image
+    document.getElementById('testImageSingle').src = sample.image_data;
+    
+    // Display ground truth
+    document.getElementById('groundTruthSingle').textContent = sample.ground_truth;
+    
+    // Get prediction
+    try {
+      const response = await fetch('/api/test/predict', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ image_array: sample.image_array }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      const prediction = data.prediction;
+      
+      document.getElementById('predictionSingle').textContent = prediction.character;
+      document.getElementById('confidenceSingle').textContent = `${prediction.confidence.toFixed(1)}%`;
+      
+      // Status badge
+      const isCorrect = prediction.character === sample.ground_truth;
+      const statusBadge = document.getElementById('testStatusSingle');
+      statusBadge.innerHTML = `<span class="status-badge ${isCorrect ? 'correct' : 'incorrect'}">${
+        isCorrect ? '✓ Correct' : '✗ Incorrect'
+      }</span>`;
+    } catch (error) {
+      console.error('Error getting prediction:', error);
+      document.getElementById('predictionSingle').textContent = 'Error';
+    }
+  }
+
+  async displayGrid() {
+    const grid = document.getElementById('testGrid');
+    const placeholder = document.getElementById('gridTestPlaceholder');
+    if (placeholder) placeholder.style.display = 'none';
+    grid.innerHTML = '<div class="test-grid-loading">Loading predictions...</div>';
+    
+    // Get predictions for all samples
+    const predictions = await Promise.all(
+      this.currentSamples.map(async (sample) => {
+        try {
+          const response = await fetch('/api/test/predict', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ image_array: sample.image_array }),
+          });
+          
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          
+          const data = await response.json();
+          return {
+            sample,
+            prediction: data.prediction
+          };
+        } catch (error) {
+          console.error('Error getting prediction:', error);
+          return {
+            sample,
+            prediction: null
+          };
+        }
+      })
+    );
+    
+    // Display grid
+    grid.innerHTML = predictions.map(({ sample, prediction }) => {
+      if (!prediction) {
+        return '<div class="test-grid-item error">Error</div>';
+      }
+      
+      const isCorrect = prediction.character === sample.ground_truth;
+      
+      return `
+        <div class="test-grid-item ${isCorrect ? 'correct' : 'incorrect'}">
+          <img src="${sample.image_data}" alt="Test sample" />
+          <div class="test-grid-info">
+            <div class="test-grid-label">Truth: <strong>${sample.ground_truth}</strong></div>
+            <div class="test-grid-label">Pred: <strong>${prediction.character}</strong></div>
+            <div class="test-grid-label">Conf: ${prediction.confidence.toFixed(1)}%</div>
+            <div class="test-grid-status">${isCorrect ? '✓' : '✗'}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+}
+
+// Theme Toggle Handler
+class ThemeHandler {
+  constructor() {
+    this.currentTheme = localStorage.getItem('theme') || 'dark';
+    this.init();
+  }
+
+  init() {
+    document.documentElement.setAttribute('data-theme', this.currentTheme);
+    this.updateIcon();
+    
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      this.toggle();
+    });
+  }
+
+  toggle() {
+    this.currentTheme = this.currentTheme === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', this.currentTheme);
+    localStorage.setItem('theme', this.currentTheme);
+    this.updateIcon();
+  }
+
+  updateIcon() {
+    const icon = document.getElementById('themeIcon');
+    icon.textContent = this.currentTheme === 'dark' ? '☀️' : '🌙';
+  }
+}
+
+// Mode Toggle Handler
+class ModeHandler {
+  constructor() {
+    this.currentMode = 'draw';
+    this.init();
+  }
+
+  init() {
+    document.getElementById('drawModeBtn').addEventListener('click', () => {
+      this.switchMode('draw');
+    });
+    
+    document.getElementById('testModeBtn').addEventListener('click', () => {
+      this.switchMode('test');
+    });
+  }
+
+  switchMode(mode) {
+    this.currentMode = mode;
+    
+    // Update buttons
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.classList.remove('active');
+    });
+    document.getElementById(`${mode}ModeBtn`).classList.add('active');
+    
+    // Update content
+    document.querySelectorAll('.mode-content').forEach(content => {
+      content.classList.remove('active');
+    });
+    document.getElementById(`${mode}ModeContent`).classList.add('active');
+  }
+}
+
+// Advanced Metrics Toggle
+function setupAdvancedMetricsToggle() {
+  const toggleBtn = document.getElementById('toggleAdvancedMetrics');
+  const content = document.getElementById('advancedMetricsContent');
+  const icon = toggleBtn.querySelector('.toggle-icon');
+  
+  toggleBtn.addEventListener('click', () => {
+    const isHidden = content.style.display === 'none';
+    content.style.display = isHidden ? 'block' : 'none';
+    icon.textContent = isHidden ? '▲' : '▼';
+  });
+}
+
+// Debug Panel Toggle
+function setupDebugPanelToggle() {
+  const toggleBtn = document.getElementById('toggleDebugPanel');
+  const content = document.getElementById('debugPanelContent');
+  const icon = toggleBtn.querySelector('.toggle-icon');
+  
+  toggleBtn.addEventListener('click', () => {
+    const isHidden = content.style.display === 'none';
+    content.style.display = isHidden ? 'block' : 'none';
+    icon.textContent = isHidden ? '▲' : '▼';
+  });
 }
 
 // Initialize app when DOM is ready
 document.addEventListener("DOMContentLoaded", () => {
   window.recognizer = new UniversalCharacterRecognizer();
+  window.testMode = new TestModeHandler();
+  window.themeHandler = new ThemeHandler();
+  window.modeHandler = new ModeHandler();
+  setupAdvancedMetricsToggle();
+  setupDebugPanelToggle();
 });
 

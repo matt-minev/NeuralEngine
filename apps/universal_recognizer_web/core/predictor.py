@@ -16,12 +16,14 @@ sys.path.insert(0, base_path)
 # Import model manager - handle both direct and package imports
 try:
     from apps.universal_recognizer_web.core.model_manager import get_model_manager
+    from apps.universal_recognizer_web.core.preprocessor import preprocess_for_prediction, preprocess_with_metrics
 except ImportError:
     # Fallback for direct execution
     import sys
     import os
     sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
     from core.model_manager import get_model_manager
+    from core.preprocessor import preprocess_for_prediction, preprocess_with_metrics
 
 
 def index_to_character(index: int) -> str:
@@ -62,88 +64,59 @@ def get_character_type(index: int) -> str:
 
 def preprocess_image(image_data, normalize=True):
     """
-    Preprocess image data for Neural Engine prediction.
+    Preprocess image using advanced preprocessing framework.
     
-    Matches EMNIST preprocessing: 28x28, normalized to [-1, 1] range.
+    This function is kept for backwards compatibility but now uses
+    the advanced preprocessor which handles all transformations automatically.
     
     Args:
         image_data: Base64 string or numpy array
-        normalize: Whether to normalize to [-1, 1] range (EMNIST format)
+        normalize: Ignored (always normalized by preprocessor)
     
     Returns:
         Preprocessed image array (1, 784) or None on error
     """
     try:
-        # Handle different input types
-        if isinstance(image_data, list):
-            # Direct array input
-            img_array = np.array(image_data, dtype=np.float32)
-            if img_array.max() > 1:
-                img_array = img_array / 255.0
-        elif isinstance(image_data, str):
-            # Base64 string input
-            if image_data.startswith('data:image'):
-                image_data = image_data.split(',')[1]
-            image_bytes = base64.b64decode(image_data)
-            
-            # Convert to PIL image
-            image = Image.open(io.BytesIO(image_bytes))
-            
-            # Convert to grayscale and resize to 28x28
-            image = image.convert('L')
-            image = image.resize((28, 28), Image.Resampling.LANCZOS)
-            
-            # Convert to numpy array
-            img_array = np.array(image, dtype=np.float32)
-            img_array = img_array / 255.0
-            
-            # Invert if background is white (EMNIST is black on white)
-            if np.mean(img_array) > 0.5:
-                img_array = 1.0 - img_array
-        else:
-            raise ValueError(f"Unsupported image data type: {type(image_data)}")
-        
-        # Ensure 28x28 shape
-        if img_array.shape != (28, 28):
-            img_array = img_array.reshape(28, 28)
-        
-        # Apply EMNIST normalization: normalize to [-1, 1]
-        if normalize:
-            # EMNIST preprocessing: contrast enhancement and centering
-            # Match the training preprocessing from load_data.py
-            contrast_factor = 1.2
-            img_array = np.clip(img_array * contrast_factor, 0, 1)
-            
-            # Center and normalize to [-1, 1]
-            mean = np.mean(img_array)
-            img_array = img_array - mean
-            img_array = img_array * 2.0
-            img_array = np.clip(img_array, -1, 1)
-        
-        # Flatten for neural network
-        return img_array.flatten().reshape(1, -1)
-    
+        return preprocess_for_prediction(image_data)
     except Exception as e:
         print(f"Image preprocessing error: {e}")
         return None
 
 
-def predict_character(image_data):
+def predict_character(image_data, return_quality_metrics=False, is_test_image=False, return_debug=False):
     """
-    Standard character prediction.
+    Standard character prediction with advanced preprocessing.
     
     Args:
         image_data: Base64 string or numpy array
+        return_quality_metrics: Whether to return quality metrics for display
+        is_test_image: If True, skip EMNIST orientation fix (test images already fixed)
+        return_debug: Whether to return debug images for visualization
     
     Returns:
-        Dictionary with prediction results
+        Dictionary with prediction results and optional quality metrics and debug images
     """
     try:
         model_manager = get_model_manager()
         model = model_manager.get_model()
         
-        # Preprocess image
-        processed_image = preprocess_image(image_data)
+        # Preprocess image using advanced preprocessor
+        if return_quality_metrics:
+            result = preprocess_with_metrics(image_data, is_test_image=is_test_image, return_debug=return_debug)
+            if return_debug:
+                processed_image, quality_metrics, debug_images = result
+            else:
+                processed_image, quality_metrics = result
+                debug_images = None
+        else:
+            result = preprocess_for_prediction(image_data, is_test_image=is_test_image, return_debug=return_debug)
+            if return_debug:
+                processed_image, debug_images = result
+            else:
+                processed_image = result
+            quality_metrics = None
+            debug_images = None
+        
         if processed_image is None:
             return None
         
@@ -168,7 +141,7 @@ def predict_character(image_data):
             for idx in top_indices
         ]
         
-        return {
+        result = {
             'predicted_character': predicted_char,
             'predicted_index': predicted_index,
             'confidence': float(confidence),  # Ensure native Python float
@@ -176,39 +149,56 @@ def predict_character(image_data):
             'top_predictions': top_predictions,
             'character_type': get_character_type(predicted_index)
         }
+        
+        # Add quality metrics if requested
+        if return_quality_metrics and quality_metrics:
+            result['quality_metrics'] = quality_metrics
+        
+        # Add debug images if requested
+        if return_debug and debug_images:
+            result['debug_images'] = debug_images
+        
+        return result
     
     except Exception as e:
         print(f"Prediction error: {e}")
+        import traceback
+        traceback.print_exc()
         return None
 
 
-def predict_with_mirror_detection(image_data, mirror_threshold=0.1):
+def predict_with_mirror_detection(image_data, mirror_threshold=0.15):
     """
     Predict character with mirror detection for accessibility.
     
-    Tests both original and horizontally flipped versions.
+    Tests both original and horizontally flipped versions using advanced preprocessing.
+    Note: Since EMNIST dataset already contains mirrored images, we use a higher
+    threshold to avoid false positives.
     
     Args:
         image_data: Base64 string or numpy array
-        mirror_threshold: Minimum confidence improvement to flag as mirrored (0.1 = 10%)
+        mirror_threshold: Minimum confidence improvement to flag as mirrored (0.15 = 15%)
     
     Returns:
         Dictionary with both predictions and mirror detection results
     """
     try:
-        # Original prediction
-        original_result = predict_character(image_data)
+        # Original prediction with quality metrics
+        original_result = predict_character(image_data, return_quality_metrics=True)
         if original_result is None:
             return None
         
-        # Preprocess for mirror
-        processed_image = preprocess_image(image_data)
+        # Get preprocessed image for mirroring
+        processed_image = preprocess_for_prediction(image_data)
         if processed_image is None:
-            return original_result
+            return {'original': original_result, 'mirrored': None, 'mirror_detected': False}
         
-        # Create mirrored version
+        # Create mirrored version (flip horizontally)
         img_2d = processed_image.reshape(28, 28)
         img_mirrored = np.flip(img_2d, axis=1)  # Horizontal flip
+        
+        # Re-normalize mirrored image (it needs to go through EMNIST normalization again)
+        # But we already have it in the right format, just need to ensure it's normalized
         img_mirrored_flat = img_mirrored.flatten().reshape(1, -1)
         
         # Predict on mirrored version
@@ -223,6 +213,7 @@ def predict_with_mirror_detection(image_data, mirror_threshold=0.1):
         confidence_mirrored = float(predictions_mirrored[predicted_index_mirrored]) * 100
         
         # Determine if mirror improves confidence significantly
+        # Use higher threshold since dataset has mirrored images
         confidence_diff = confidence_mirrored - original_result['confidence']
         is_mirrored = confidence_diff > (mirror_threshold * 100)
         
@@ -242,12 +233,17 @@ def predict_with_mirror_detection(image_data, mirror_threshold=0.1):
     
     except Exception as e:
         print(f"Mirror detection error: {e}")
+        import traceback
+        traceback.print_exc()
         return {'original': original_result, 'mirrored': None, 'mirror_detected': False} if 'original_result' in locals() else None
 
 
 def analyze_writing_quality(image_data):
     """
-    Analyze writing quality metrics.
+    Analyze writing quality metrics using preprocessing framework.
+    
+    Quality metrics are now calculated during preprocessing and returned
+    for display purposes only (not used in prediction).
     
     Args:
         image_data: Base64 string or numpy array
@@ -256,81 +252,21 @@ def analyze_writing_quality(image_data):
         Dictionary with quality metrics
     """
     try:
-        processed_image = preprocess_image(image_data, normalize=False)
-        if processed_image is None:
-            return None
-        
-        img_2d = processed_image.reshape(28, 28)
-        
-        # Calculate metrics
-        # 1. Stroke clarity (contrast)
-        contrast = np.std(img_2d)
-        
-        # 2. Character size (non-zero pixels)
-        non_zero_pixels = np.sum(img_2d > 0.1)
-        size_ratio = non_zero_pixels / (28 * 28)
-        
-        # 3. Centering (center of mass)
-        y_coords, x_coords = np.where(img_2d > 0.1)
-        if len(x_coords) > 0:
-            center_x = np.mean(x_coords)
-            center_y = np.mean(y_coords)
-            center_offset = np.sqrt((center_x - 14)**2 + (center_y - 14)**2)
-        else:
-            center_offset = 14.0  # Worst case
-        
-        # 4. Stroke thickness (edge detection)
-        try:
-            from scipy import ndimage
-            edges = ndimage.sobel(img_2d)
-            edge_strength = np.mean(np.abs(edges))
-        except ImportError:
-            # Fallback if scipy not available
-            edge_strength = contrast * 0.5
-        
-        # Quality scores (0-100) - convert all to native Python floats
-        clarity_score = float(min(contrast * 100, 100))
-        size_score = float(min(size_ratio * 200, 100))  # Good size is ~30-50% of image
-        centering_score = float(max(100 - (center_offset / 14.0 * 100), 0))
-        stroke_score = float(min(edge_strength * 100, 100))
-        
-        overall_score = float((clarity_score + size_score + centering_score + stroke_score) / 4)
-        
-        return {
-            'overall_score': overall_score,
-            'clarity_score': clarity_score,
-            'size_score': size_score,
-            'centering_score': centering_score,
-            'stroke_score': stroke_score,
-            'metrics': {
-                'contrast': float(contrast),
-                'size_ratio': float(size_ratio),
-                'center_offset': float(center_offset),
-                'edge_strength': float(edge_strength)
-            }
-        }
-    
+        # Use preprocessor to get quality metrics
+        _, quality_metrics = preprocess_with_metrics(image_data)
+        return quality_metrics
     except Exception as e:
         print(f"Quality analysis error: {e}")
-        # Fallback without scipy
-        processed_image = preprocess_image(image_data, normalize=False)
-        if processed_image is None:
-            return None
-        
-        img_2d = processed_image.reshape(28, 28)
-        contrast = np.std(img_2d)
-        non_zero_pixels = np.sum(img_2d > 0.1)
-        size_ratio = non_zero_pixels / (28 * 28)
-        
+        # Return default metrics on error
         return {
-            'overall_score': float(min(contrast * 100, 100)),
-            'clarity_score': float(min(contrast * 100, 100)),
-            'size_score': float(min(size_ratio * 200, 100)),
-            'centering_score': 50.0,  # Default
-            'stroke_score': 50.0,  # Default
+            'overall_score': 50.0,
+            'clarity_score': 50.0,
+            'size_score': 50.0,
+            'centering_score': 50.0,
+            'stroke_score': 50.0,
             'metrics': {
-                'contrast': float(contrast),
-                'size_ratio': float(size_ratio),
+                'contrast': 0.0,
+                'size_ratio': 0.0,
                 'center_offset': 0.0,
                 'edge_strength': 0.0
             }
