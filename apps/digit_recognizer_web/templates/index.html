@@ -3,13 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>NeuralEngine • Digit Recognizer</title>
+    <title>Neural Engine • Digit Recognizer</title>
 
-    <!-- using emoji as favicon, simple and effective -->
+    <!-- Neural Engine Logo Favicon -->
     <link
       rel="icon"
-      type="image/svg+xml"
-      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔢</text></svg>"
+      type="image/png"
+      href="{{ url_for('serve_assets', filename='neural-engine-logo.png') }}"
     />
 
     <!-- main stylesheet -->
@@ -23,7 +23,10 @@
     <div class="container">
       <!-- header section with title -->
       <header class="header">
-        <h1 class="title">🧠 NeuralEngine</h1>
+        <div class="logo-container">
+          <img src="{{ url_for('serve_assets', filename='neural-engine-logo.png') }}" alt="Neural Engine Logo" class="header-logo" />
+          <h1 class="title">Neural Engine</h1>
+        </div>
         <p class="subtitle">Neural Network Digit Recognition</p>
       </header>
 

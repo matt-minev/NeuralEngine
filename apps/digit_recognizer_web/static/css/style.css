@@ -7,10 +7,11 @@
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e8ba3 100%);
   min-height: 100vh;
   color: #333;
   line-height: 1.6;
+  overflow-x: hidden;
 }
 
 .container {
@@ -41,12 +42,26 @@ body {
   margin-bottom: 40px;
 }
 
+.logo-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 10px;
+}
+
+.header-logo {
+  height: 50px;
+  width: auto;
+  filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3));
+}
+
 .title {
   font-size: 3rem;
   font-weight: 700;
   color: white;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-  margin-bottom: 10px;
+  margin: 0;
 }
 
 .subtitle {
@@ -105,19 +120,26 @@ body {
   display: flex;
   justify-content: center;
   margin-bottom: 20px;
+  overflow: hidden;
 }
 
 #drawingCanvas {
   border: 3px solid rgba(255, 255, 255, 0.3);
   border-radius: 15px;
   background: #000;
-  cursor: crosshair;
-  transition: all 0.3s ease;
+  cursor: crosshair !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  overflow: hidden;
 }
 
 #drawingCanvas:hover {
-  border-color: rgba(255, 255, 255, 0.6);
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+}
+
+#drawingCanvas:active {
+  cursor: crosshair !important;
 }
 
 .canvas-overlay {
@@ -192,14 +214,15 @@ body {
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(79, 195, 247, 0.2);
   color: white;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid rgba(79, 195, 247, 0.4);
 }
 
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: translateY(-2px);
+  background: rgba(79, 195, 247, 0.3);
+  border-color: rgba(79, 195, 247, 0.6);
+  transform: translateY(-1px);
 }
 
 /* Prediction Section */
@@ -211,13 +234,14 @@ body {
 .predicted-digit {
   font-size: 4rem;
   font-weight: 700;
-  color: #ff6b6b;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  color: #4fc3f7;
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.4);
   margin-bottom: 10px;
   min-height: 80px;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: color 0.3s ease, transform 0.2s ease;
 }
 
 .confidence {
@@ -264,14 +288,18 @@ body {
 
 .bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, #ff6b6b, #4ecdc4);
+  background: linear-gradient(90deg, #4fc3f7, #29b6f6);
+  background-size: 200% 100%;
   border-radius: 10px;
-  transition: width 0.5s ease;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   width: 0%;
+  position: relative;
+  overflow: hidden;
+  animation: gradientShift 6s ease infinite;
 }
 
 .bar-fill.top-prediction {
-  background: linear-gradient(90deg, #ff6b6b, #ff8e8e);
+  background: linear-gradient(90deg, #66bb6a, #4caf50);
 }
 
 .percentage {
@@ -366,6 +394,282 @@ body {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* Enhanced Number Reveal Animation - More Subtle */
+.predicted-digit.reveal {
+  animation: numberReveal 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes numberReveal {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Canvas Drawing Pulse Effect - Removed to prevent flickering */
+
+/* Enhanced Confidence Bar Animations - Subtle only */
+.bar-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+  animation: shimmer 4s infinite;
+  animation-timing-function: ease-in-out;
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+.bar-fill.top-prediction::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, 
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0) 100%);
+  animation: glow 3s ease-in-out infinite;
+}
+
+@keyframes glow {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* Button Hover Enhancements */
+.btn {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Button hover effect simplified to prevent flickering */
+.btn:active {
+  transform: scale(0.98);
+  transition: transform 0.1s;
+}
+
+/* Glass Card Enhancements - Removed shimmer to prevent flickering */
+.glass-card {
+  position: relative;
+}
+
+/* Particle Effects Container */
+.particles-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 998;
+  overflow: hidden;
+}
+
+.particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: #fff;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: particleFloat 3s ease-out forwards;
+}
+
+@keyframes particleFloat {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-100px) scale(0);
+  }
+}
+
+/* Success State Animation - More Subtle */
+.prediction-success {
+  animation: successPulse 0.4s ease-out;
+}
+
+@keyframes successPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Loading Skeleton */
+.skeleton {
+  background: linear-gradient(90deg, 
+    rgba(255, 255, 255, 0.1) 25%, 
+    rgba(255, 255, 255, 0.2) 50%, 
+    rgba(255, 255, 255, 0.1) 75%);
+  background-size: 200% 100%;
+  animation: skeletonLoading 1.5s ease-in-out infinite;
+}
+
+@keyframes skeletonLoading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Smooth Canvas Clear Animation - Removed to prevent flickering */
+
+@keyframes gradientShift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Tutorial Overlay */
+.tutorial-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(5px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.tutorial-overlay.show {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.tutorial-content {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 40px;
+  border-radius: 20px;
+  max-width: 500px;
+  text-align: center;
+  color: white;
+  transform: scale(0.8);
+  transition: transform 0.3s ease;
+}
+
+.tutorial-overlay.show .tutorial-content {
+  transform: scale(1);
+}
+
+/* Prediction History Styles */
+.prediction-history {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  max-width: 280px;
+  background: rgba(30, 60, 114, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 12px;
+  padding: 12px;
+  max-height: 180px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.3s, transform 0.3s;
+  z-index: 100;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.prediction-history.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.prediction-history::-webkit-scrollbar {
+  width: 6px;
+}
+
+.prediction-history::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+.prediction-history::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+}
+
+.prediction-history::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px;
+  margin-bottom: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: white;
+  transition: background 0.2s ease;
+  animation: slideInRight 0.2s ease;
+}
+
+.history-item:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.history-item:last-child {
+  margin-bottom: 0;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 

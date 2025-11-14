@@ -8,7 +8,7 @@ import os
 import sys
 import pickle
 import numpy as np
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_from_directory
 from flask_cors import CORS
 from PIL import Image
 import base64
@@ -277,6 +277,15 @@ def index():
 def showcase():
     """Serve the dataset showcase page."""
     return render_template('dataset_showcase.html', model_info=model_info)
+
+
+@app.route('/assets/<path:filename>')
+def serve_assets(filename):
+    """Serve assets from the root assets directory."""
+    assets_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'assets', filename)
+    if os.path.exists(assets_path):
+        return send_from_directory(os.path.dirname(assets_path), filename)
+    return "Asset not found", 404
 
 
 @app.route('/api/dataset/sample')

@@ -10,9 +10,15 @@ class DigitRecognizer {
     this.setupEventListeners();
     this.setupPredictionDisplay();
     this.setupModelSelector();
+    this.setupKeyboardShortcuts();
+    this.setupTutorial();
+    this.setupPredictionHistory();
     this.lastPredictionTime = 0;
     this.sequenceTracker = []; // Track digit sequence for easter egg
     this.targetSequence = [3, 1, 4]; // Pi digits sequence
+    this.predictionHistory = [];
+    this.historyMaxSize = 10;
+    this.predictionCache = new Map(); // Cache for identical drawings
 
     console.log("🧠 NeuralEngine Web App initialized");
   }
@@ -119,6 +125,9 @@ class DigitRecognizer {
 
     // Hide instructions overlay
     document.querySelector(".canvas-overlay").classList.remove("show");
+    
+    // Ensure cursor stays as crosshair
+    this.canvas.style.cursor = "crosshair";
   }
 
   draw(e) {
@@ -138,6 +147,9 @@ class DigitRecognizer {
     this.lastX = pos.x;
     this.lastY = pos.y;
 
+    // Ensure cursor stays as crosshair while drawing
+    this.canvas.style.cursor = "crosshair";
+
     // Debounced prediction
     this.debouncedPredict();
   }
@@ -145,6 +157,9 @@ class DigitRecognizer {
   stopDrawing() {
     if (!this.isDrawing) return;
     this.isDrawing = false;
+
+    // Ensure cursor stays as crosshair
+    this.canvas.style.cursor = "crosshair";
 
     // Final prediction
     this.predictDigit();
@@ -157,34 +172,6 @@ class DigitRecognizer {
     }, 300);
   }
 
-  async predictDigit() {
-    try {
-      // Convert canvas to image data
-      const imageData = this.canvas.toDataURL("image/png");
-
-      // Show loading state
-      document.getElementById("predictedDigit").className =
-        "predicted-digit loading";
-
-      // Send prediction request
-      const response = await fetch("/predict", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ image: imageData }),
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        this.updatePredictionDisplay(result);
-      } else {
-        console.error("Prediction failed:", response.statusText);
-      }
-    } catch (error) {
-      console.error("Prediction error:", error);
-    }
-  }
 
   updatePredictionDisplay(result) {
     const { predicted_digit, confidence, predictions, prediction_time } =
@@ -195,20 +182,36 @@ class DigitRecognizer {
     const confidenceEl = document.getElementById("confidence");
     const predictionTimeEl = document.getElementById("predictionTime");
 
+    // Add reveal animation
     predictedDigitEl.textContent = predicted_digit;
-    predictedDigitEl.className = "predicted-digit fade-in";
+    predictedDigitEl.classList.add("reveal");
+    
+    // Remove reveal class after animation
+    setTimeout(() => {
+      predictedDigitEl.classList.remove("reveal");
+    }, 400);
 
-    // Color based on confidence
+    // Color based on confidence - Modern color palette
     if (confidence > 80) {
-      predictedDigitEl.style.color = "#4caf50";
+      predictedDigitEl.style.color = "#66bb6a";
+      predictedDigitEl.classList.add("prediction-success");
+      // Only create particles for very high confidence (>95%)
+      if (confidence > 95) {
+        this.createParticles(predictedDigitEl);
+      }
     } else if (confidence > 60) {
-      predictedDigitEl.style.color = "#ff9800";
+      predictedDigitEl.style.color = "#ffb74d";
+      predictedDigitEl.classList.remove("prediction-success");
     } else {
-      predictedDigitEl.style.color = "#f44336";
+      predictedDigitEl.style.color = "#ef5350";
+      predictedDigitEl.classList.remove("prediction-success");
     }
 
     confidenceEl.textContent = `Confidence: ${confidence.toFixed(1)}%`;
     predictionTimeEl.textContent = `${prediction_time.toFixed(1)}ms`;
+
+    // Add to prediction history
+    this.addToHistory(predicted_digit, confidence);
 
     // Easter egg: Check for Pi sequence (3-1-4)
     this.checkPiSequence(predicted_digit);
@@ -238,12 +241,18 @@ class DigitRecognizer {
   }
 
   clearCanvas() {
+    // Clear canvas immediately without animation to prevent flickering
     this.ctx.fillStyle = "#000";
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    
+    // Ensure cursor stays as crosshair
+    this.canvas.style.cursor = "crosshair";
 
     // Reset prediction display
-    document.getElementById("predictedDigit").textContent = "?";
-    document.getElementById("predictedDigit").style.color = "#ff6b6b";
+    const predictedDigitEl = document.getElementById("predictedDigit");
+    predictedDigitEl.textContent = "?";
+    predictedDigitEl.style.color = "#4fc3f7";
+    predictedDigitEl.classList.remove("reveal", "prediction-success");
     document.getElementById("confidence").textContent = "Confidence: --%";
     document.getElementById("predictionTime").textContent = "--ms";
 
@@ -421,9 +430,223 @@ class DigitRecognizer {
       elements.accuracy.textContent = `${modelInfo.accuracy.toFixed(2)}%`;
     }
   }
+
+  setupKeyboardShortcuts() {
+    document.addEventListener("keydown", (e) => {
+      // C key to clear canvas
+      if (e.key === "c" || e.key === "C") {
+        if (!e.target.matches("input, textarea, select")) {
+          e.preventDefault();
+          this.clearCanvas();
+        }
+      }
+      
+      // Number keys 0-9 to quick-select (show hint)
+      if (e.key >= "0" && e.key <= "9" && !e.target.matches("input, textarea, select")) {
+        const digit = parseInt(e.key);
+        this.showQuickSelectHint(digit);
+      }
+      
+      // Escape to close tutorial
+      if (e.key === "Escape") {
+        this.hideTutorial();
+      }
+    });
+  }
+
+  showQuickSelectHint(digit) {
+    const predictedDigitEl = document.getElementById("predictedDigit");
+    const originalText = predictedDigitEl.textContent;
+    predictedDigitEl.textContent = digit;
+    predictedDigitEl.style.color = "#66bb6a";
+    predictedDigitEl.classList.add("prediction-success");
+    
+    setTimeout(() => {
+      predictedDigitEl.textContent = originalText;
+      predictedDigitEl.classList.remove("prediction-success");
+      predictedDigitEl.style.color = "#4fc3f7";
+    }, 400);
+  }
+
+  setupTutorial() {
+    // Check if user has seen tutorial
+    const hasSeenTutorial = localStorage.getItem("digit_recognizer_tutorial_seen");
+    
+    if (!hasSeenTutorial) {
+      // Create tutorial overlay
+      const tutorialOverlay = document.createElement("div");
+      tutorialOverlay.className = "tutorial-overlay show";
+      tutorialOverlay.innerHTML = `
+        <div class="tutorial-content">
+          <h2>Welcome to NeuralEngine! 🧠</h2>
+          <p>Draw digits (0-9) on the canvas to see predictions</p>
+          <ul style="text-align: left; margin: 20px 0; list-style: none; padding: 0;">
+            <li>✏️ Draw on the canvas</li>
+            <li>⌨️ Press <strong>C</strong> to clear</li>
+            <li>⌨️ Press <strong>0-9</strong> for quick hints</li>
+            <li>🎯 View confidence levels below</li>
+          </ul>
+          <button class="btn btn-secondary" onclick="digitRecognizer.hideTutorial()">
+            Got it!
+          </button>
+        </div>
+      `;
+      document.body.appendChild(tutorialOverlay);
+      this.tutorialOverlay = tutorialOverlay;
+    }
+  }
+
+  hideTutorial() {
+    if (this.tutorialOverlay) {
+      this.tutorialOverlay.classList.remove("show");
+      localStorage.setItem("digit_recognizer_tutorial_seen", "true");
+      setTimeout(() => {
+        if (this.tutorialOverlay.parentNode) {
+          this.tutorialOverlay.parentNode.removeChild(this.tutorialOverlay);
+        }
+      }, 300);
+    }
+  }
+
+  setupPredictionHistory() {
+    // Create history container
+    const historyContainer = document.createElement("div");
+    historyContainer.className = "prediction-history";
+    historyContainer.innerHTML = `
+      <div style="font-weight: 600; margin-bottom: 12px; color: white; font-size: 0.95rem; padding-bottom: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">Recent Predictions</div>
+      <div id="historyItems"></div>
+    `;
+    document.body.appendChild(historyContainer);
+    this.historyContainer = historyContainer;
+  }
+
+  addToHistory(digit, confidence) {
+    // Check if this is a duplicate of the most recent prediction
+    // Only add if it's different from the last one (different digit or significantly different confidence)
+    const lastPrediction = this.predictionHistory[0];
+    const isDuplicate = lastPrediction && 
+      lastPrediction.digit === digit && 
+      Math.abs(lastPrediction.confidence - confidence) < 0.1; // Same digit and very similar confidence
+    
+    if (isDuplicate) {
+      // Don't add duplicate - just update the timestamp
+      return;
+    }
+    
+    this.predictionHistory.unshift({ digit, confidence, timestamp: Date.now() });
+    
+    // Keep only last N items
+    if (this.predictionHistory.length > this.historyMaxSize) {
+      this.predictionHistory.pop();
+    }
+    
+    this.updateHistoryDisplay();
+  }
+
+  updateHistoryDisplay() {
+    const historyItems = document.getElementById("historyItems");
+    if (!historyItems) return;
+    
+    historyItems.innerHTML = this.predictionHistory.map((item, index) => {
+      const confidenceColor = item.confidence > 80 ? "#66bb6a" : item.confidence > 60 ? "#ffb74d" : "#ef5350";
+      return `
+      <div class="history-item" style="animation-delay: ${index * 0.05}s;">
+        <span style="font-size: 1.3rem; font-weight: 700; color: ${confidenceColor};">${item.digit}</span>
+        <span style="opacity: 0.8; font-size: 0.85rem;">${item.confidence.toFixed(1)}%</span>
+      </div>
+    `;
+    }).join("");
+    
+    // Show history if it has items
+    if (this.predictionHistory.length > 0) {
+      this.historyContainer.classList.add("show");
+    } else {
+      this.historyContainer.classList.remove("show");
+    }
+  }
+
+  createParticles(element) {
+    const rect = element.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    
+    // Create particles container if it doesn't exist
+    let particlesContainer = document.querySelector(".particles-container");
+    if (!particlesContainer) {
+      particlesContainer = document.createElement("div");
+      particlesContainer.className = "particles-container";
+      document.body.appendChild(particlesContainer);
+    }
+    
+    // Create 20 particles
+    for (let i = 0; i < 20; i++) {
+      const particle = document.createElement("div");
+      particle.className = "particle";
+      particle.style.left = centerX + "px";
+      particle.style.top = centerY + "px";
+      particle.style.backgroundColor = this.getRandomColor();
+      particle.style.animationDelay = (Math.random() * 0.5) + "s";
+      particle.style.transform = `translate(${(Math.random() - 0.5) * 100}px, ${(Math.random() - 0.5) * 100}px)`;
+      
+      particlesContainer.appendChild(particle);
+      
+      setTimeout(() => {
+        if (particle.parentNode) {
+          particle.parentNode.removeChild(particle);
+        }
+      }, 3000);
+    }
+  }
+
+  async predictDigit() {
+    try {
+      // Convert canvas to image data
+      const imageData = this.canvas.toDataURL("image/png");
+      
+      // Check cache
+      const cacheKey = imageData.substring(0, 100); // Use first 100 chars as key
+      if (this.predictionCache.has(cacheKey)) {
+        const cached = this.predictionCache.get(cacheKey);
+        this.updatePredictionDisplay(cached);
+        return;
+      }
+
+      // Show loading state
+      const predictedDigitEl = document.getElementById("predictedDigit");
+      predictedDigitEl.className = "predicted-digit loading";
+
+      // Send prediction request
+      const response = await fetch("/predict", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ image: imageData }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        
+        // Cache result
+        this.predictionCache.set(cacheKey, result);
+        if (this.predictionCache.size > 50) {
+          // Limit cache size
+          const firstKey = this.predictionCache.keys().next().value;
+          this.predictionCache.delete(firstKey);
+        }
+        
+        this.updatePredictionDisplay(result);
+      } else {
+        console.error("Prediction failed:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Prediction error:", error);
+    }
+  }
 }
 
 // Initialize the app when DOM is loaded
+let digitRecognizer;
 document.addEventListener("DOMContentLoaded", () => {
-  new DigitRecognizer();
+  digitRecognizer = new DigitRecognizer();
 });
