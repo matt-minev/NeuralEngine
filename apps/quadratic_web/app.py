@@ -576,33 +576,22 @@ def generate_quadratic_dataset(equation_type, num_equations, coefficient_range, 
     
     return np.array(dataset)
 
-def generate_school_grade_equation(coefficient_range, root_type):
+def _generate_standard_factoring_pattern(coefficient_range, root_type):
     """
-    Generate school-grade quadratic equations with:
-    - Whole number coefficients (a, b, c)
-    - Perfect square discriminant
-    - Whole number roots
-    - Easy to solve by 10th graders (factoring patterns)
+    Generate standard factoring pattern: (x - r1)(x - r2) = 0
+    Most common in textbooks, typically with a=1
     """
-    from fractions import Fraction
     import math
-    
     min_coeff = coefficient_range['min']
     max_coeff = coefficient_range['max']
     
-    # For school-grade equations, we want integer roots only
-    # Choose integer roots that will result in nice coefficients
-    max_root_magnitude = min(10, abs(max_coeff) // 3)  # Reasonable root range
+    # Determine root range based on coefficient range
+    max_root_magnitude = min(15, abs(max_coeff) // 2)
+    if max_root_magnitude < 1:
+        max_root_magnitude = 5
     
     # Generate integer roots
-    if root_type == 'integers':
-        possible_roots = [r for r in range(-max_root_magnitude, max_root_magnitude + 1) if r != 0]
-    elif root_type == 'fractions':
-        # For fractions, we'll still generate integer roots but scale appropriately
-        possible_roots = [r for r in range(-max_root_magnitude, max_root_magnitude + 1) if r != 0]
-    else:  # mixed - prefer integers for school-grade
-        possible_roots = [r for r in range(-max_root_magnitude, max_root_magnitude + 1) if r != 0]
-    
+    possible_roots = [r for r in range(-max_root_magnitude, max_root_magnitude + 1) if r != 0]
     if not possible_roots:
         possible_roots = [-5, -4, -3, -2, -1, 1, 2, 3, 4, 5]
     
@@ -610,100 +599,297 @@ def generate_school_grade_equation(coefficient_range, root_type):
     x1 = int(np.random.choice(possible_roots))
     x2 = int(np.random.choice(possible_roots))
     
-    # Ensure roots are different (unless we want repeated roots)
-    if x1 == x2 and np.random.random() > 0.1:  # 10% chance for repeated roots
-        # Choose a different second root
+    # Ensure roots are different (10% chance for repeated roots)
+    if x1 == x2 and np.random.random() > 0.1:
         other_roots = [r for r in possible_roots if r != x1]
         if other_roots:
             x2 = int(np.random.choice(other_roots))
     
-    # Use Vieta's formulas: 
-    # For ax² + bx + c = 0 with roots x1, x2:
-    # b = -a(x1 + x2)
-    # c = a(x1)(x2)
-    
-    # Choose 'a' to be a small integer (1-5 typically for school problems)
-    # This ensures coefficients stay reasonable
+    # Choose 'a' - bias heavily toward 1 (most common)
     a_candidates = [i for i in range(1, min(6, abs(max_coeff) + 1)) if i != 0]
     if not a_candidates:
         a_candidates = [1]
     
-    # Bias toward a=1 (most common in textbooks)
-    weights = [3 if i == 1 else 1 for i in a_candidates]
-    a = int(np.random.choice(a_candidates, p=np.array(weights)/sum(weights)))
+    # Strong bias toward a=1 (80% chance)
+    if np.random.random() < 0.8:
+        a = 1
+    else:
+        a = int(np.random.choice(a_candidates))
     
-    # Calculate b and c using Vieta's formulas
-    sum_roots = x1 + x2
-    product_roots = x1 * x2
+    # Use Vieta's formulas
+    b = -a * (x1 + x2)
+    c = a * x1 * x2
     
-    b = -a * sum_roots
-    c = a * product_roots
+    # Order roots: x1 <= x2
+    if x1 > x2:
+        x1, x2 = x2, x1
     
-    # Verify all coefficients are integers (they should be by construction)
-    a_final = int(a)
-    b_final = int(b)
-    c_final = int(c)
+    return int(a), int(b), int(c), int(x1), int(x2)
+
+
+def _generate_difference_of_squares(coefficient_range, root_type):
+    """
+    Generate difference of squares: x² - k² = 0
+    Roots: ±k
+    """
+    min_coeff = coefficient_range['min']
+    max_coeff = coefficient_range['max']
     
-    # Ensure 'a' is not zero
-    if a_final == 0:
-        a_final = 1
+    # k can be from 1 to reasonable range
+    max_k = min(15, abs(max_coeff))
+    if max_k < 1:
+        max_k = 5
     
-    # Check if coefficients are within range
-    if (abs(a_final) > abs(max_coeff) or abs(b_final) > abs(max_coeff) or 
-        abs(c_final) > abs(max_coeff) or
-        abs(a_final) < abs(min_coeff) or abs(b_final) < abs(min_coeff) or 
-        abs(c_final) < abs(min_coeff)):
-        # Regenerate with smaller root range
-        return generate_school_grade_equation(
-            {'min': min_coeff, 'max': max_coeff}, 
-            root_type
-        )
+    k = int(np.random.choice(range(1, max_k + 1)))
     
-    # Verify discriminant is a perfect square
-    discriminant = b_final**2 - 4*a_final*c_final
+    # x² - k² = 0
+    a = 1
+    b = 0
+    c = -k * k
     
-    # For integer roots, discriminant should be a perfect square
-    sqrt_disc = math.sqrt(discriminant) if discriminant >= 0 else 0
-    is_perfect_square = abs(sqrt_disc - round(sqrt_disc)) < 1e-10
+    # Roots: k and -k
+    x1 = -k
+    x2 = k
     
-    if not is_perfect_square:
-        # This shouldn't happen with integer roots, but regenerate if it does
-        return generate_school_grade_equation(
-            {'min': min_coeff, 'max': max_coeff}, 
-            root_type
-        )
+    return a, b, c, x1, x2
+
+
+def _generate_perfect_square_trinomial(coefficient_range, root_type):
+    """
+    Generate perfect square trinomial: (x ± k)² = 0
+    Repeated root: ∓k
+    """
+    min_coeff = coefficient_range['min']
+    max_coeff = coefficient_range['max']
     
-    # Calculate roots using quadratic formula to verify
+    # Determine k range
+    max_k = min(15, abs(max_coeff) // 2)
+    if max_k < 1:
+        max_k = 5
+    
+    k = int(np.random.choice(range(1, max_k + 1)))
+    
+    # Choose sign randomly
+    sign = 1 if np.random.random() > 0.5 else -1
+    
+    # (x - sign*k)² = x² - 2*sign*k*x + k² = 0
+    a = 1
+    b = -2 * sign * k
+    c = k * k
+    
+    # Repeated root
+    x1 = sign * k
+    x2 = sign * k
+    
+    return a, b, c, x1, x2
+
+
+def _generate_larger_coefficients(coefficient_range, root_type):
+    """
+    Generate equations with larger coefficients (a > 1)
+    """
+    import math
+    min_coeff = coefficient_range['min']
+    max_coeff = coefficient_range['max']
+    
+    # Choose a from 2-5
+    a_candidates = [i for i in range(2, min(6, abs(max_coeff) + 1))]
+    if not a_candidates:
+        a_candidates = [2, 3]
+    
+    a = int(np.random.choice(a_candidates))
+    
+    # Choose roots
+    max_root_magnitude = min(10, abs(max_coeff) // (2 * a))
+    if max_root_magnitude < 1:
+        max_root_magnitude = 3
+    
+    possible_roots = [r for r in range(-max_root_magnitude, max_root_magnitude + 1) if r != 0]
+    if not possible_roots:
+        possible_roots = [-3, -2, -1, 1, 2, 3]
+    
+    x1 = int(np.random.choice(possible_roots))
+    x2 = int(np.random.choice(possible_roots))
+    
+    # Ensure different roots
+    if x1 == x2:
+        other_roots = [r for r in possible_roots if r != x1]
+        if other_roots:
+            x2 = int(np.random.choice(other_roots))
+    
+    # Use Vieta's formulas
+    b = -a * (x1 + x2)
+    c = a * x1 * x2
+    
+    # Order roots
+    if x1 > x2:
+        x1, x2 = x2, x1
+    
+    return int(a), int(b), int(c), int(x1), int(x2)
+
+
+def _generate_special_cases(coefficient_range, root_type):
+    """
+    Generate special cases: negative coefficients, zero sum roots, etc.
+    """
+    import math
+    min_coeff = coefficient_range['min']
+    max_coeff = coefficient_range['max']
+    
+    # Choose pattern randomly
+    pattern = np.random.choice(['zero_sum', 'negative_c', 'negative_b'])
+    
+    max_root_magnitude = min(10, abs(max_coeff) // 2)
+    if max_root_magnitude < 1:
+        max_root_magnitude = 5
+    
+    possible_roots = [r for r in range(-max_root_magnitude, max_root_magnitude + 1) if r != 0]
+    if not possible_roots:
+        possible_roots = [-5, -4, -3, -2, -1, 1, 2, 3, 4, 5]
+    
+    if pattern == 'zero_sum':
+        # Roots sum to zero: x1 = -x2
+        x1 = int(np.random.choice([r for r in possible_roots if r > 0]))
+        x2 = -x1
+        a = 1
+    elif pattern == 'negative_c':
+        # Negative c (roots have opposite signs)
+        x1 = int(np.random.choice([r for r in possible_roots if r < 0]))
+        x2 = int(np.random.choice([r for r in possible_roots if r > 0]))
+        a = 1
+    else:  # negative_b
+        # Negative b (both roots positive)
+        x1 = int(np.random.choice([r for r in possible_roots if r > 0]))
+        x2 = int(np.random.choice([r for r in possible_roots if r > 0 and r != x1]))
+        a = 1
+    
+    # Use Vieta's formulas
+    b = -a * (x1 + x2)
+    c = a * x1 * x2
+    
+    # Order roots
+    if x1 > x2:
+        x1, x2 = x2, x1
+    
+    return int(a), int(b), int(c), int(x1), int(x2)
+
+
+def _validate_equation(a, b, c, x1, x2, coefficient_range):
+    """
+    Validate that equation meets all requirements:
+    - All coefficients are integers
+    - Discriminant is perfect square
+    - Roots are integers
+    - Coefficients within range
+    - Equation is satisfied
+    """
+    import math
+    
+    # Check coefficients are integers
+    if not (isinstance(a, (int, np.integer)) and 
+            isinstance(b, (int, np.integer)) and 
+            isinstance(c, (int, np.integer))):
+        return False
+    
+    # Check a is not zero
+    if a == 0:
+        return False
+    
+    # Check coefficient range
+    min_coeff = coefficient_range['min']
+    max_coeff = coefficient_range['max']
+    
+    if (abs(a) > abs(max_coeff) or abs(b) > abs(max_coeff) or abs(c) > abs(max_coeff)):
+        return False
+    
+    # Verify discriminant is perfect square
+    discriminant = b * b - 4 * a * c
+    if discriminant < 0:
+        return False
+    
+    sqrt_disc = math.sqrt(discriminant)
+    if abs(sqrt_disc - round(sqrt_disc)) > 1e-10:
+        return False
+    
+    # Verify roots are integers
     sqrt_disc_int = int(round(sqrt_disc))
-    x1_calc = (-b_final + sqrt_disc_int) / (2 * a_final)
-    x2_calc = (-b_final - sqrt_disc_int) / (2 * a_final)
+    x1_calc = (-b + sqrt_disc_int) / (2 * a)
+    x2_calc = (-b - sqrt_disc_int) / (2 * a)
     
-    # Verify roots are integers (or very close due to floating point)
+    if abs(x1_calc - round(x1_calc)) > 1e-6 or abs(x2_calc - round(x2_calc)) > 1e-6:
+        return False
+    
     x1_int = int(round(x1_calc))
     x2_int = int(round(x2_calc))
     
-    # Check if calculated roots match original (within floating point tolerance)
-    if (abs(x1_calc - x1_int) > 1e-6 or abs(x2_calc - x2_int) > 1e-6 or
-        abs(x1_int - x1) > 1e-6 or abs(x2_int - x2) > 1e-6):
-        # Roots don't match - regenerate
-        return generate_school_grade_equation(
-            {'min': min_coeff, 'max': max_coeff}, 
-            root_type
-        )
-    
-    # Verify the equation: ax² + bx + c = 0 is satisfied by both roots
-    error1 = abs(a_final * x1_int**2 + b_final * x1_int + c_final)
-    error2 = abs(a_final * x2_int**2 + b_final * x2_int + c_final)
+    # Verify equation is satisfied
+    error1 = abs(a * x1_int * x1_int + b * x1_int + c)
+    error2 = abs(a * x2_int * x2_int + b * x2_int + c)
     
     if error1 > 1e-6 or error2 > 1e-6:
-        # Equation not satisfied - regenerate
-        return generate_school_grade_equation(
-            {'min': min_coeff, 'max': max_coeff}, 
-            root_type
-        )
+        return False
     
-    # Return with integer roots
-    return [float(a_final), float(b_final), float(c_final), float(x1_int), float(x2_int)]
+    # Verify roots match expected
+    roots_match = (abs(x1_int - x1) < 1e-6 and abs(x2_int - x2) < 1e-6) or \
+                  (abs(x1_int - x2) < 1e-6 and abs(x2_int - x1) < 1e-6)
+    
+    return roots_match
+
+
+def generate_school_grade_equation(coefficient_range, root_type):
+    """
+    Generate school-grade quadratic equations with pattern-based approach:
+    - Whole number coefficients (a, b, c)
+    - Perfect square discriminant
+    - Whole number roots
+    - Common textbook patterns
+    
+    Pattern distribution:
+    - 40%: Standard factoring patterns (a=1, small roots)
+    - 25%: Difference of squares (x² - k²)
+    - 20%: Perfect square trinomials (repeated roots)
+    - 10%: Larger coefficients (a > 1)
+    - 5%: Special cases (negative coefficients, zero sum roots)
+    """
+    # Pattern distribution
+    pattern_choice = np.random.random()
+    
+    max_attempts = 10  # Try up to 10 times to find valid equation
+    
+    for attempt in range(max_attempts):
+        if pattern_choice < 0.40:
+            # Standard factoring patterns (40%)
+            a, b, c, x1, x2 = _generate_standard_factoring_pattern(coefficient_range, root_type)
+        elif pattern_choice < 0.65:
+            # Difference of squares (25%)
+            a, b, c, x1, x2 = _generate_difference_of_squares(coefficient_range, root_type)
+        elif pattern_choice < 0.85:
+            # Perfect square trinomials (20%)
+            a, b, c, x1, x2 = _generate_perfect_square_trinomial(coefficient_range, root_type)
+        elif pattern_choice < 0.95:
+            # Larger coefficients (10%)
+            a, b, c, x1, x2 = _generate_larger_coefficients(coefficient_range, root_type)
+        else:
+            # Special cases (5%)
+            a, b, c, x1, x2 = _generate_special_cases(coefficient_range, root_type)
+        
+        # Validate equation
+        if _validate_equation(a, b, c, x1, x2, coefficient_range):
+            # Order roots: x1 <= x2
+            if x1 > x2:
+                x1, x2 = x2, x1
+            return [float(a), float(b), float(c), float(x1), float(x2)]
+        
+        # If validation failed, try different pattern
+        pattern_choice = np.random.random()
+    
+    # Fallback: use standard factoring pattern with conservative parameters
+    a, b, c, x1, x2 = _generate_standard_factoring_pattern(
+        {'min': -10, 'max': 10}, root_type
+    )
+    if x1 > x2:
+        x1, x2 = x2, x1
+    return [float(a), float(b), float(c), float(x1), float(x2)]
 
 def generate_random_equation(coefficient_range, allow_complex):
     """Generate random quadratic equations"""

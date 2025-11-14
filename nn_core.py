@@ -14,21 +14,59 @@ from autograd import grad
 class Layer:
     """Single neural network layer: h = activation(W*x + b)"""
     
-    def __init__(self, input_size: int, output_size: int, activation: str = 'relu'):
+    def __init__(self, input_size: int, output_size: int, activation: str = 'relu',
+                 init_method: str = 'he'):
         """
         Initialize layer with weights and biases.
         
-        Uses He initialization for weights (good for ReLU).
+        Args:
+            input_size: Number of input neurons
+            output_size: Number of output neurons
+            activation: Activation function name
+            init_method: Weight initialization method ('he', 'xavier', 'orthogonal', 'uniform')
+                        Default: 'he' (backwards compatible)
         """
         self.input_size = input_size
         self.output_size = output_size
         self.activation_name = activation
+        self.init_method = init_method
         
-        # He initialization - works well with ReLU
-        self.weights = anp.random.randn(output_size, input_size) * anp.sqrt(2.0 / input_size)
+        # Initialize weights based on method
+        self.weights = self._initialize_weights(input_size, output_size, init_method)
         self.biases = anp.random.randn(output_size) * 0.01
         
         self.activation = self._get_activation_function(activation)
+    
+    def _initialize_weights(self, n_in: int, n_out: int, method: str) -> anp.ndarray:
+        """Initialize weights using specified method."""
+        if method == 'he':
+            # He initialization - good for ReLU
+            return anp.random.randn(n_out, n_in) * anp.sqrt(2.0 / n_in)
+        elif method == 'xavier':
+            # Xavier/Glorot initialization - good for sigmoid/tanh
+            limit = anp.sqrt(6.0 / (n_in + n_out))
+            return anp.random.uniform(-limit, limit, (n_out, n_in))
+        elif method == 'orthogonal':
+            # Orthogonal initialization
+            try:
+                from utils import MathUtils
+                return MathUtils.orthogonal_init(n_in, n_out)
+            except ImportError:
+                # Fallback: simple orthogonal-like initialization
+                W = anp.random.randn(n_out, n_in)
+                if n_out >= n_in:
+                    Q, R = anp.linalg.qr(W)
+                    return Q[:n_out, :n_in]
+                else:
+                    Q, R = anp.linalg.qr(W.T)
+                    return Q.T[:n_out, :n_in]
+        elif method == 'uniform':
+            # Uniform initialization
+            limit = anp.sqrt(1.0 / n_in)
+            return anp.random.uniform(-limit, limit, (n_out, n_in))
+        else:
+            # Default to He if unknown method
+            return anp.random.randn(n_out, n_in) * anp.sqrt(2.0 / n_in)
     
     def _get_activation_function(self, activation: str) -> Callable:
         """Get activation function by name."""

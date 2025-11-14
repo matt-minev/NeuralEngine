@@ -25,6 +25,9 @@ class QuadraticPredictor:
         self.is_trained = False
         self.training_history = {}
         self.performance_stats = {}
+        # Ensemble support
+        self.ensemble_networks = []  # List of trained networks for ensemble
+        self.use_ensemble = False
         
     def create_network(self, learning_rate: float = 0.001):
         """Create neural network for this scenario"""
@@ -38,7 +41,10 @@ class QuadraticPredictor:
         self.trainer = TrainingEngine(self.network, optimizer, mean_squared_error)
         
     def train(self, epochs: int = 1000, learning_rate: float = 0.001, verbose: bool = True, 
-              use_multi_phase: bool = True, early_stopping_patience: int = 50) -> Dict[str, Any]:
+              use_multi_phase: bool = True, early_stopping_patience: int = 50,
+              clip_gradients: bool = True, max_grad_norm: float = 5.0,
+              lr_scheduler: str = 'cosine', use_augmentation: bool = True,
+              ensemble_size: int = 1) -> Dict[str, Any]:
         """
         Train the neural network with multi-phase training, learning rate scheduling, and early stopping
         
@@ -48,9 +54,18 @@ class QuadraticPredictor:
             verbose: Print training progress
             use_multi_phase: Use multi-phase training (fast learning -> fine-tuning -> optimization)
             early_stopping_patience: Number of epochs to wait before early stopping
+            clip_gradients: Whether to clip gradients (default: True for better stability)
+            max_grad_norm: Maximum gradient norm for clipping (default: 5.0)
+            lr_scheduler: Learning rate scheduler ('cosine', 'warm_restarts', 'plateau', 'onecycle')
+            use_augmentation: Whether to use data augmentation (default: True)
+            ensemble_size: Number of models to train for ensemble (default: 1, no ensemble)
         """
         # Prepare data
         X, y = self.data_processor.prepare_scenario_data(self.scenario, normalize=True)
+        
+        # Apply data augmentation if enabled
+        if use_augmentation:
+            X, y = self._augment_data(X, y)
         
         # Split data
         X_train, X_val, X_test, y_train, y_val, y_test = self.data_processor.split_data(X, y)
@@ -66,19 +81,64 @@ class QuadraticPredictor:
             print(f"   Multi-phase: {use_multi_phase}")
         
         try:
-            if use_multi_phase and epochs >= 300:
-                # Multi-phase training
-                self.training_history = self._train_multi_phase(
-                    X_train, y_train, X_val, y_val,
-                    epochs, learning_rate, early_stopping_patience, verbose
-                )
+            # Ensemble training: train multiple models
+            if ensemble_size > 1:
+                self.use_ensemble = True
+                self.ensemble_networks = []
+                ensemble_histories = []
+                
+                if verbose:
+                    print(f"🎯 Training ensemble of {ensemble_size} models...")
+                
+                for model_idx in range(ensemble_size):
+                    if verbose:
+                        print(f"\n📦 Training model {model_idx + 1}/{ensemble_size}")
+                    
+                    # Create new network with different initialization
+                    self.create_network(learning_rate)
+                    
+                    # Train this model
+                    if use_multi_phase and epochs >= 300:
+                        model_history = self._train_multi_phase(
+                            X_train, y_train, X_val, y_val,
+                            epochs, learning_rate, early_stopping_patience, False,  # verbose=False for ensemble
+                            clip_gradients, max_grad_norm
+                        )
+                    else:
+                        model_history = self._train_with_early_stopping(
+                            X_train, y_train, X_val, y_val,
+                            epochs, learning_rate, early_stopping_patience, False,  # verbose=False for ensemble
+                            clip_gradients, max_grad_norm, lr_scheduler
+                        )
+                    
+                    # Store trained network
+                    self.ensemble_networks.append(self.network.get_all_parameters())
+                    ensemble_histories.append(model_history)
+                
+                # Use average history
+                self.training_history = self._average_histories(ensemble_histories)
+                # Keep the last trained network as primary
+                self.is_trained = True
+                
+                if verbose:
+                    print(f"\n✅ Ensemble training complete!")
             else:
-                # Single-phase training with early stopping
-                self.create_network(learning_rate)
-                self.training_history = self._train_with_early_stopping(
-                    X_train, y_train, X_val, y_val,
-                    epochs, learning_rate, early_stopping_patience, verbose
-                )
+                # Single model training
+                if use_multi_phase and epochs >= 300:
+                    # Multi-phase training
+                    self.training_history = self._train_multi_phase(
+                        X_train, y_train, X_val, y_val,
+                        epochs, learning_rate, early_stopping_patience, verbose,
+                        clip_gradients, max_grad_norm
+                    )
+                else:
+                    # Single-phase training with early stopping
+                    self.create_network(learning_rate)
+                    self.training_history = self._train_with_early_stopping(
+                        X_train, y_train, X_val, y_val,
+                        epochs, learning_rate, early_stopping_patience, verbose,
+                        clip_gradients, max_grad_norm, lr_scheduler
+                    )
             
             training_time = time.time() - start_time
             self.performance_stats['training_time'] = training_time
@@ -106,7 +166,8 @@ class QuadraticPredictor:
             raise e
     
     def _train_multi_phase(self, X_train, y_train, X_val, y_val, 
-                          total_epochs, initial_lr, patience, verbose):
+                          total_epochs, initial_lr, patience, verbose,
+                          clip_gradients=True, max_grad_norm=5.0):
         """Multi-phase training: fast learning -> fine-tuning -> optimization"""
         all_history = {'train_loss': [], 'val_loss': [], 'val_r2': []}
         best_val_loss = float('inf')
@@ -126,7 +187,9 @@ class QuadraticPredictor:
             epochs=phase1_epochs,
             validation_data=(X_val, y_val),
             verbose=False,
-            plot_progress=False
+            plot_progress=False,
+            clip_gradients=clip_gradients,
+            max_grad_norm=max_grad_norm
         )
         
         # Track best model
@@ -158,7 +221,9 @@ class QuadraticPredictor:
             epochs=phase2_epochs,
             validation_data=(X_val, y_val),
             verbose=False,
-            plot_progress=False
+            plot_progress=False,
+            clip_gradients=clip_gradients,
+            max_grad_norm=max_grad_norm
         )
         
         # Track best model
@@ -194,7 +259,9 @@ class QuadraticPredictor:
                     epochs=phase3_epochs,
                     validation_data=(X_val, y_val),
                     verbose=False,
-                    plot_progress=False
+                    plot_progress=False,
+                    clip_gradients=clip_gradients,
+                    max_grad_norm=max_grad_norm
                 )
                 
                 # Track best model
@@ -211,8 +278,63 @@ class QuadraticPredictor:
         
         return all_history
     
+    def _augment_data(self, X: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Augment training data with:
+        - Coefficient scaling (multiply all coefficients by constant)
+        - Root swapping (swap x1 and x2 labels)
+        - Sign flipping (negate all coefficients)
+        
+        Args:
+            X: Input features (coefficients)
+            y: Target values (roots)
+        
+        Returns:
+            Augmented X and y arrays
+        """
+        augmented_X = [X]
+        augmented_y = [y]
+        
+        # Determine scenario type from input/output shapes
+        # For quadratic equations, we typically have 3 inputs (a, b, c) and 2 outputs (x1, x2)
+        n_samples = X.shape[0]
+        
+        # Only augment if we have the right structure (3 inputs, 2 outputs for root prediction)
+        if X.shape[1] == 3 and y.shape[1] == 2:
+            # Root swapping: swap x1 and x2
+            y_swapped = y.copy()
+            y_swapped[:, [0, 1]] = y_swapped[:, [1, 0]]  # Swap columns
+            augmented_X.append(X)
+            augmented_y.append(y_swapped)
+            
+            # Sign flipping: negate all coefficients (creates equivalent equation)
+            # For ax² + bx + c = 0, negating gives -ax² - bx - c = 0 (same roots)
+            X_flipped = -X.copy()
+            augmented_X.append(X_flipped)
+            augmented_y.append(y.copy())  # Roots remain the same
+            
+            # Coefficient scaling: multiply by small constants (0.5, 2.0)
+            # This creates equivalent equations: k(ax² + bx + c) = 0 has same roots
+            for scale in [0.5, 2.0]:
+                X_scaled = X * scale
+                augmented_X.append(X_scaled)
+                augmented_y.append(y.copy())  # Roots remain the same
+        
+        # Concatenate all augmented data
+        X_augmented = np.vstack(augmented_X)
+        y_augmented = np.vstack(augmented_y)
+        
+        # Shuffle augmented data
+        indices = np.random.permutation(len(X_augmented))
+        X_augmented = X_augmented[indices]
+        y_augmented = y_augmented[indices]
+        
+        return X_augmented, y_augmented
+    
     def _train_with_early_stopping(self, X_train, y_train, X_val, y_val,
-                                   epochs, learning_rate, patience, verbose):
+                                   epochs, learning_rate, patience, verbose,
+                                   clip_gradients=True, max_grad_norm=5.0,
+                                   lr_scheduler='cosine'):
         """Single-phase training with early stopping and learning rate decay"""
         all_history = {'train_loss': [], 'val_loss': []}
         best_val_loss = float('inf')
@@ -220,11 +342,31 @@ class QuadraticPredictor:
         patience_counter = 0
         current_lr = learning_rate
         
+        # Initialize learning rate scheduler if needed
+        scheduler = None
+        if lr_scheduler == 'warm_restarts':
+            from autodiff import CosineAnnealingWarmRestarts
+            scheduler = CosineAnnealingWarmRestarts(learning_rate, T_0=max(10, epochs//10), T_mult=2)
+        elif lr_scheduler == 'plateau':
+            from autodiff import ReduceLROnPlateau
+            scheduler = ReduceLROnPlateau(learning_rate, factor=0.5, patience=patience//2)
+        elif lr_scheduler == 'onecycle':
+            from autodiff import OneCycleLR
+            scheduler = OneCycleLR(learning_rate, max_lr=learning_rate*10, total_steps=epochs)
+        
         # Train with learning rate decay
         for epoch in range(epochs):
-            # Cosine annealing learning rate schedule
-            lr = learning_rate * (1 + np.cos(np.pi * epoch / epochs)) / 2
-            lr = max(lr, learning_rate * 0.01)  # Minimum learning rate
+            # Get learning rate from scheduler
+            if scheduler:
+                if lr_scheduler == 'plateau':
+                    # For plateau, we'll update after validation
+                    lr = scheduler.get_lr(epoch)
+                else:
+                    lr = scheduler.get_lr(epoch)
+            else:
+                # Default: Cosine annealing learning rate schedule
+                lr = learning_rate * (1 + np.cos(np.pi * epoch / epochs)) / 2
+                lr = max(lr, learning_rate * 0.01)  # Minimum learning rate
             
             # Update learning rate if it changed significantly
             if abs(current_lr - lr) / current_lr > 0.1:
@@ -239,7 +381,9 @@ class QuadraticPredictor:
                 epochs=1,
                 validation_data=(X_val, y_val),
                 verbose=False,
-                plot_progress=False
+                plot_progress=False,
+                clip_gradients=clip_gradients,
+                max_grad_norm=max_grad_norm
             )
             
             val_loss = epoch_history.get('val_loss', [float('inf')])[-1]
@@ -247,6 +391,16 @@ class QuadraticPredictor:
             
             all_history['train_loss'].append(train_loss)
             all_history['val_loss'].append(val_loss)
+            
+            # Update learning rate scheduler if using plateau
+            if lr_scheduler == 'plateau' and scheduler:
+                scheduler.step(val_loss)
+                new_lr = scheduler.get_lr(epoch)
+                if abs(current_lr - new_lr) / current_lr > 0.1:
+                    current_lr = new_lr
+                    self.create_network(current_lr)
+                    if best_network_state:
+                        self.network.set_all_parameters(best_network_state)
             
             # Early stopping check
             if val_loss < best_val_loss:
@@ -283,15 +437,37 @@ class QuadraticPredictor:
         # Transform input data
         X_transformed = self.data_processor.transform_input(self.scenario, input_data)
         
-        # Make predictions
-        y_pred_transformed = self.network.forward(X_transformed)
+        # Make predictions (ensemble or single model)
+        if self.use_ensemble and len(self.ensemble_networks) > 0:
+            # Ensemble prediction: average predictions from all models
+            predictions = []
+            for network_params in self.ensemble_networks:
+                self.network.set_all_parameters(network_params)
+                pred = self.network.forward(X_transformed)
+                predictions.append(pred)
+            
+            # Average predictions
+            y_pred_transformed = np.mean(predictions, axis=0)
+            
+            # Restore primary network
+            if self.network is not None:
+                self.network.set_all_parameters(self.ensemble_networks[-1])
+        else:
+            # Single model prediction
+            y_pred_transformed = self.network.forward(X_transformed)
         
         # Inverse transform predictions
         y_pred = self.data_processor.inverse_transform_output(self.scenario, y_pred_transformed)
         
         # Refine predictions if requested
         if refine_predictions:
-            y_pred = self._refine_predictions(input_data, y_pred)
+            # Calculate confidence if needed
+            confidence_vals = None
+            if return_confidence:
+                # Estimate confidence based on prediction variance or error
+                # For now, use a simple heuristic: confidence inversely related to prediction magnitude
+                confidence_vals = 1.0 / (1.0 + np.abs(y_pred).mean(axis=1))
+            y_pred = self._refine_predictions(input_data, y_pred, confidence_vals)
         
         if return_confidence:
             confidences = self._estimate_confidence(X_transformed)
@@ -299,12 +475,19 @@ class QuadraticPredictor:
         else:
             return y_pred, None
     
-    def _refine_predictions(self, input_data: np.ndarray, predictions: np.ndarray) -> np.ndarray:
+    def _refine_predictions(self, input_data: np.ndarray, predictions: np.ndarray,
+                           confidence: Optional[np.ndarray] = None) -> np.ndarray:
         """
-        Refine predictions using post-processing:
-        - Verify roots satisfy quadratic formula
-        - Order roots consistently (x1 <= x2)
+        Refine predictions using advanced post-processing:
+        - Multi-step Newton's method refinement
+        - Confidence-based refinement (aggressive for low confidence)
+        - Root verification and correction
         - Handle special cases (repeated roots, near-zero coefficients)
+        
+        Args:
+            input_data: Input features (coefficients)
+            predictions: Initial predictions (roots)
+            confidence: Optional confidence estimates for each prediction
         """
         refined = predictions.copy()
         
@@ -333,30 +516,110 @@ class QuadraticPredictor:
                         refined[i, 0] = x1_pred
                         refined[i, 1] = x2_pred
                     
-                    # If we have coefficients, verify the roots
+                    # If we have coefficients, verify and refine the roots
                     if len(coeffs) >= 3:
                         a, b, c = coeffs[0], coeffs[1], coeffs[2]
                         
-                        # Verify roots satisfy ax² + bx + c = 0
-                        error1 = abs(a * x1_pred**2 + b * x1_pred + c)
-                        error2 = abs(a * x2_pred**2 + b * x2_pred + c)
+                        # Skip refinement if a is zero or very small
+                        if abs(a) < 1e-10:
+                            continue
                         
-                        # If error is large, try to refine using iterative method
-                        if error1 > 0.1 or error2 > 0.1:
-                            # Use Newton's method for refinement (one iteration)
-                            if abs(2 * a * x1_pred + b) > 1e-6:
-                                x1_refined = x1_pred - (a * x1_pred**2 + b * x1_pred + c) / (2 * a * x1_pred + b)
-                                refined[i, 0] = x1_refined
+                        # Calculate confidence for this prediction
+                        pred_confidence = confidence[i] if confidence is not None and i < len(confidence) else 0.5
+                        
+                        # Determine refinement strategy based on confidence
+                        # Low confidence (< 0.7): aggressive refinement (3 iterations)
+                        # Medium confidence (0.7-0.9): moderate refinement (2 iterations)
+                        # High confidence (>= 0.9): minimal refinement (1 iteration)
+                        if pred_confidence < 0.7:
+                            max_iterations = 3
+                            error_threshold = 0.05
+                        elif pred_confidence < 0.9:
+                            max_iterations = 2
+                            error_threshold = 0.1
+                        else:
+                            max_iterations = 1
+                            error_threshold = 0.2
+                        
+                        # Multi-step Newton's method refinement for x1
+                        x1_refined = x1_pred
+                        for iteration in range(max_iterations):
+                            error1 = abs(a * x1_refined**2 + b * x1_refined + c)
+                            if error1 < error_threshold:
+                                break
                             
-                            if abs(2 * a * x2_pred + b) > 1e-6:
-                                x2_refined = x2_pred - (a * x2_pred**2 + b * x2_pred + c) / (2 * a * x2_pred + b)
-                                refined[i, 1] = x2_refined
+                            derivative = 2 * a * x1_refined + b
+                            if abs(derivative) > 1e-6:
+                                x1_new = x1_refined - (a * x1_refined**2 + b * x1_refined + c) / derivative
+                                # Check for convergence
+                                if abs(x1_new - x1_refined) < 1e-10:
+                                    break
+                                x1_refined = x1_new
+                            else:
+                                break
+                        
+                        # Multi-step Newton's method refinement for x2
+                        x2_refined = x2_pred
+                        for iteration in range(max_iterations):
+                            error2 = abs(a * x2_refined**2 + b * x2_refined + c)
+                            if error2 < error_threshold:
+                                break
                             
-                            # Re-order after refinement
-                            if refined[i, 0] > refined[i, 1]:
-                                refined[i, 0], refined[i, 1] = refined[i, 1], refined[i, 0]
+                            derivative = 2 * a * x2_refined + b
+                            if abs(derivative) > 1e-6:
+                                x2_new = x2_refined - (a * x2_refined**2 + b * x2_refined + c) / derivative
+                                # Check for convergence
+                                if abs(x2_new - x2_refined) < 1e-10:
+                                    break
+                                x2_refined = x2_new
+                            else:
+                                break
+                        
+                        # Verify refined roots still satisfy equation
+                        final_error1 = abs(a * x1_refined**2 + b * x1_refined + c)
+                        final_error2 = abs(a * x2_refined**2 + b * x2_refined + c)
+                        
+                        # Use refined roots if they're better
+                        if final_error1 < abs(a * x1_pred**2 + b * x1_pred + c):
+                            refined[i, 0] = x1_refined
+                        if final_error2 < abs(a * x2_pred**2 + b * x2_pred + c):
+                            refined[i, 1] = x2_refined
+                        
+                        # Special case: repeated roots (discriminant = 0)
+                        discriminant = b**2 - 4*a*c
+                        if abs(discriminant) < 1e-6:
+                            # Both roots should be the same
+                            repeated_root = -b / (2 * a)
+                            refined[i, 0] = repeated_root
+                            refined[i, 1] = repeated_root
+                        
+                        # Final ordering
+                        if refined[i, 0] > refined[i, 1]:
+                            refined[i, 0], refined[i, 1] = refined[i, 1], refined[i, 0]
         
         return refined
+    
+    def _average_histories(self, histories: list) -> Dict[str, list]:
+        """Average training histories from multiple models"""
+        if not histories:
+            return {}
+        
+        # Find maximum length
+        max_len = max(len(h.get('train_loss', [])) for h in histories)
+        
+        averaged = {
+            'train_loss': [],
+            'val_loss': []
+        }
+        
+        for i in range(max_len):
+            train_losses = [h.get('train_loss', [0])[i] if i < len(h.get('train_loss', [])) else h.get('train_loss', [0])[-1] for h in histories]
+            val_losses = [h.get('val_loss', [0])[i] if i < len(h.get('val_loss', [])) else h.get('val_loss', [0])[-1] for h in histories]
+            
+            averaged['train_loss'].append(np.mean(train_losses))
+            averaged['val_loss'].append(np.mean(val_losses))
+        
+        return averaged
     
     def _estimate_confidence(self, X_transformed: np.ndarray, n_samples: int = 50) -> np.ndarray:
         """Estimate prediction confidence using Monte Carlo dropout simulation"""

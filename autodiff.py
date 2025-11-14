@@ -195,8 +195,17 @@ class TrainingEngine:
         
         return params
     
-    def train_step(self, X: anp.ndarray, y_true: anp.ndarray) -> float:
-        """Perform single training step."""
+    def train_step(self, X: anp.ndarray, y_true: anp.ndarray, 
+                   clip_gradients: bool = False, max_norm: float = 5.0) -> float:
+        """
+        Perform single training step.
+        
+        Args:
+            X: Input data
+            y_true: Target data
+            clip_gradients: Whether to clip gradients (default: False for backwards compatibility)
+            max_norm: Maximum gradient norm for clipping (default: 5.0)
+        """
         # get current params
         current_params = self.network.get_all_parameters()
         params_flat = self._flatten_params(current_params)
@@ -208,6 +217,18 @@ class TrainingEngine:
         gradients_flat = self.gradient_function(params_flat, X, y_true)
         gradients_structured = self._unflatten_params(gradients_flat)
         
+        # Apply gradient clipping if requested
+        if clip_gradients:
+            try:
+                from utils import MathUtils
+                gradients_structured = MathUtils.clip_gradients(gradients_structured, max_norm)
+            except ImportError:
+                # Fallback: simple gradient clipping if MathUtils not available
+                global_norm = anp.sqrt(sum(anp.sum(g**2) for g in gradients_structured))
+                if global_norm > max_norm:
+                    clip_ratio = max_norm / global_norm
+                    gradients_structured = [g * clip_ratio for g in gradients_structured]
+        
         # update params
         updated_params = self.optimizer.update(current_params, gradients_structured)
         self.network.set_all_parameters(updated_params)
@@ -216,7 +237,8 @@ class TrainingEngine:
     
     def train(self, X: anp.ndarray, y_true: anp.ndarray, epochs: int = 1000, 
               batch_size: Optional[int] = None, validation_data: Optional[Tuple] = None,
-              verbose: bool = True, plot_progress: bool = True) -> Dict:
+              verbose: bool = True, plot_progress: bool = True,
+              clip_gradients: bool = False, max_grad_norm: float = 5.0) -> Dict:
         """
         Train the neural network.
         
@@ -244,7 +266,7 @@ class TrainingEngine:
             # handle batching
             if batch_size is None:
                 # full batch
-                loss = self.train_step(X, y_true)
+                loss = self.train_step(X, y_true, clip_gradients=clip_gradients, max_norm=max_grad_norm)
                 epoch_losses.append(loss)
             else:
                 # mini-batch
@@ -256,7 +278,7 @@ class TrainingEngine:
                     X_batch = X[batch_indices]
                     y_batch = y_true[batch_indices]
                     
-                    loss = self.train_step(X_batch, y_batch)
+                    loss = self.train_step(X_batch, y_batch, clip_gradients=clip_gradients, max_norm=max_grad_norm)
                     epoch_losses.append(loss)
             
             # record training loss
@@ -373,6 +395,147 @@ class ExponentialLR(LearningRateScheduler):
     
     def get_lr(self, epoch: int) -> float:
         return self.initial_lr * (self.gamma ** epoch)
+
+
+class CosineAnnealingWarmRestarts(LearningRateScheduler):
+    """
+    Cosine annealing with warm restarts.
+    
+    Learning rate follows cosine annealing, then restarts at higher value.
+    Good for escaping local minima.
+    """
+    
+    def __init__(self, initial_lr: float, T_0: int = 10, T_mult: int = 2, eta_min: float = 0.0):
+        """
+        Args:
+            initial_lr: Initial learning rate
+            T_0: Number of epochs for first restart
+            T_mult: Multiplier for restart period
+            eta_min: Minimum learning rate
+        """
+        super().__init__(initial_lr)
+        self.T_0 = T_0
+        self.T_mult = T_mult
+        self.eta_min = eta_min
+        self.current_restart = 0
+        self.epoch_since_restart = 0
+        self.T_curr = T_0
+    
+    def get_lr(self, epoch: int) -> float:
+        """Get learning rate for given epoch with warm restarts."""
+        # Check if we need to restart
+        if self.epoch_since_restart >= self.T_curr:
+            self.current_restart += 1
+            self.epoch_since_restart = 0
+            self.T_curr = self.T_0 * (self.T_mult ** self.current_restart)
+        
+        # Cosine annealing within current period
+        lr = self.eta_min + (self.initial_lr - self.eta_min) * \
+             (1 + np.cos(np.pi * self.epoch_since_restart / self.T_curr)) / 2
+        
+        self.epoch_since_restart += 1
+        return float(lr)
+
+
+class ReduceLROnPlateau(LearningRateScheduler):
+    """
+    Reduce learning rate when validation loss plateaus.
+    
+    Monitors validation loss and reduces LR when no improvement.
+    """
+    
+    def __init__(self, initial_lr: float, factor: float = 0.5, patience: int = 10, 
+                 min_lr: float = 1e-6, mode: str = 'min'):
+        """
+        Args:
+            initial_lr: Initial learning rate
+            factor: Factor to multiply LR by when reducing
+            patience: Number of epochs to wait before reducing
+            min_lr: Minimum learning rate
+            mode: 'min' to reduce when metric stops decreasing, 'max' for increasing
+        """
+        super().__init__(initial_lr)
+        self.factor = factor
+        self.patience = patience
+        self.min_lr = min_lr
+        self.mode = mode
+        self.best_metric = None
+        self.patience_counter = 0
+        self.current_lr = initial_lr
+    
+    def get_lr(self, epoch: int) -> float:
+        """Get current learning rate (doesn't change based on epoch alone)."""
+        return self.current_lr
+    
+    def step(self, metric: float):
+        """
+        Update learning rate based on metric.
+        
+        Args:
+            metric: Current metric value (e.g., validation loss)
+        """
+        if self.best_metric is None:
+            self.best_metric = metric
+            return
+        
+        # Check if metric improved
+        if self.mode == 'min':
+            improved = metric < self.best_metric
+        else:  # mode == 'max'
+            improved = metric > self.best_metric
+        
+        if improved:
+            self.best_metric = metric
+            self.patience_counter = 0
+        else:
+            self.patience_counter += 1
+            if self.patience_counter >= self.patience:
+                # Reduce learning rate
+                self.current_lr = max(self.current_lr * self.factor, self.min_lr)
+                self.patience_counter = 0
+
+
+class OneCycleLR(LearningRateScheduler):
+    """
+    One cycle learning rate policy.
+    
+    Increases LR to max_lr, then decreases following cosine annealing.
+    """
+    
+    def __init__(self, initial_lr: float, max_lr: float, total_steps: int, 
+                 pct_start: float = 0.3, div_factor: float = 25.0):
+        """
+        Args:
+            initial_lr: Initial learning rate
+            max_lr: Maximum learning rate
+            total_steps: Total number of training steps
+            pct_start: Percentage of steps for warmup (0.0 to 1.0)
+            div_factor: Initial LR = max_lr / div_factor
+        """
+        super().__init__(initial_lr)
+        self.max_lr = max_lr
+        self.total_steps = total_steps
+        self.pct_start = pct_start
+        self.div_factor = div_factor
+        self.initial_lr = max_lr / div_factor
+    
+    def get_lr(self, epoch: int) -> float:
+        """Get learning rate for given epoch in one cycle."""
+        if epoch >= self.total_steps:
+            return self.initial_lr
+        
+        # Warmup phase
+        warmup_steps = int(self.total_steps * self.pct_start)
+        if epoch < warmup_steps:
+            # Linear warmup
+            lr = self.initial_lr + (self.max_lr - self.initial_lr) * (epoch / warmup_steps)
+        else:
+            # Cosine annealing
+            progress = (epoch - warmup_steps) / (self.total_steps - warmup_steps)
+            lr = self.initial_lr + (self.max_lr - self.initial_lr) * \
+                 (1 + np.cos(np.pi * progress)) / 2
+        
+        return float(lr)
 
 
 if __name__ == "__main__":
