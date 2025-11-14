@@ -386,8 +386,24 @@ const Navigation = {
       });
     });
 
-    // Initialize with dashboard
-    this.showSection("dashboard");
+    // Check for URL hash first, then localStorage, then default to dashboard
+    const hashSection = window.location.hash.substring(1); // Remove #
+    const savedSection = localStorage.getItem('quadratic_web_active_tab');
+    const initialSection = hashSection || savedSection || 'dashboard';
+    
+    // Validate section exists
+    const validSections = ['dashboard', 'data', 'training', 'model-management', 'prediction', 'analysis', 'comparison'];
+    const sectionToShow = validSections.includes(initialSection) ? initialSection : 'dashboard';
+    
+    this.showSection(sectionToShow);
+    
+    // Listen for hash changes (browser back/forward)
+    window.addEventListener('hashchange', () => {
+      const hashSection = window.location.hash.substring(1);
+      if (hashSection && validSections.includes(hashSection)) {
+        this.showSection(hashSection);
+      }
+    });
   },
 
   showSection(sectionId) {
@@ -411,6 +427,14 @@ const Navigation = {
     const activeLink = document.querySelector(`[data-section="${sectionId}"]`);
     if (activeLink) {
       activeLink.classList.add("active");
+    }
+
+    // Save to localStorage for persistence across refreshes
+    localStorage.setItem('quadratic_web_active_tab', sectionId);
+    
+    // Update URL hash for deep linking (without triggering page reload)
+    if (window.location.hash !== `#${sectionId}`) {
+      window.history.replaceState(null, null, `#${sectionId}`);
     }
 
     // Section-specific initialization

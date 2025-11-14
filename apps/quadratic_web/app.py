@@ -69,6 +69,15 @@ if not os.path.exists(UPLOAD_FOLDER):
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+# Route to serve assets from root assets directory
+@app.route('/assets/<path:filename>')
+def serve_assets(filename):
+    """Serve assets from the root assets directory."""
+    assets_path = Path(neural_engine_root) / 'assets' / filename
+    if assets_path.exists():
+        return send_from_directory(assets_path.parent, filename)
+    return "Asset not found", 404
+
 # Routes
 @app.route('/')
 def index():
@@ -568,90 +577,133 @@ def generate_quadratic_dataset(equation_type, num_equations, coefficient_range, 
     return np.array(dataset)
 
 def generate_school_grade_equation(coefficient_range, root_type):
-    """Generate school-grade quadratic equations with nice solutions - FIXED VERSION"""
+    """
+    Generate school-grade quadratic equations with:
+    - Whole number coefficients (a, b, c)
+    - Perfect square discriminant
+    - Whole number roots
+    - Easy to solve by 10th graders (factoring patterns)
+    """
+    from fractions import Fraction
+    import math
+    
     min_coeff = coefficient_range['min']
     max_coeff = coefficient_range['max']
     
-    # Define nice root values with better distribution
-    integer_roots = list(range(-8, 9))  # Reduced range for better coefficients
-    fractional_roots = [-5/2, -3/2, -1/2, -1/3, -1/4, 1/4, 1/3, 1/2, 3/2, 5/2, 
-                       -4/3, -2/3, 2/3, 4/3, -3/4, -5/4, 3/4, 5/4]
+    # For school-grade equations, we want integer roots only
+    # Choose integer roots that will result in nice coefficients
+    max_root_magnitude = min(10, abs(max_coeff) // 3)  # Reasonable root range
     
+    # Generate integer roots
     if root_type == 'integers':
-        possible_roots = integer_roots
+        possible_roots = [r for r in range(-max_root_magnitude, max_root_magnitude + 1) if r != 0]
     elif root_type == 'fractions':
-        possible_roots = fractional_roots
-    else:  # mixed
-        possible_roots = integer_roots + fractional_roots
-    
-    # Remove roots that are too large (causes coefficient boundary issues)
-    max_root = min(8, abs(max_coeff) // 2)
-    possible_roots = [r for r in possible_roots if abs(r) <= max_root and r != 0]
+        # For fractions, we'll still generate integer roots but scale appropriately
+        possible_roots = [r for r in range(-max_root_magnitude, max_root_magnitude + 1) if r != 0]
+    else:  # mixed - prefer integers for school-grade
+        possible_roots = [r for r in range(-max_root_magnitude, max_root_magnitude + 1) if r != 0]
     
     if not possible_roots:
-        possible_roots = [-2, -1, 1, 2]  # Fallback
+        possible_roots = [-5, -4, -3, -2, -1, 1, 2, 3, 4, 5]
     
-    # Choose two roots
-    x1 = np.random.choice(possible_roots)
-    x2 = np.random.choice(possible_roots)
+    # Choose two integer roots
+    x1 = int(np.random.choice(possible_roots))
+    x2 = int(np.random.choice(possible_roots))
     
-    # Generate 'a' with bias toward smaller values to avoid boundary issues
-    a_range = min(abs(max_coeff), abs(min_coeff), 8)  # Cap at 8
-    weights = [1/(abs(i)+1) for i in range(-a_range, a_range+1) if i != 0]  # Bias toward smaller values
-    a_candidates = [i for i in range(-a_range, a_range+1) if i != 0]
-    a = np.random.choice(a_candidates, p=np.array(weights)/sum(weights))
+    # Ensure roots are different (unless we want repeated roots)
+    if x1 == x2 and np.random.random() > 0.1:  # 10% chance for repeated roots
+        # Choose a different second root
+        other_roots = [r for r in possible_roots if r != x1]
+        if other_roots:
+            x2 = int(np.random.choice(other_roots))
+    
+    # Use Vieta's formulas: 
+    # For ax² + bx + c = 0 with roots x1, x2:
+    # b = -a(x1 + x2)
+    # c = a(x1)(x2)
+    
+    # Choose 'a' to be a small integer (1-5 typically for school problems)
+    # This ensures coefficients stay reasonable
+    a_candidates = [i for i in range(1, min(6, abs(max_coeff) + 1)) if i != 0]
+    if not a_candidates:
+        a_candidates = [1]
+    
+    # Bias toward a=1 (most common in textbooks)
+    weights = [3 if i == 1 else 1 for i in a_candidates]
+    a = int(np.random.choice(a_candidates, p=np.array(weights)/sum(weights)))
     
     # Calculate b and c using Vieta's formulas
     sum_roots = x1 + x2
     product_roots = x1 * x2
     
-    # Handle fractional roots properly
-    from fractions import Fraction
-    sum_frac = Fraction(sum_roots).limit_denominator(100)
-    prod_frac = Fraction(product_roots).limit_denominator(100)
+    b = -a * sum_roots
+    c = a * product_roots
     
-    # Scale 'a' to make b and c integers when possible
-    lcm_denom = np.lcm(sum_frac.denominator, prod_frac.denominator)
-    a_scaled = a * lcm_denom
-    
-    b = -a_scaled * sum_roots
-    c = a_scaled * product_roots
-    
-    # Check if scaled coefficients fit in range
-    max_scaled_coeff = max(abs(a_scaled), abs(b), abs(c))
-    if max_scaled_coeff > max(abs(max_coeff), abs(min_coeff)):
-        # Scale down proportionally instead of hitting boundaries
-        scale_factor = max(abs(max_coeff), abs(min_coeff)) * 0.8 / max_scaled_coeff  # 0.8 for safety margin
-        a_scaled *= scale_factor
-        b *= scale_factor
-        c *= scale_factor
-    
-    # Round to remove floating point errors
-    a_final = round(a_scaled)
-    b_final = round(b)
-    c_final = round(c)
+    # Verify all coefficients are integers (they should be by construction)
+    a_final = int(a)
+    b_final = int(b)
+    c_final = int(c)
     
     # Ensure 'a' is not zero
     if a_final == 0:
-        a_final = 1 if a > 0 else -1
+        a_final = 1
     
-    # Final boundary check - regenerate if still at boundaries
-    if (abs(a_final) >= abs(max_coeff) or abs(b_final) >= abs(max_coeff) or 
-        abs(c_final) >= abs(max_coeff)):
-        return generate_school_grade_equation(coefficient_range, root_type)
+    # Check if coefficients are within range
+    if (abs(a_final) > abs(max_coeff) or abs(b_final) > abs(max_coeff) or 
+        abs(c_final) > abs(max_coeff) or
+        abs(a_final) < abs(min_coeff) or abs(b_final) < abs(min_coeff) or 
+        abs(c_final) < abs(min_coeff)):
+        # Regenerate with smaller root range
+        return generate_school_grade_equation(
+            {'min': min_coeff, 'max': max_coeff}, 
+            root_type
+        )
     
-    # Recalculate roots with final coefficients
+    # Verify discriminant is a perfect square
     discriminant = b_final**2 - 4*a_final*c_final
-    if discriminant >= 0:
-        sqrt_disc = np.sqrt(discriminant)
-        x1_calc = (-b_final + sqrt_disc) / (2*a_final)
-        x2_calc = (-b_final - sqrt_disc) / (2*a_final)
-    else:
-        # Fallback for edge cases
-        x1_calc = x1
-        x2_calc = x2
     
-    return [float(a_final), float(b_final), float(c_final), float(x1_calc), float(x2_calc)]
+    # For integer roots, discriminant should be a perfect square
+    sqrt_disc = math.sqrt(discriminant) if discriminant >= 0 else 0
+    is_perfect_square = abs(sqrt_disc - round(sqrt_disc)) < 1e-10
+    
+    if not is_perfect_square:
+        # This shouldn't happen with integer roots, but regenerate if it does
+        return generate_school_grade_equation(
+            {'min': min_coeff, 'max': max_coeff}, 
+            root_type
+        )
+    
+    # Calculate roots using quadratic formula to verify
+    sqrt_disc_int = int(round(sqrt_disc))
+    x1_calc = (-b_final + sqrt_disc_int) / (2 * a_final)
+    x2_calc = (-b_final - sqrt_disc_int) / (2 * a_final)
+    
+    # Verify roots are integers (or very close due to floating point)
+    x1_int = int(round(x1_calc))
+    x2_int = int(round(x2_calc))
+    
+    # Check if calculated roots match original (within floating point tolerance)
+    if (abs(x1_calc - x1_int) > 1e-6 or abs(x2_calc - x2_int) > 1e-6 or
+        abs(x1_int - x1) > 1e-6 or abs(x2_int - x2) > 1e-6):
+        # Roots don't match - regenerate
+        return generate_school_grade_equation(
+            {'min': min_coeff, 'max': max_coeff}, 
+            root_type
+        )
+    
+    # Verify the equation: ax² + bx + c = 0 is satisfied by both roots
+    error1 = abs(a_final * x1_int**2 + b_final * x1_int + c_final)
+    error2 = abs(a_final * x2_int**2 + b_final * x2_int + c_final)
+    
+    if error1 > 1e-6 or error2 > 1e-6:
+        # Equation not satisfied - regenerate
+        return generate_school_grade_equation(
+            {'min': min_coeff, 'max': max_coeff}, 
+            root_type
+        )
+    
+    # Return with integer roots
+    return [float(a_final), float(b_final), float(c_final), float(x1_int), float(x2_int)]
 
 def generate_random_equation(coefficient_range, allow_complex):
     """Generate random quadratic equations"""
