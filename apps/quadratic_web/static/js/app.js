@@ -334,7 +334,17 @@ const ApiClient = {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        // Try to parse error message from response
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        try {
+          const errorData = await response.json();
+          if (errorData.error) {
+            errorMessage = errorData.error;
+          }
+        } catch (e) {
+          // If JSON parsing fails, use default message
+        }
+        throw new Error(errorMessage);
       }
 
       return await response.json();
@@ -388,17 +398,27 @@ const Navigation = {
 
     // Check for URL hash first, then localStorage, then default to dashboard
     const hashSection = window.location.hash.substring(1); // Remove #
-    const savedSection = localStorage.getItem('quadratic_web_active_tab');
-    const initialSection = hashSection || savedSection || 'dashboard';
-    
+    const savedSection = localStorage.getItem("quadratic_web_active_tab");
+    const initialSection = hashSection || savedSection || "dashboard";
+
     // Validate section exists
-    const validSections = ['dashboard', 'data', 'training', 'model-management', 'prediction', 'analysis', 'comparison'];
-    const sectionToShow = validSections.includes(initialSection) ? initialSection : 'dashboard';
-    
+    const validSections = [
+      "dashboard",
+      "data",
+      "training",
+      "model-management",
+      "prediction",
+      "analysis",
+      "comparison",
+    ];
+    const sectionToShow = validSections.includes(initialSection)
+      ? initialSection
+      : "dashboard";
+
     this.showSection(sectionToShow);
-    
+
     // Listen for hash changes (browser back/forward)
-    window.addEventListener('hashchange', () => {
+    window.addEventListener("hashchange", () => {
       const hashSection = window.location.hash.substring(1);
       if (hashSection && validSections.includes(hashSection)) {
         this.showSection(hashSection);
@@ -430,8 +450,8 @@ const Navigation = {
     }
 
     // Save to localStorage for persistence across refreshes
-    localStorage.setItem('quadratic_web_active_tab', sectionId);
-    
+    localStorage.setItem("quadratic_web_active_tab", sectionId);
+
     // Update URL hash for deep linking (without triggering page reload)
     if (window.location.hash !== `#${sectionId}`) {
       window.history.replaceState(null, null, `#${sectionId}`);
@@ -3112,7 +3132,21 @@ async function makePrediction() {
       Utils.showNotification(response.error || "Prediction failed", "error");
     }
   } catch (error) {
-    Utils.showNotification("Prediction failed: " + error.message, "error");
+    // Check if error message indicates model not trained/loaded
+    const errorMsg = error.message.toLowerCase();
+    if (
+      errorMsg.includes("not trained") ||
+      errorMsg.includes("not loaded") ||
+      errorMsg.includes("400")
+    ) {
+      const scenarioName = scenarioData ? scenarioData.name : scenario;
+      Utils.showNotification(
+        `Model not loaded for "${scenarioName}". Please train a model or load a saved model first.`,
+        "error"
+      );
+    } else {
+      Utils.showNotification("Prediction failed: " + error.message, "error");
+    }
   }
 }
 
@@ -3151,6 +3185,22 @@ async function randomTest() {
     }
 
     const randomData = response.data;
+
+    // Validate that we have all required features
+    const missingFeatures = scenarioData.input_features.filter(
+      (feature) => randomData[feature] === undefined
+    );
+
+    if (missingFeatures.length > 0) {
+      Utils.showNotification(
+        `Random data missing required features: ${missingFeatures.join(", ")}`,
+        "error"
+      );
+      randomBtn.innerHTML = originalHTML;
+      randomBtn.disabled = false;
+      randomBtn.style.transform = "scale(1)";
+      return;
+    }
 
     // Create animated population of fields
     const populateFieldsSequentially = async () => {
