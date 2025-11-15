@@ -444,19 +444,29 @@ class DatasetShowcase {
       this.ctx.fillStyle = "#FFFFFF";
       this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
+      // Get logical canvas dimensions (accounting for device pixel ratio scaling)
+      // The canvas context is scaled by DPR, so we use CSS dimensions for calculations
+      const rect = this.canvas.getBoundingClientRect();
+      const logicalWidth = rect.width;
+      const logicalHeight = rect.height;
+
       // draw the sample image scaled up
       const scale =
-        Math.min(this.canvas.width / 28, this.canvas.height / 28) * 0.8;
-      const x = (this.canvas.width - 28 * scale) / 2;
-      const y = (this.canvas.height - 28 * scale) / 2;
+        Math.min(logicalWidth / 28, logicalHeight / 28) * 0.8;
+      const scaledSize = 28 * scale;
+      
+      // Round coordinates to ensure pixel-perfect centering (fixes Windows rendering)
+      const x = Math.round((logicalWidth - scaledSize) / 2);
+      const y = Math.round((logicalHeight - scaledSize) / 2);
+      const roundedSize = Math.round(scaledSize);
 
       this.ctx.imageSmoothingEnabled = false;
-      this.ctx.drawImage(img, x, y, 28 * scale, 28 * scale);
+      this.ctx.drawImage(img, x, y, roundedSize, roundedSize);
 
       // add subtle border
       this.ctx.strokeStyle = "#E0E0E0";
       this.ctx.lineWidth = 2;
-      this.ctx.strokeRect(x, y, 28 * scale, 28 * scale);
+      this.ctx.strokeRect(x, y, roundedSize, roundedSize);
     };
     img.src = sampleData.image;
   }
