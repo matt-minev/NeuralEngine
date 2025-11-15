@@ -913,17 +913,37 @@ const ModelSection = {
   async loadSavedModelsList() {
     try {
       const response = await fetch(API.modelsList);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const data = await response.json();
 
-      if (data.success) {
-        AppState.savedModels = data.models;
+      if (data.error) {
+        console.error("API error loading models:", data.error);
+        Utils.showNotification(`Failed to load models: ${data.error}`, "error");
+        AppState.savedModels = [];
+        this.updateModelsGrid();
+        return;
+      }
+
+      if (data.success !== false) {
+        // Handle both success: true and missing success field (backward compatibility)
+        AppState.savedModels = data.models || [];
         // **KEY FIX: Call the new grid update method**
         this.updateModelsGrid();
-        console.log(`✅ Loaded ${data.models.length} saved models`);
+        console.log(`✅ Loaded ${AppState.savedModels.length} saved models`);
+      } else {
+        console.error("API returned success: false");
+        AppState.savedModels = [];
+        this.updateModelsGrid();
       }
     } catch (error) {
       console.error("Failed to load saved models:", error);
       Utils.showNotification("Failed to load saved models", "error");
+      AppState.savedModels = [];
+      this.updateModelsGrid();
     }
   },
 

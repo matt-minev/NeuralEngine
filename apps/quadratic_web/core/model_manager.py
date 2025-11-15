@@ -13,13 +13,17 @@ class ModelManager:
     """Model saving and loading system for trained QuadraticPredictor models"""
     
     def __init__(self):
-        self.save_path = Path(Config.MODEL_SAVE_PATH)
-        self.backup_path = Path(Config.MODEL_BACKUP_PATH)
+        # Get the absolute path to the quadratic_web directory
+        # This ensures paths work regardless of where the app is run from
+        app_dir = Path(__file__).parent.parent  # Go up from core/ to apps/quadratic_web/
+        
+        self.save_path = (app_dir / Config.MODEL_SAVE_PATH).resolve()
+        self.backup_path = (app_dir / Config.MODEL_BACKUP_PATH).resolve()
         self.metadata_file = self.save_path / Config.MODEL_METADATA_FILE
         
         # Create directories
-        self.save_path.mkdir(exist_ok=True)
-        self.backup_path.mkdir(exist_ok=True)
+        self.save_path.mkdir(parents=True, exist_ok=True)
+        self.backup_path.mkdir(parents=True, exist_ok=True)
         
         # Load existing metadata
         self._load_metadata()
@@ -30,9 +34,13 @@ class ModelManager:
             try:
                 with open(self.metadata_file, 'r') as f:
                     self.metadata = json.load(f)
-            except (json.JSONDecodeError, IOError):
+                print(f"✅ Loaded metadata from {self.metadata_file}")
+                print(f"   Found {len(self.metadata.get('models', []))} models in metadata")
+            except (json.JSONDecodeError, IOError) as e:
+                print(f"⚠️ Error loading metadata: {e}")
                 self.metadata = {'models': [], 'next_id': 1}
         else:
+            print(f"⚠️ Metadata file not found at {self.metadata_file}, creating new metadata")
             self.metadata = {'models': [], 'next_id': 1}
     
     def _save_metadata(self):
@@ -343,7 +351,9 @@ class ModelManager:
     
     def get_saved_models(self) -> List[Dict]:
         """Get list of all saved models sorted by creation date with folder organization"""
-        models = self.metadata['models'].copy()
+        models = self.metadata.get('models', []).copy()
+        
+        print(f"📋 get_saved_models() called: found {len(models)} models in metadata")
         
         # Add folder organization information
         for model in models:
@@ -358,8 +368,9 @@ class ModelManager:
                 model['folder_prefix'] = None
         
         # Sort by creation date (newest first)
-        models.sort(key=lambda x: x['created_date'], reverse=True)
+        models.sort(key=lambda x: x.get('created_date', ''), reverse=True)
         
+        print(f"✅ Returning {len(models)} models sorted by date")
         return models
 
     def delete_model(self, model_id: str) -> bool:
