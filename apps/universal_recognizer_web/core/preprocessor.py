@@ -47,8 +47,8 @@ class AdvancedPreprocessor:
         
     def preprocess(self, image_data, return_metrics: bool = False, is_test_image: bool = False, return_debug: bool = False) -> Tuple[np.ndarray, Optional[Dict], Optional[Dict]]:
         """
-        MINIMAL preprocessing pipeline with VERTICAL FLIP.
-        Only does: convert → flip upside down → resize → normalize → flatten
+        MINIMAL preprocessing pipeline with 180-DEGREE ROTATION.
+        Only does: convert → rotate 180° → resize → normalize → flatten
         
         Args:
             image_data: Base64 string, numpy array, or PIL Image
@@ -71,11 +71,11 @@ class AdvancedPreprocessor:
         if return_debug:
             debug_images['original'] = self._image_to_base64(img_array)
         
-        # Step 2: FLIP UPSIDE DOWN for user-drawn images (fixes M/W confusion)
+        # Step 2: ROTATE 180 DEGREES for user-drawn images (fixes M/W confusion)
         if not is_test_image:
-            img_array = np.flip(img_array, axis=0)  # Vertical flip (upside down)
+            img_array = np.rot90(img_array, 2)  # Rotate 180 degrees (upside down)
             if return_debug:
-                debug_images['after_flip'] = self._image_to_base64(img_array)
+                debug_images['flipped_upside_down'] = self._image_to_base64(img_array)
         
         # Step 3: Resize to 28x28 (REQUIRED - model needs this size)
         if img_array.shape != (self.target_size, self.target_size):
@@ -205,7 +205,7 @@ class AdvancedPreprocessor:
         """
         Fix EMNIST image orientation to match training data.
         
-        For user-drawn images, we only need to flip vertically (upside down).
+        For user-drawn images, we only need to rotate 180 degrees (upside down).
         This is because:
         - User draws M, model sees it upside down as W without this fix
         - User draws W, model sees it upside down as M without this fix
@@ -214,12 +214,12 @@ class AdvancedPreprocessor:
             img: 2D numpy array (H, W)
         
         Returns:
-            Vertically flipped image (upside down)
+            Image rotated 180 degrees (upside down)
         """
-        # Flip vertically (upside down) - axis=0 flips rows
-        flipped = np.flip(img, axis=0)
+        # Rotate 180 degrees (k=2 means 2*90 = 180 degrees)
+        rotated = np.rot90(img, 2)
         
-        return flipped
+        return rotated
     
     def _extract_and_center(self, img: np.ndarray) -> Tuple[np.ndarray, Dict]:
         """

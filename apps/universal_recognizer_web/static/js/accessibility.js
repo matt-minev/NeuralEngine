@@ -123,6 +123,11 @@ function updateResourcesInitial() {
       url: "https://github.com/matt-minev/NeuralEngine"
     },
     {
+      title: "Handwriting for Kids",
+      description: "Interactive lessons and practice sheets to help children learn to write numbers and letters with simple step-by-step instructions.",
+      url: "https://www.handwritingforkids.com/"
+    },
+    {
       title: "Improve Your Handwriting",
       description: "Tips and techniques for clearer character formation and better recognition accuracy.",
       url: "https://www.wikihow.com/Improve-Your-Handwriting"

@@ -269,9 +269,8 @@ class UniversalCharacterRecognizer {
 
     const steps = [
       { key: 'original', label: 'Original' },
-      { key: 'after_orientation', label: 'After Orientation Fix' },
+      { key: 'flipped_upside_down', label: 'Flipped Upside Down' },
       { key: 'after_resize', label: 'After Resize' },
-      { key: 'after_normalize_01', label: 'After Normalize [0,1]' },
       { key: 'final', label: 'Final (to Model)' }
     ];
 
