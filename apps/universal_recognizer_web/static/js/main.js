@@ -329,17 +329,36 @@ class TestModeHandler {
 
   setupEventListeners() {
     // View toggle
-    document.getElementById('singleViewBtn').addEventListener('click', () => {
+    document.getElementById('singleViewBtn').addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       this.switchView('single');
     });
-    document.getElementById('gridViewBtn').addEventListener('click', () => {
+    document.getElementById('gridViewBtn').addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       this.switchView('grid');
     });
 
     // Load samples button
-    document.getElementById('loadTestSamples').addEventListener('click', () => {
+    document.getElementById('loadTestSamples').addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       this.loadSamples();
     });
+    
+    // Character filter change
+    const characterFilter = document.getElementById('characterFilter');
+    if (characterFilter) {
+      characterFilter.addEventListener('change', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        // Optionally reload samples when filter changes
+        if (this.currentSamples.length > 0) {
+          this.loadSamples();
+        }
+      });
+    }
   }
 
   switchView(view) {
@@ -358,17 +377,35 @@ class TestModeHandler {
     // If grid view and we have samples, display them
     if (view === 'grid' && this.currentSamples.length > 0) {
       this.displayGrid();
+    } else if (view === 'single' && this.currentSamples.length > 0) {
+      this.displaySingle(this.currentSamples[0]);
     }
   }
 
   async loadSamples() {
+    // Store current scroll position to preserve it
+    const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+    
+    // Prevent any default behaviors
     const view = this.currentView;
     const count = view === 'single' ? 1 : 9; // 1 for single, 9 for grid
     const character = document.getElementById('characterFilter').value;
     
+    // Disable button during loading
+    const loadBtn = document.getElementById('loadTestSamples');
+    const originalBtnText = loadBtn.innerHTML;
+    loadBtn.disabled = true;
+    loadBtn.innerHTML = '⏳ Loading...';
+    
     try {
       const url = `/api/test/random?count=${count}${character ? `&character=${character}` : ''}`;
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-cache',
+      });
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -378,17 +415,65 @@ class TestModeHandler {
       this.currentSamples = data.samples;
       
       if (view === 'single') {
-        this.displaySingle(this.currentSamples[0]);
+        await this.displaySingle(this.currentSamples[0]);
       } else {
-        this.displayGrid();
+        await this.displayGrid();
       }
+      
+      // Restore scroll position after content updates
+      requestAnimationFrame(() => {
+        window.scrollTo(0, scrollPosition);
+      });
     } catch (error) {
       console.error('Error loading test samples:', error);
-      alert('Failed to load test samples. Please try again.');
+      // Use a non-blocking notification instead of alert
+      this.showNotification('Failed to load test samples. Please try again.', 'error');
+      // Restore scroll position even on error
+      requestAnimationFrame(() => {
+        window.scrollTo(0, scrollPosition);
+      });
+    } finally {
+      // Re-enable button
+      loadBtn.disabled = false;
+      loadBtn.innerHTML = originalBtnText;
     }
+  }
+  
+  showNotification(message, type = 'info') {
+    // Create a temporary notification element
+    const notification = document.createElement('div');
+    notification.className = `test-notification test-notification-${type}`;
+    notification.textContent = message;
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 12px 24px;
+      background: ${type === 'error' ? '#ff3b30' : '#007aff'};
+      color: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 10000;
+      animation: slideIn 0.3s ease;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+      notification.style.animation = 'slideOut 0.3s ease';
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.parentNode.removeChild(notification);
+        }
+      }, 300);
+    }, 3000);
   }
 
   async displaySingle(sample) {
+    // Store scroll position to preserve it
+    const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+    
     // Hide placeholder and show content
     const placeholder = document.getElementById('singleTestPlaceholder');
     const content = document.getElementById('singleTestSample');
@@ -427,13 +512,25 @@ class TestModeHandler {
       statusBadge.innerHTML = `<span class="status-badge ${isCorrect ? 'correct' : 'incorrect'}">${
         isCorrect ? '✓ Correct' : '✗ Incorrect'
       }</span>`;
+      
+      // Restore scroll position after DOM updates
+      requestAnimationFrame(() => {
+        window.scrollTo(0, scrollPosition);
+      });
     } catch (error) {
       console.error('Error getting prediction:', error);
       document.getElementById('predictionSingle').textContent = 'Error';
+      // Restore scroll position even on error
+      requestAnimationFrame(() => {
+        window.scrollTo(0, scrollPosition);
+      });
     }
   }
 
   async displayGrid() {
+    // Store scroll position to preserve it
+    const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+    
     const grid = document.getElementById('testGrid');
     const placeholder = document.getElementById('gridTestPlaceholder');
     if (placeholder) placeholder.style.display = 'none';
@@ -490,6 +587,11 @@ class TestModeHandler {
         </div>
       `;
     }).join('');
+    
+    // Restore scroll position after DOM updates
+    requestAnimationFrame(() => {
+      window.scrollTo(0, scrollPosition);
+    });
   }
 }
 

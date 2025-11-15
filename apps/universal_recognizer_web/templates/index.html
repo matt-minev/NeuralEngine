@@ -25,7 +25,11 @@
       <nav class="top-nav">
         <div class="nav-content">
           <div class="nav-brand">
-            <img src="/assets/neural-engine-logo.png" alt="Neural Engine" class="nav-logo" />
+            <img
+              src="/assets/neural-engine-logo.png"
+              alt="Neural Engine"
+              class="nav-logo"
+            />
             <div class="nav-brand-text">
               <h1>Neural Engine</h1>
               <span class="nav-subtitle">Universal Character Recognition</span>
@@ -46,7 +50,8 @@
             <div class="stat-card">
               <div class="stat-label">Model Accuracy</div>
               <div class="stat-value" id="headerAccuracy">
-                {% if model_info %}{{ "%.1f" | format(model_info.accuracy) }}%{% else %}--{% endif %}
+                {% if model_info %}{{ "%.1f" | format(model_info.accuracy) }}%{%
+                else %}--{% endif %}
               </div>
             </div>
             <div class="stat-card">
@@ -56,7 +61,8 @@
             <div class="stat-card">
               <div class="stat-label">Architecture</div>
               <div class="stat-value" id="headerArchitecture">
-                {% if model_info %}{{ model_info.layer_sizes | join(' → ') }}{% else %}--{% endif %}
+                {% if model_info %}{{ model_info.layer_sizes | join(' → ') }}{%
+                else %}--{% endif %}
               </div>
             </div>
           </div>
@@ -94,8 +100,12 @@
                   </div>
                 </div>
                 <div class="canvas-controls">
-                  <button id="clearBtn" class="btn btn-secondary">🗑️ Clear</button>
-                  <button id="predictBtn" class="btn btn-primary">🔍 Predict</button>
+                  <button id="clearBtn" class="btn btn-secondary">
+                    🗑️ Clear
+                  </button>
+                  <button id="predictBtn" class="btn btn-primary">
+                    🔍 Predict
+                  </button>
                 </div>
               </div>
             </div>
@@ -107,10 +117,14 @@
               </div>
               <div class="card-body">
                 <div class="top-prediction">
-                  <div class="predicted-character" id="predictedCharacter">?</div>
+                  <div class="predicted-character" id="predictedCharacter">
+                    ?
+                  </div>
                   <div class="prediction-details">
                     <div class="character-type" id="characterType">--</div>
-                    <div class="confidence" id="confidence">Confidence: --%</div>
+                    <div class="confidence" id="confidence">
+                      Confidence: --%
+                    </div>
                     <div class="prediction-time" id="predictionTime">--ms</div>
                   </div>
                 </div>
@@ -123,7 +137,9 @@
                 </div>
 
                 <div class="top-predictions" id="topPredictions">
-                  <p class="no-prediction">Draw a character to see predictions</p>
+                  <p class="no-prediction">
+                    Draw a character to see predictions
+                  </p>
                 </div>
               </div>
             </div>
@@ -131,7 +147,7 @@
             <!-- Accessibility Card -->
             <div class="dashboard-card accessibility-card">
               <div class="card-header">
-                <h2>♿ Accessibility</h2>
+                <h2>📖 Accessibility</h2>
               </div>
               <div class="card-body">
                 <div class="accessibility-item" id="mirrorDetection">
@@ -161,7 +177,11 @@
                     <span>📊 Advanced Metrics</span>
                     <span class="toggle-icon">▼</span>
                   </button>
-                  <div class="advanced-metrics-content" id="advancedMetricsContent" style="display: none;">
+                  <div
+                    class="advanced-metrics-content"
+                    id="advancedMetricsContent"
+                    style="display: none"
+                  >
                     <div class="accessibility-item" id="writingQuality">
                       <h3>✍️ Writing Quality</h3>
                       <div class="quality-metrics" id="qualityMetrics">
@@ -177,10 +197,17 @@
                     <span>🔍 Debug Panel</span>
                     <span class="toggle-icon">▼</span>
                   </button>
-                  <div class="advanced-metrics-content" id="debugPanelContent" style="display: none;">
+                  <div
+                    class="advanced-metrics-content"
+                    id="debugPanelContent"
+                    style="display: none"
+                  >
                     <div class="accessibility-item" id="debugImages">
                       <h3>🖼️ Preprocessing Steps</h3>
-                      <div class="debug-images-container" id="debugImagesContainer">
+                      <div
+                        class="debug-images-container"
+                        id="debugImagesContainer"
+                      >
                         <p>Enable debug mode to see preprocessing steps</p>
                       </div>
                     </div>
@@ -202,21 +229,37 @@
           <div class="dashboard-card test-mode-card">
             <div class="card-header">
               <h2>🧪 Test Mode</h2>
-              <p class="card-subtitle">Test the model with EMNIST dataset samples</p>
+              <p class="card-subtitle">
+                Test the model with EMNIST dataset samples
+              </p>
             </div>
             <div class="card-body">
               <!-- Test Controls -->
               <div class="test-controls">
                 <div class="test-view-toggle">
-                  <button class="view-btn active" data-view="single" id="singleViewBtn">
+                  <button
+                    type="button"
+                    class="view-btn active"
+                    data-view="single"
+                    id="singleViewBtn"
+                  >
                     Single
                   </button>
-                  <button class="view-btn" data-view="grid" id="gridViewBtn">
+                  <button
+                    type="button"
+                    class="view-btn"
+                    data-view="grid"
+                    id="gridViewBtn"
+                  >
                     Grid
                   </button>
                 </div>
                 <div class="test-actions">
-                  <button id="loadTestSamples" class="btn btn-primary">
+                  <button
+                    type="button"
+                    id="loadTestSamples"
+                    class="btn btn-primary"
+                  >
                     🔄 Load Random Samples
                   </button>
                   <select id="characterFilter" class="select-input">
@@ -235,25 +278,39 @@
                 <div class="test-sample-single" id="singleTestContent">
                   <div class="test-placeholder" id="singleTestPlaceholder">
                     <div class="placeholder-icon">🧪</div>
-                    <div class="placeholder-text">Click "Load Random Samples" to test the model</div>
-                    <div class="placeholder-subtext">Test samples from EMNIST dataset will appear here</div>
+                    <div class="placeholder-text">
+                      Click "Load Random Samples" to test the model
+                    </div>
+                    <div class="placeholder-subtext">
+                      Test samples from EMNIST dataset will appear here
+                    </div>
                   </div>
-                  <div class="test-sample-content" id="singleTestSample" style="display: none;">
+                  <div
+                    class="test-sample-content"
+                    id="singleTestSample"
+                    style="display: none"
+                  >
                     <div class="test-image-container">
                       <img id="testImageSingle" src="" alt="Test sample" />
                     </div>
                     <div class="test-results-single">
                       <div class="test-result-item">
                         <span class="result-label">Ground Truth:</span>
-                        <span class="result-value" id="groundTruthSingle">--</span>
+                        <span class="result-value" id="groundTruthSingle"
+                          >--</span
+                        >
                       </div>
                       <div class="test-result-item">
                         <span class="result-label">Prediction:</span>
-                        <span class="result-value" id="predictionSingle">--</span>
+                        <span class="result-value" id="predictionSingle"
+                          >--</span
+                        >
                       </div>
                       <div class="test-result-item">
                         <span class="result-label">Confidence:</span>
-                        <span class="result-value" id="confidenceSingle">--%</span>
+                        <span class="result-value" id="confidenceSingle"
+                          >--%</span
+                        >
                       </div>
                       <div class="test-result-status" id="testStatusSingle">
                         <span class="status-badge">--</span>
@@ -264,12 +321,16 @@
               </div>
 
               <!-- Grid View -->
-              <div class="test-view" id="gridTestView" style="display: none;">
+              <div class="test-view" id="gridTestView" style="display: none">
                 <div class="test-grid" id="testGrid">
                   <div class="test-placeholder" id="gridTestPlaceholder">
                     <div class="placeholder-icon">🧪</div>
-                    <div class="placeholder-text">Click "Load Random Samples" to test the model</div>
-                    <div class="placeholder-subtext">Test samples from EMNIST dataset will appear here</div>
+                    <div class="placeholder-text">
+                      Click "Load Random Samples" to test the model
+                    </div>
+                    <div class="placeholder-subtext">
+                      Test samples from EMNIST dataset will appear here
+                    </div>
                   </div>
                 </div>
               </div>
@@ -284,7 +345,8 @@
           <div class="footer-stat">
             <span class="footer-label">Parameters:</span>
             <span class="footer-value" id="footerParameters">
-              {% if model_info %}{{ "{:,}".format(model_info.total_parameters) }}{% else %}--{% endif %}
+              {% if model_info %}{{ "{:,}".format(model_info.total_parameters)
+              }}{% else %}--{% endif %}
             </span>
           </div>
           <div class="footer-stat">
