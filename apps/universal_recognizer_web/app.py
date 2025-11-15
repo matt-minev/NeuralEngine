@@ -5,8 +5,9 @@ Flask web application for universal character recognition with accessibility fea
 import os
 import sys
 import time
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_from_directory
 from flask_cors import CORS
+from pathlib import Path
 
 # Add NeuralEngine to path
 base_path = os.path.dirname(os.path.dirname(__file__))
@@ -284,6 +285,13 @@ def get_characters():
         'lowercase': [chr(ord('a') + i) for i in range(26)],
         'total': 62
     })
+
+
+@app.route('/assets/<path:filename>')
+def serve_assets(filename):
+    """Serve shared assets from the root assets directory"""
+    assets_dir = Path(__file__).parent.parent.parent / 'assets'
+    return send_from_directory(assets_dir, filename)
 
 
 if __name__ == '__main__':
