@@ -167,17 +167,16 @@ def predict_character(image_data, return_quality_metrics=False, is_test_image=Fa
         return None
 
 
-def predict_with_mirror_detection(image_data, mirror_threshold=0.15):
+def predict_with_mirror_detection(image_data, mirror_threshold=0.05):
     """
     Predict character with mirror detection for accessibility.
     
-    Tests both original and horizontally flipped versions using advanced preprocessing.
-    Note: Since EMNIST dataset already contains mirrored images, we use a higher
-    threshold to avoid false positives.
+    Tests both original and horizontally flipped versions.
+    Uses LOWER threshold (5%) to be more sensitive to mirroring.
     
     Args:
         image_data: Base64 string or numpy array
-        mirror_threshold: Minimum confidence improvement to flag as mirrored (0.15 = 15%)
+        mirror_threshold: Minimum confidence improvement to flag as mirrored (0.05 = 5%)
     
     Returns:
         Dictionary with both predictions and mirror detection results
@@ -188,24 +187,31 @@ def predict_with_mirror_detection(image_data, mirror_threshold=0.15):
         if original_result is None:
             return None
         
-        # Get preprocessed image for mirroring
-        processed_image = preprocess_for_prediction(image_data)
-        if processed_image is None:
+        # Now process a mirrored version - flip BEFORE preprocessing
+        # Convert to numpy first
+        from apps.universal_recognizer_web.core.preprocessor import AdvancedPreprocessor
+        preprocessor = AdvancedPreprocessor()
+        
+        # Convert image to numpy
+        img_array = preprocessor._to_numpy_minimal(image_data)
+        if img_array is None:
             return {'original': original_result, 'mirrored': None, 'mirror_detected': False}
         
-        # Create mirrored version (flip horizontally)
-        img_2d = processed_image.reshape(28, 28)
-        img_mirrored = np.flip(img_2d, axis=1)  # Horizontal flip
+        # Flip horizontally BEFORE any other preprocessing
+        img_mirrored = np.flip(img_array, axis=1)  # Horizontal flip on the raw image
         
-        # Re-normalize mirrored image (it needs to go through EMNIST normalization again)
-        # But we already have it in the right format, just need to ensure it's normalized
-        img_mirrored_flat = img_mirrored.flatten().reshape(1, -1)
+        # Now preprocess the mirrored image through the full pipeline
+        result_mirrored = preprocessor.preprocess(img_mirrored, return_metrics=False, is_test_image=False, return_debug=False)
+        if result_mirrored[0] is None:
+            return {'original': original_result, 'mirrored': None, 'mirror_detected': False}
+        
+        img_mirrored_processed = result_mirrored[0]
         
         # Predict on mirrored version
         model_manager = get_model_manager()
         model = model_manager.get_model()
         
-        predictions_mirrored = model.forward(img_mirrored_flat)
+        predictions_mirrored = model.forward(img_mirrored_processed)
         predictions_mirrored = predictions_mirrored.flatten()
         
         predicted_index_mirrored = int(np.argmax(predictions_mirrored))
@@ -213,16 +219,41 @@ def predict_with_mirror_detection(image_data, mirror_threshold=0.15):
         confidence_mirrored = float(predictions_mirrored[predicted_index_mirrored]) * 100
         
         # Determine if mirror improves confidence significantly
-        # Use higher threshold since dataset has mirrored images
         confidence_diff = confidence_mirrored - original_result['confidence']
-        is_mirrored = confidence_diff > (mirror_threshold * 100)
+        
+        # Check if predicted character is different
+        char_different = predicted_char_mirrored != original_result['predicted_character']
+        
+        # Multiple conditions for mirror detection (be aggressive):
+        # 1. Confidence improvement of 5% or more
+        condition_1 = confidence_diff > (mirror_threshold * 100)
+        
+        # 2. Different character with decent confidence (50%+)
+        condition_2 = char_different and confidence_mirrored > 50.0 and confidence_diff > -10.0
+        
+        # 3. Different character with ANY positive improvement
+        condition_3 = char_different and confidence_diff > 0
+        
+        # 4. Mirrored version is much more confident (60%+) than original
+        condition_4 = char_different and confidence_mirrored > 60.0 and original_result['confidence'] < 70.0
+        
+        # Trigger if ANY condition is met
+        is_mirrored = condition_1 or condition_2 or condition_3 or condition_4
+        
+        # Debug logging
+        print(f"[Mirror Detection Debug]")
+        print(f"  Original: '{original_result['predicted_character']}' @ {original_result['confidence']:.1f}%")
+        print(f"  Mirrored: '{predicted_char_mirrored}' @ {confidence_mirrored:.1f}%")
+        print(f"  Diff: {confidence_diff:.1f}%")
+        print(f"  Conditions: 1={condition_1}, 2={condition_2}, 3={condition_3}, 4={condition_4}")
+        print(f"  Mirror Detected: {is_mirrored}")
         
         mirror_result = {
             'predicted_character': predicted_char_mirrored,
             'predicted_index': predicted_index_mirrored,
-            'confidence': float(confidence_mirrored),  # Ensure native Python float
+            'confidence': float(confidence_mirrored),
             'is_mirrored': is_mirrored,
-            'confidence_improvement': float(confidence_diff)  # Ensure native Python float
+            'confidence_improvement': float(confidence_diff)
         }
         
         return {

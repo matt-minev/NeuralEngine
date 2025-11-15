@@ -47,12 +47,13 @@ class AdvancedPreprocessor:
         
     def preprocess(self, image_data, return_metrics: bool = False, is_test_image: bool = False, return_debug: bool = False) -> Tuple[np.ndarray, Optional[Dict], Optional[Dict]]:
         """
-        Complete preprocessing pipeline.
+        MINIMAL preprocessing pipeline with VERTICAL FLIP.
+        Only does: convert → flip upside down → resize → normalize → flatten
         
         Args:
             image_data: Base64 string, numpy array, or PIL Image
             return_metrics: Whether to return quality metrics for display
-            is_test_image: If True, skip EMNIST orientation fix (test images already fixed)
+            is_test_image: If True, skip the flip for test images
             return_debug: Whether to return debug images for visualization
         
         Returns:
@@ -60,8 +61,8 @@ class AdvancedPreprocessor:
             Optional quality metrics dict
             Optional debug images dict
         """
-        # Step 1: Convert to numpy array
-        img_array = self._to_numpy(image_data)
+        # Step 1: Convert to numpy array (basic conversion only, no inversion)
+        img_array = self._to_numpy_minimal(image_data)
         if img_array is None:
             return (None, None, None) if return_debug else (None, None)
         
@@ -70,51 +71,33 @@ class AdvancedPreprocessor:
         if return_debug:
             debug_images['original'] = self._image_to_base64(img_array)
         
-        # Step 2: Fix EMNIST orientation for user-drawn images
-        # Test images are already in correct orientation (fixed during training data load)
+        # Step 2: FLIP UPSIDE DOWN for user-drawn images (fixes M/W confusion)
         if not is_test_image:
-            img_array = self._fix_emnist_orientation(img_array)
+            img_array = np.flip(img_array, axis=0)  # Vertical flip (upside down)
             if return_debug:
-                debug_images['after_orientation'] = self._image_to_base64(img_array)
+                debug_images['after_flip'] = self._image_to_base64(img_array)
         
-        # Step 3: Resize to 28x28 if needed (before other processing)
+        # Step 3: Resize to 28x28 (REQUIRED - model needs this size)
         if img_array.shape != (self.target_size, self.target_size):
             img_array = self._resize_to_target(img_array)
             if return_debug:
                 debug_images['after_resize'] = self._image_to_base64(img_array)
         
-        # Step 4: Normalize to [0, 1] if needed
+        # Step 4: Normalize to [0, 1]
         if img_array.max() > 1.0:
             img_array = img_array / 255.0
-            if return_debug:
-                debug_images['after_normalize_01'] = self._image_to_base64(img_array)
         
-        # Step 5: EMNIST normalization (match training preprocessing exactly)
-        # This is the critical step - must match training normalization
+        # Step 5: EMNIST normalization (REQUIRED - model expects this)
         img_final = self._emnist_normalize(img_array)
         
         if return_debug:
             debug_images['final'] = self._image_to_base64(self._denormalize_for_display(img_final))
-            debug_images['stats'] = {
-                'original_min': float(img_array.min()),
-                'original_max': float(img_array.max()),
-                'original_mean': float(img_array.mean()),
-                'final_min': float(img_final.min()),
-                'final_max': float(img_final.max()),
-                'final_mean': float(img_final.mean()),
-                'final_std': float(img_final.std())
-            }
         
         # Calculate quality metrics if requested
         metrics = None
         if return_metrics:
-            # Use original image for metrics (before orientation fix for user drawings)
-            original_for_metrics = img_array if is_test_image else self._to_numpy(image_data)
-            if original_for_metrics is not None and not is_test_image:
-                # Apply orientation fix for metrics calculation
-                original_for_metrics = self._fix_emnist_orientation(original_for_metrics)
             metrics = self._calculate_quality_metrics(
-                original_for_metrics if original_for_metrics is not None else img_array, 
+                img_array, 
                 img_final, 
                 {'bbox_width': 28, 'bbox_height': 28, 'center_offset': 0.0}
             )
@@ -124,6 +107,49 @@ class AdvancedPreprocessor:
         if return_debug:
             return result, metrics, debug_images
         return result, metrics
+    
+    def _to_numpy_minimal(self, image_data) -> Optional[np.ndarray]:
+        """Convert to numpy with MINIMAL processing - no inversion, no checks."""
+        try:
+            if isinstance(image_data, np.ndarray):
+                img = image_data.copy()
+            elif isinstance(image_data, list):
+                img = np.array(image_data, dtype=np.float32)
+            elif isinstance(image_data, str):
+                # Base64 string
+                if image_data.startswith('data:image'):
+                    image_data = image_data.split(',')[1]
+                image_bytes = base64.b64decode(image_data)
+                image = Image.open(io.BytesIO(image_bytes))
+                image = image.convert('L')
+                img = np.array(image, dtype=np.float32)
+            elif isinstance(image_data, Image.Image):
+                image = image_data.convert('L')
+                img = np.array(image, dtype=np.float32)
+            else:
+                return None
+            
+            # Handle 1D arrays
+            if img.ndim == 1:
+                if img.size == 784:
+                    img = img.reshape(28, 28)
+                else:
+                    return None
+            
+            # Ensure 2D array
+            if img.ndim != 2:
+                return None
+            
+            # Normalize to [0, 1] if needed
+            if img.max() > 1.0:
+                img = img / 255.0
+            
+            # NO INVERSION - just return as-is
+            
+            return img
+        except Exception as e:
+            print(f"Error converting to numpy: {e}")
+            return None
     
     def _to_numpy(self, image_data) -> Optional[np.ndarray]:
         """Convert various input types to numpy array."""
@@ -179,24 +205,21 @@ class AdvancedPreprocessor:
         """
         Fix EMNIST image orientation to match training data.
         
-        EMNIST images are rotated 90 degrees CCW and flipped horizontally.
-        This applies the same fix used in training data loading:
-        1. Flip horizontally (axis=1 for single image)
-        2. Rotate 90 degrees clockwise (k=-1)
+        For user-drawn images, we only need to flip vertically (upside down).
+        This is because:
+        - User draws M, model sees it upside down as W without this fix
+        - User draws W, model sees it upside down as M without this fix
         
         Args:
             img: 2D numpy array (H, W)
         
         Returns:
-            Oriented image matching training data format
+            Vertically flipped image (upside down)
         """
-        # Step 1: Flip horizontally
-        flipped = np.flip(img, axis=1)
+        # Flip vertically (upside down) - axis=0 flips rows
+        flipped = np.flip(img, axis=0)
         
-        # Step 2: Rotate 90 degrees clockwise
-        rotated = np.rot90(flipped, k=-1)
-        
-        return rotated
+        return flipped
     
     def _extract_and_center(self, img: np.ndarray) -> Tuple[np.ndarray, Dict]:
         """
