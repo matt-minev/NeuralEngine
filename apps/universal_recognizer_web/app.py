@@ -305,10 +305,10 @@ if __name__ == '__main__':
         print(f"  Classes: {info['classes']} (0-9, A-Z, a-z)")
         print(f"  Architecture: {info['layer_sizes']}")
         print(f"\nStarting web server...")
-        print(f"Main app: http://localhost:8000")
+        print(f"Main app: http://localhost:8003")
         print(f"Model ready for universal character recognition!")
         
-        app.run(debug=True, host='0.0.0.0', port=8000)
+        app.run(debug=True, host='0.0.0.0', port=8003)
     else:
         print("ERROR: Model could not be loaded")
         print("Please ensure the model file exists at:")

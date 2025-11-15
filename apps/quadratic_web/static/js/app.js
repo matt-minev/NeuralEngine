@@ -399,7 +399,12 @@ const Navigation = {
     // Check for URL hash first, then localStorage, then default to dashboard
     const hashSection = window.location.hash.substring(1); // Remove #
     const savedSection = localStorage.getItem("quadratic_web_active_tab");
-    const initialSection = hashSection || savedSection || "dashboard";
+
+    // If hash is dashboard, ignore it and use saved section or default
+    const initialSection =
+      hashSection && hashSection !== "dashboard"
+        ? hashSection
+        : savedSection || "dashboard";
 
     // Validate section exists
     const validSections = [
@@ -415,13 +420,30 @@ const Navigation = {
       ? initialSection
       : "dashboard";
 
+    // Prevent scroll if it's dashboard
+    if (
+      sectionToShow === "dashboard" &&
+      window.location.hash === "#dashboard"
+    ) {
+      // Remove hash immediately to prevent browser scroll
+      window.history.replaceState(null, null, window.location.pathname);
+    }
+
     this.showSection(sectionToShow);
 
     // Listen for hash changes (browser back/forward)
     window.addEventListener("hashchange", () => {
       const hashSection = window.location.hash.substring(1);
-      if (hashSection && validSections.includes(hashSection)) {
+      if (
+        hashSection &&
+        hashSection !== "dashboard" &&
+        validSections.includes(hashSection)
+      ) {
         this.showSection(hashSection);
+      } else if (hashSection === "dashboard") {
+        // Remove dashboard hash to prevent scrolling
+        window.history.replaceState(null, null, window.location.pathname);
+        this.showSection("dashboard");
       }
     });
   },
@@ -453,8 +475,15 @@ const Navigation = {
     localStorage.setItem("quadratic_web_active_tab", sectionId);
 
     // Update URL hash for deep linking (without triggering page reload)
-    if (window.location.hash !== `#${sectionId}`) {
-      window.history.replaceState(null, null, `#${sectionId}`);
+    // Special handling for dashboard: remove hash to prevent scrolling
+    if (sectionId === "dashboard") {
+      if (window.location.hash) {
+        window.history.replaceState(null, null, window.location.pathname);
+      }
+    } else {
+      if (window.location.hash !== `#${sectionId}`) {
+        window.history.replaceState(null, null, `#${sectionId}`);
+      }
     }
 
     // Section-specific initialization

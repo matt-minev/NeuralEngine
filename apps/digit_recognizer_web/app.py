@@ -36,7 +36,9 @@ dataset_samples = []
 def load_model(model_name='enhanced_digit_model.pkl'):
     """Load the trained Neural Engine model."""
     global neural_network, model_accuracy, model_info
-    model_path = os.path.join('static', 'models', model_name)
+    # Use absolute path based on script location
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    model_path = os.path.join(script_dir, 'static', 'models', model_name)
 
     try:
         with open(model_path, 'rb') as f:
@@ -603,10 +605,10 @@ if __name__ == '__main__':
         load_test_dataset()
 
         print(f"Starting web server...")
-        print(f"Main app: http://localhost:8000")
-        print(f"Dataset showcase: http://localhost:8000/showcase")
+        print(f"Main app: http://localhost:8001")
+        print(f"Dataset showcase: http://localhost:8001/showcase")
         print(f"Model ready for digit recognition!")
 
-        app.run(debug=True, host='0.0.0.0', port=8000)
+        app.run(debug=True, host='0.0.0.0', port=8001)
     else:
         print("Failed to start - model could not be loaded")

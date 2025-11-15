@@ -1630,11 +1630,11 @@ if __name__ == '__main__':
     cleanup_old_uploads()
     
     print("Starting Flask server...")
-    print("Access the app at: http://localhost:8000")
+    print("Access the app at: http://localhost:8002")
     print("=" * 50)
     
     try:
-        app.run(debug=True, host='0.0.0.0', port=8000)
+        app.run(debug=True, host='0.0.0.0', port=8002)
     except KeyboardInterrupt:
         print("\n" + "=" * 50)
         print("🛑 Server shutdown requested by user")

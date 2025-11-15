@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neural Engine • AI-Powered Neural Networks</title>
+    
+    <!-- Google Fonts - Montserrat -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/assets/neural-engine-logo.png">
+</head>
+<body>
+    <div class="container">
+        <!-- Background Animation -->
+        <div class="background-animation"></div>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Logo Section -->
+            <div class="logo-section fade-in">
+                <img src="/assets/neural-engine-logo.png" alt="Neural Engine" class="logo">
+                <h1 class="title">Neural Engine</h1>
+                <p class="subtitle">AI-Powered Neural Networks</p>
+            </div>
+            
+            <!-- Apps Grid -->
+            <div class="apps-grid">
+                <!-- Digit Recognizer -->
+                <div class="app-card fade-in-delay-1">
+                    <div class="app-icon">🔢</div>
+                    <h2 class="app-title">Digit Recognizer</h2>
+                    <p class="app-description">Draw digits and watch as our neural network recognizes them with high accuracy. Perfect for testing handwritten number recognition.</p>
+                    <a href="http://localhost:8001" class="app-button" target="_blank">
+                        <span>Launch App</span>
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </a>
+                </div>
+                
+                <!-- Universal Character Recognizer -->
+                <div class="app-card fade-in-delay-2">
+                    <div class="app-icon">✍️</div>
+                    <h2 class="app-title">Universal Character Recognizer</h2>
+                    <p class="app-description">Recognize digits, uppercase, and lowercase letters. Features mirror detection, writing quality analysis, and accessibility tools.</p>
+                    <a href="http://localhost:8003" class="app-button" target="_blank">
+                        <span>Launch App</span>
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </a>
+                </div>
+                
+                <!-- Quadratic Neural Network -->
+                <div class="app-card fade-in-delay-3">
+                    <div class="app-icon">📊</div>
+                    <h2 class="app-title">Quadratic Neural Network</h2>
+                    <p class="app-description">Train and test neural networks to solve quadratic equations. Generate datasets, train models, and predict roots with precision.</p>
+                    <a href="http://localhost:8002" class="app-button" target="_blank">
+                        <span>Launch App</span>
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <footer class="footer fade-in-delay-4">
+                <p>Built with Neural Engine • Open Source AI Framework</p>
+            </footer>
+        </main>
+    </div>
+    
+    <!-- JavaScript -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
+
