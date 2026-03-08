@@ -66,6 +66,16 @@ class ModelManager:
             
             self.model = model_data['model']
             contract = load_contract()
+            model_contract = model_data.get('contract_version')
+            model_checksum = model_data.get('contract_checksum')
+            if model_contract and model_contract != contract.version:
+                raise RuntimeError(
+                    f"Model/contract version mismatch: model={model_contract}, runtime={contract.version}"
+                )
+            if model_checksum and model_checksum != contract.checksum:
+                raise RuntimeError(
+                    "Model/contract checksum mismatch. Retrain or load matching preprocess contract."
+                )
             self.model_info = {
                 'accuracy': model_data.get('accuracy', 0.0),
                 'architecture': model_data.get('architecture', 'universal_character_recognizer'),

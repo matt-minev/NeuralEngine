@@ -214,6 +214,7 @@ def train_model(config: TrainingConfig = None, data_dir: Optional[str] = None):
         'validation_split': config.validation_split,
     }
     
+    contract = load_contract()
     model_data = {
         'model': model,
         'accuracy': results['overall_accuracy'],
@@ -225,8 +226,9 @@ def train_model(config: TrainingConfig = None, data_dir: Optional[str] = None):
         'dataset': 'emnist_byclass',
         'classes': 62,
         'config': config_dict,  # Save as dict instead of object
-        'model_version': 'universal_v2_contract',
-        'contract_version': load_contract().version,
+        'model_version': 'universal_v3_cnn_ready',
+        'contract_version': contract.version,
+        'contract_checksum': contract.checksum,
         'calibration': {'temperature': 1.0},
         'engine_backend': getattr(model, 'execution_backend', 'python_fallback'),
         'device': getattr(model, 'device', 'cpu'),

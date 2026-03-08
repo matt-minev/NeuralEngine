@@ -121,6 +121,7 @@ neural_engine_native/_kernels*.dylib
 *.npz
 data/
 datasets/
+!apps/universal_recognizer_web/contracts/*.json
 
 # Model files
 # *.pkl

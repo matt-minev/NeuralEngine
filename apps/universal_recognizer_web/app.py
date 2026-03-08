@@ -77,10 +77,9 @@ def predict():
         
         # Get image data from request
         data = request.get_json()
-        image_data = data.get('image')
-        
+        image_data = data.get('input') or data.get('image')
         if not image_data:
-            return jsonify({'error': 'No image data provided'}), 400
+            return jsonify({'error': 'No input payload provided'}), 400
         
         if model_manager is None or not model_manager.is_loaded():
             return jsonify({'error': 'Model not loaded'}), 500
@@ -92,7 +91,7 @@ def predict():
         result = predict_character(image_data, return_quality_metrics=True, return_debug=debug)
         
         if result is None:
-            return jsonify({'error': 'Failed to process image'}), 400
+            return jsonify({'error': 'Failed to process input payload'}), 400
         
         prediction_time = (time.time() - start_time) * 1000  # Convert to milliseconds
         
@@ -135,10 +134,9 @@ def predict_with_accessibility():
         
         # Get image data from request
         data = request.get_json()
-        image_data = data.get('image')
-        
+        image_data = data.get('input') or data.get('image')
         if not image_data:
-            return jsonify({'error': 'No image data provided'}), 400
+            return jsonify({'error': 'No input payload provided'}), 400
         
         if model_manager is None or not model_manager.is_loaded():
             return jsonify({'error': 'Model not loaded'}), 500
@@ -147,7 +145,7 @@ def predict_with_accessibility():
         mirror_result = predict_with_mirror_detection(image_data)
         
         if mirror_result is None or mirror_result.get('original') is None:
-            return jsonify({'error': 'Failed to process image'}), 400
+            return jsonify({'error': 'Failed to process input payload'}), 400
         
         # Analyze writing quality
         quality_metrics = analyze_writing_quality(image_data)
@@ -201,9 +199,9 @@ def debug_preprocess():
     """Deterministic debug endpoint for preprocess contract stages/metadata."""
     try:
         data = request.get_json()
-        image_data = data.get('image')
+        image_data = data.get('input') or data.get('image')
         if not image_data:
-            return jsonify({'error': 'No image data provided'}), 400
+            return jsonify({'error': 'No input payload provided'}), 400
 
         result = predict_character(
             image_data,

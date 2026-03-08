@@ -10,9 +10,19 @@ from apps.universal_recognizer_web.core.preprocess_contract import load_contract
 from apps.universal_recognizer_web.core.canonical_preprocessor import CanonicalPreprocessorV2, apply_transform, TRANSFORMS
 
 
+def _payload(offset_x=0, offset_y=0):
+    points = []
+    for i in range(80):
+        points.append({'x': 130 + offset_x + (i % 3), 'y': 70 + offset_y + i * 2, 't': i})
+    return {
+        'canvas': {'width': 280, 'height': 280},
+        'strokes': [{'points': points}],
+    }
+
+
 def test_contract_load_and_checksum():
     c = load_contract()
-    assert c.version == 'v2'
+    assert c.version in {'v2', 'v3'}
     assert len(c.checksum) == 64
 
 
@@ -26,9 +36,14 @@ def test_transform_registry_and_shape():
 
 def test_contract_preprocess_deterministic_output():
     pp = CanonicalPreprocessorV2(load_contract())
-    x = np.zeros((280, 280), dtype=np.float32)
-    x[60:220, 120:160] = 1.0
-    out1, _, _ = pp.preprocess(x)
-    out2, _, _ = pp.preprocess(x)
+    out1, _, _ = pp.preprocess(_payload())
+    out2, _, _ = pp.preprocess(_payload())
     np.testing.assert_allclose(out1, out2, atol=1e-7)
     assert out1.shape == (1, 784)
+
+
+def test_translation_invariance_near_center():
+    pp = CanonicalPreprocessorV2(load_contract())
+    a, _, _ = pp.preprocess(_payload(0, 0))
+    b, _, _ = pp.preprocess(_payload(8, 10))
+    assert np.mean(np.abs(a - b)) < 0.12

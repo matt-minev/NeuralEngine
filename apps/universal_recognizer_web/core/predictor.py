@@ -3,9 +3,6 @@ Prediction logic with mirror detection for universal character recognition.
 """
 
 import numpy as np
-from PIL import Image
-import io
-import base64
 import sys
 import os
 
@@ -85,6 +82,59 @@ def preprocess_image(image_data, normalize=True):
     except Exception as e:
         print(f"Image preprocessing error: {e}")
         return None
+
+
+def _mirror_payload(image_data):
+    """Horizontally mirror strict canvas payload for advisory analysis."""
+    if not isinstance(image_data, dict):
+        return image_data
+
+    payload = dict(image_data)
+    canvas = dict(payload.get('canvas', {}) if isinstance(payload.get('canvas', {}), dict) else {})
+    width = float(canvas.get('width', 280))
+    strokes = payload.get('strokes', [])
+    mirrored_strokes = []
+
+    if isinstance(strokes, list):
+        for stroke in strokes:
+            if not isinstance(stroke, dict):
+                continue
+            pts = stroke.get('points', [])
+            new_pts = []
+            for p in pts:
+                if isinstance(p, dict):
+                    x = p.get('x')
+                    y = p.get('y')
+                    if x is None or y is None:
+                        continue
+                    xf = float(x)
+                    yf = float(y)
+                    if 0.0 <= xf <= 1.0:
+                        mx = 1.0 - xf
+                    else:
+                        mx = max(0.0, width - xf)
+                    q = dict(p)
+                    q['x'] = mx
+                    q['y'] = yf
+                    new_pts.append(q)
+                elif isinstance(p, (list, tuple)) and len(p) >= 2:
+                    xf = float(p[0])
+                    yf = float(p[1])
+                    if 0.0 <= xf <= 1.0:
+                        mx = 1.0 - xf
+                    else:
+                        mx = max(0.0, width - xf)
+                    new_pts.append([mx, yf, *(list(p)[2:])])
+            mirrored_strokes.append({'points': new_pts})
+
+    payload['strokes'] = mirrored_strokes
+    # Drop raster to force deterministic stroke-based path in strict mode.
+    if 'raster' in payload:
+        payload.pop('raster')
+    if 'image' in payload:
+        payload.pop('image')
+    payload['canvas'] = canvas
+    return payload
 
 
 def predict_character(image_data, return_quality_metrics=False, is_test_image=False, return_debug=False):
@@ -202,25 +252,16 @@ def predict_with_mirror_detection(image_data, mirror_threshold=0.05):
         if original_result is None:
             return None
         
-        # Now process a mirrored version - flip BEFORE preprocessing
-        # Convert to numpy first
+        # Build mirrored strict payload.
         preprocessor = CanonicalPreprocessorV2()
-        
-        # Convert image to numpy
-        img_array = preprocessor._to_numpy(image_data)
-        if img_array is None:
-            return {'original': original_result, 'mirrored': None, 'mirror_detected': False}
-        
-        # Flip horizontally BEFORE any other preprocessing
-        img_mirrored = np.flip(img_array, axis=1)  # Horizontal flip on the raw image
-        
-        # Now preprocess the mirrored image through the full pipeline
+        mirrored_payload = _mirror_payload(image_data)
         img_mirrored_processed, _, _ = preprocessor.preprocess(
-            img_mirrored,
+            mirrored_payload,
             return_metrics=False,
             return_debug=False,
             skip_transform=False,
             already_normalized=False,
+            strict_mode=None,
         )
         if img_mirrored_processed is None:
             return {'original': original_result, 'mirrored': None, 'mirror_detected': False}

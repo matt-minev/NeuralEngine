@@ -23,18 +23,31 @@ def _canvas_data_url():
     return 'data:image/png;base64,' + base64.b64encode(buf.getvalue()).decode('utf-8')
 
 
+def _strict_payload(offset_x=0, offset_y=0):
+    points = []
+    for i in range(60):
+        points.append({'x': 140 + offset_x, 'y': 90 + i * 2 + offset_y, 't': i})
+    return {
+        'input': {
+            'canvas': {'width': 280, 'height': 280},
+            'strokes': [{'points': points}],
+            'raster': _canvas_data_url(),
+        }
+    }
+
+
 def test_preprocess_shape_and_range():
     pp = CanonicalPreprocessorV2()
-    out, metrics, debug = pp.preprocess(_canvas_data_url(), return_metrics=True, return_debug=True)
+    out, metrics, debug = pp.preprocess(_strict_payload()['input'], return_metrics=True, return_debug=True)
     assert out.shape == (1, 784)
     assert np.isfinite(out).all()
     assert 'contract_version' in debug
     assert metrics is not None
 
 
-def test_predict_schema_v2():
+def test_predict_schema_v3():
     h = FlaskHarness(app)
-    resp = h.client.post('/predict', json={'image': _canvas_data_url()})
+    resp = h.client.post('/predict', json=_strict_payload())
     data = h.assert_json_ok(resp)
     for key in ['predicted_character', 'predicted_index', 'confidence', 'calibrated_confidence', 'top_k', 'model_version', 'contract_version', 'contract_checksum']:
         assert key in data
@@ -42,7 +55,7 @@ def test_predict_schema_v2():
 
 def test_accessibility_is_advisory_only():
     h = FlaskHarness(app)
-    resp = h.client.post('/predict/accessibility', json={'image': _canvas_data_url()})
+    resp = h.client.post('/predict/accessibility', json=_strict_payload())
     data = h.assert_json_ok(resp)
     assert 'prediction' in data
     assert 'advisory' in data
@@ -52,8 +65,14 @@ def test_accessibility_is_advisory_only():
 
 def test_debug_preprocess_endpoint():
     h = FlaskHarness(app)
-    resp = h.client.post('/api/debug/preprocess', json={'image': _canvas_data_url()})
+    resp = h.client.post('/api/debug/preprocess', json=_strict_payload())
     data = h.assert_json_ok(resp)
     assert 'contract_version' in data
     assert 'contract_checksum' in data
     assert 'transform_id' in data
+
+
+def test_strict_mode_rejects_raster_only():
+    h = FlaskHarness(app)
+    resp = h.client.post('/predict', json={'image': _canvas_data_url()})
+    assert resp.status_code >= 400

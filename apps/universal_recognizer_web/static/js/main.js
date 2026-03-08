@@ -8,6 +8,8 @@ class UniversalCharacterRecognizer {
     this.brushSize = Math.max(12, Math.min(20, this.canvas.width / 20));
     this.currentTab = "all";
     this.lastPrediction = null;
+    this.strokes = [];
+    this.currentStroke = null;
 
     this.setupCanvas();
     this.setupEventListeners();
@@ -96,6 +98,7 @@ class UniversalCharacterRecognizer {
     const rect = this.canvas.getBoundingClientRect();
     this.lastX = e.clientX - rect.left;
     this.lastY = e.clientY - rect.top;
+    this.currentStroke = [{ x: this.lastX, y: this.lastY, t: Date.now() }];
     this.hideOverlay();
   }
 
@@ -115,9 +118,16 @@ class UniversalCharacterRecognizer {
 
     this.lastX = x;
     this.lastY = y;
+    if (this.currentStroke) {
+      this.currentStroke.push({ x, y, t: Date.now() });
+    }
   }
 
   stopDrawing() {
+    if (this.currentStroke && this.currentStroke.length > 0) {
+      this.strokes.push({ points: this.currentStroke });
+    }
+    this.currentStroke = null;
     this.isDrawing = false;
   }
 
@@ -126,6 +136,8 @@ class UniversalCharacterRecognizer {
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     this.showOverlay();
     this.lastPrediction = null;
+    this.strokes = [];
+    this.currentStroke = null;
     this.updatePredictionsDisplay();
     if (window.updateAccessibilityDisplay) {
       window.updateAccessibilityDisplay(null);
@@ -152,6 +164,16 @@ class UniversalCharacterRecognizer {
     return this.canvas.toDataURL("image/png");
   }
 
+  getStrictInputPayload() {
+    return {
+      input: {
+        canvas: { width: this.canvas.width, height: this.canvas.height },
+        strokes: this.strokes,
+        raster: this.getCanvasImageData(),
+      },
+    };
+  }
+
   hideOverlay() {
     const overlay = document.getElementById("canvasOverlay");
     if (overlay) overlay.classList.remove("show");
@@ -167,7 +189,6 @@ class UniversalCharacterRecognizer {
       return;
     }
 
-    const imageData = this.getCanvasImageData();
     const startTime = performance.now();
 
     try {
@@ -184,7 +205,7 @@ class UniversalCharacterRecognizer {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ image: imageData }),
+        body: JSON.stringify(this.getStrictInputPayload()),
       });
 
       if (!response.ok) {
