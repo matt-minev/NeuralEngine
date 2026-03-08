@@ -21,6 +21,13 @@ if base_path not in sys.path:
 
 from nn_core import NeuralNetwork, cross_entropy_loss
 from autodiff import Adam
+try:
+    from apps.universal_recognizer_web.core.preprocess_contract import load_contract
+except ImportError:
+    core_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'core')
+    if core_dir not in sys.path:
+        sys.path.insert(0, core_dir)
+    from preprocess_contract import load_contract
 
 # Handle both script and module execution
 try:
@@ -50,7 +57,8 @@ def create_model(config: TrainingConfig) -> NeuralNetwork:
     
     model = NeuralNetwork(
         layer_sizes=config.layer_sizes,
-        activations=config.activations
+        activations=config.activations,
+        device=os.getenv('NEURAL_ENGINE_DEVICE', 'auto')
     )
     
     print(f"  Total Parameters: {model.count_parameters():,}")
@@ -216,7 +224,13 @@ def train_model(config: TrainingConfig = None, data_dir: Optional[str] = None):
         'architecture': config.layer_sizes,
         'dataset': 'emnist_byclass',
         'classes': 62,
-        'config': config_dict  # Save as dict instead of object
+        'config': config_dict,  # Save as dict instead of object
+        'model_version': 'universal_v2_contract',
+        'contract_version': load_contract().version,
+        'calibration': {'temperature': 1.0},
+        'engine_backend': getattr(model, 'execution_backend', 'python_fallback'),
+        'device': getattr(model, 'device', 'cpu'),
+        'backend_name': getattr(model, 'backend_name', 'numpy'),
     }
     
     model_path = os.path.join(models_dir, 'universal_character_model.pkl')
@@ -326,4 +340,3 @@ if __name__ == "__main__":
     
     # Train (data_dir defaults to universal_recognizer_web/data in train_model)
     train_model(config, args.data_dir)
-

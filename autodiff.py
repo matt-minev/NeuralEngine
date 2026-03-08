@@ -1,368 +1,424 @@
 """
-Automatic differentiation engine for neural network optimization.
+Training engine and optimizers for neural network optimization.
 
-Implements gradient computation using autograd and various optimizers
-(SGD, Adam, etc.) with training loop management.
+Implements manual backpropagation with optional NumPy/CuPy backend execution.
 """
 
-import numpy as np
-import autograd.numpy as anp
-from autograd import grad
-from typing import List, Tuple, Dict, Callable, Optional, Any
-import matplotlib.pyplot as plt
+from __future__ import annotations
+
 from collections import defaultdict
+from typing import Any, Callable, Dict, List, Optional, Tuple
 import time
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+from neural_backend import as_numpy, array_module, default_device, to_cpu, to_device
+from nn_core import cross_entropy_loss, mean_absolute_error, mean_squared_error
+try:
+    from neural_engine_native import kernels as native_kernels
+except Exception:  # pragma: no cover
+    native_kernels = None
 
 
 class Optimizer:
     """Base optimizer class. All optimizers inherit from this."""
-    
+
     def __init__(self, learning_rate: float = 0.001):
         self.learning_rate = learning_rate
         self.step_count = 0
-    
-    def update(self, params: List[anp.ndarray], gradients: List[anp.ndarray]) -> List[anp.ndarray]:
-        """Update parameters using gradients."""
+
+    def update(self, params: List[Any], gradients: List[Any]) -> List[Any]:
         raise NotImplementedError("Subclasses must implement update method")
-    
+
     def zero_grad(self):
-        """Reset internal state."""
         pass
 
 
 class SGD(Optimizer):
-    """
-    Stochastic gradient descent with optional momentum.
-    
-    Update rule: theta_new = theta_old - lr * gradient
-    """
-    
+    """Stochastic gradient descent with optional momentum."""
+
     def __init__(self, learning_rate: float = 0.001, momentum: float = 0.0):
-        """
-        Initialize SGD.
-        
-        Args:
-            learning_rate: step size
-            momentum: momentum factor (0.0 to 1.0)
-        """
         super().__init__(learning_rate)
         self.momentum = momentum
         self.velocity = None
-    
-    def update(self, params: List[anp.ndarray], gradients: List[anp.ndarray]) -> List[anp.ndarray]:
-        """Update params with SGD."""
-        # init velocity on first update
+
+    def update(self, params: List[Any], gradients: List[Any]) -> List[Any]:
         if self.velocity is None:
-            self.velocity = [anp.zeros_like(p) for p in params]
-        
+            self.velocity = [array_module(p).zeros_like(p) for p in params]
+
         updated_params = []
-        
         for i, (param, grad) in enumerate(zip(params, gradients)):
-            if self.momentum > 0:
-                # update with momentum
-                self.velocity[i] = self.momentum * self.velocity[i] + (1 - self.momentum) * grad
-                updated_param = param - self.learning_rate * self.velocity[i]
+            use_native = (
+                native_kernels is not None
+                and array_module(param) is np
+                and native_kernels.is_native_available()
+            )
+            if use_native:
+                updated_param, self.velocity[i] = native_kernels.sgd_update(
+                    param,
+                    grad,
+                    learning_rate=self.learning_rate,
+                    momentum=self.momentum,
+                    velocity=self.velocity[i],
+                )
             else:
-                # pure SGD
-                updated_param = param - self.learning_rate * grad
-            
+                if self.momentum > 0:
+                    self.velocity[i] = self.momentum * self.velocity[i] + (1 - self.momentum) * grad
+                    updated_param = param - self.learning_rate * self.velocity[i]
+                else:
+                    updated_param = param - self.learning_rate * grad
             updated_params.append(updated_param)
-        
+
         self.step_count += 1
         return updated_params
 
 
 class Adam(Optimizer):
-    """
-    Adam optimizer - adaptive learning rates with momentum.
-    
-    Combines momentum and adaptive learning rates for faster convergance.
-    """
-    
-    def __init__(self, learning_rate: float = 0.001, beta1: float = 0.9, 
-                 beta2: float = 0.999, epsilon: float = 1e-8):
-        """
-        Initialize Adam.
-        
-        Args:
-            learning_rate: step size
-            beta1: momentum decay (usually 0.9)
-            beta2: adaptive lr decay (usually 0.999)
-            epsilon: prevent division by zero
-        """
+    """Adam optimizer with backend-agnostic tensors."""
+
+    def __init__(
+        self,
+        learning_rate: float = 0.001,
+        beta1: float = 0.9,
+        beta2: float = 0.999,
+        epsilon: float = 1e-8,
+    ):
         super().__init__(learning_rate)
         self.beta1 = beta1
         self.beta2 = beta2
         self.epsilon = epsilon
-        self.m = None  # first moment
-        self.v = None  # second moment
-    
-    def update(self, params: List[anp.ndarray], gradients: List[anp.ndarray]) -> List[anp.ndarray]:
-        """Update params with Adam."""
-        # init moments on first update
+        self.m = None
+        self.v = None
+
+    def update(self, params: List[Any], gradients: List[Any]) -> List[Any]:
         if self.m is None:
-            self.m = [anp.zeros_like(p) for p in params]
-            self.v = [anp.zeros_like(p) for p in params]
-        
+            self.m = [array_module(p).zeros_like(p) for p in params]
+            self.v = [array_module(p).zeros_like(p) for p in params]
+
         self.step_count += 1
         updated_params = []
-        
+
         for i, (param, grad) in enumerate(zip(params, gradients)):
-            # update first moment (momentum)
-            self.m[i] = self.beta1 * self.m[i] + (1 - self.beta1) * grad
-            
-            # update second moment (adaptive lr)
-            self.v[i] = self.beta2 * self.v[i] + (1 - self.beta2) * (grad ** 2)
-            
-            # bias correction
-            m_hat = self.m[i] / (1 - self.beta1 ** self.step_count)
-            v_hat = self.v[i] / (1 - self.beta2 ** self.step_count)
-            
-            # update parameters
-            updated_param = param - self.learning_rate * m_hat / (anp.sqrt(v_hat) + self.epsilon)
+            xp = array_module(param)
+            use_native = (
+                native_kernels is not None
+                and xp is np
+                and native_kernels.is_native_available()
+            )
+            if use_native:
+                updated_param, self.m[i], self.v[i] = native_kernels.adam_update(
+                    param,
+                    grad,
+                    self.m[i],
+                    self.v[i],
+                    learning_rate=self.learning_rate,
+                    beta1=self.beta1,
+                    beta2=self.beta2,
+                    epsilon=self.epsilon,
+                    step_count=self.step_count,
+                )
+            else:
+                self.m[i] = self.beta1 * self.m[i] + (1 - self.beta1) * grad
+                self.v[i] = self.beta2 * self.v[i] + (1 - self.beta2) * (grad ** 2)
+                m_hat = self.m[i] / (1 - self.beta1 ** self.step_count)
+                v_hat = self.v[i] / (1 - self.beta2 ** self.step_count)
+                updated_param = param - self.learning_rate * m_hat / (xp.sqrt(v_hat) + self.epsilon)
             updated_params.append(updated_param)
-        
+
         return updated_params
 
 
 class TrainingEngine:
-    """
-    Training engine that handles gradient computation and parameter updates.
-    
-    Uses autograd to automatically compute gradients.
-    """
-    
-    def __init__(self, network, optimizer: Optimizer, loss_function: Callable):
-        """
-        Initialize training engine.
-        
-        Args:
-            network: neural network to train
-            optimizer: optimization algorithm
-            loss_function: loss to minimize
-        """
+    """Manual backprop training engine with optional GPU backend."""
+
+    def __init__(self, network, optimizer: Optimizer, loss_function: Callable, device: Optional[str] = None):
         self.network = network
         self.optimizer = optimizer
         self.loss_function = loss_function
-        
+        self.device = device or getattr(network, "device", default_device())
+        if hasattr(self.network, "to_device"):
+            self.network.to_device(self.device)
+        self.xp = getattr(self.network, "xp", np)
         self.history = defaultdict(list)
-        
-        # create gradient function using autograd
-        self._create_gradient_function()
-    
-    def _create_gradient_function(self):
-        """
-        Create automatic gradient computation function.
-        
-        Autograd magically computes gradients for us!
-        """
-        def loss_with_params(params_flat, X, y_true):
-            """Compute loss given flattened params."""
-            # reshape flat params back to network structure
-            params_structured = self._unflatten_params(params_flat)
-            
-            self.network.set_all_parameters(params_structured)
-            
-            # forward pass
-            y_pred = self.network.forward(X)
-            
-            # compute loss
-            loss = self.loss_function(y_true, y_pred)
-            
-            return loss
-        
-        # create gradient function automatically
-        self.gradient_function = grad(loss_with_params, argnum=0)
-    
-    def _flatten_params(self, params: List[anp.ndarray]) -> anp.ndarray:
-        """Flatten parameter list into single array."""
-        return anp.concatenate([p.flatten() for p in params])
-    
-    def _unflatten_params(self, params_flat: anp.ndarray) -> List[anp.ndarray]:
-        """Reshape flattened params back to original structure."""
-        params = []
-        start_idx = 0
-        
-        # get original param shapes
-        original_params = self.network.get_all_parameters()
-        
-        for original_param in original_params:
-            param_size = original_param.size
-            param_data = params_flat[start_idx:start_idx + param_size]
-            param_reshaped = param_data.reshape(original_param.shape)
-            params.append(param_reshaped)
-            start_idx += param_size
-        
-        return params
-    
-    def train_step(self, X: anp.ndarray, y_true: anp.ndarray, 
-                   clip_gradients: bool = False, max_norm: float = 5.0) -> float:
-        """
-        Perform single training step.
-        
-        Args:
-            X: Input data
-            y_true: Target data
-            clip_gradients: Whether to clip gradients (default: False for backwards compatibility)
-            max_norm: Maximum gradient norm for clipping (default: 5.0)
-        """
-        # get current params
-        current_params = self.network.get_all_parameters()
-        params_flat = self._flatten_params(current_params)
-        
-        # compute loss
-        loss = self.loss_function(y_true, self.network.forward(X))
-        
-        # compute gradients automatically
-        gradients_flat = self.gradient_function(params_flat, X, y_true)
-        gradients_structured = self._unflatten_params(gradients_flat)
-        
-        # Apply gradient clipping if requested
+
+    def _loss_name(self) -> str:
+        fn = self.loss_function
+        if fn is mean_squared_error:
+            return "mse"
+        if fn is mean_absolute_error:
+            return "mae"
+        if fn is cross_entropy_loss:
+            return "cross_entropy"
+        return getattr(fn, "__name__", "custom")
+
+    def _ensure_2d(self, x):
+        return x.reshape(1, -1) if x.ndim == 1 else x
+
+    def _activation_backward(self, d_a, z, a, activation_name: str):
+        if (
+            getattr(self.network, "execution_backend", "python_fallback") == "native_cpu"
+            and native_kernels is not None
+            and native_kernels.is_native_available()
+        ):
+            return native_kernels.activation_backward(d_a, z, a, activation_name)
+
+        xp = self.xp
+        if activation_name == "linear":
+            return d_a
+        if activation_name == "relu":
+            return d_a * (z > 0)
+        if activation_name == "leaky_relu":
+            return d_a * xp.where(z > 0, 1.0, 0.01)
+        if activation_name == "elu":
+            return d_a * xp.where(z > 0, 1.0, xp.exp(z))
+        if activation_name == "sigmoid":
+            s = a
+            return d_a * s * (1 - s)
+        if activation_name == "tanh":
+            return d_a * (1 - a**2)
+        if activation_name == "swish":
+            s = 1 / (1 + xp.exp(-xp.clip(z, -500, 500)))
+            return d_a * (s + z * s * (1 - s))
+        if activation_name == "gelu":
+            k = np.sqrt(2.0 / np.pi)
+            u = k * (z + 0.044715 * z**3)
+            t = xp.tanh(u)
+            sech2 = 1 - t**2
+            du = k * (1 + 3 * 0.044715 * z**2)
+            return d_a * (0.5 * (1 + t) + 0.5 * z * sech2 * du)
+        if activation_name == "softmax":
+            return a * (d_a - xp.sum(d_a * a, axis=1, keepdims=True))
+        raise ValueError(f"Unsupported activation for backward pass: {activation_name}")
+
+    def _compute_loss_and_output_grad(self, y_true, y_pred, output_activation: str):
+        xp = self.xp
+        loss_name = self._loss_name()
+        eps = 1e-12
+        batch_size = max(1, int(y_true.shape[0]))
+
+        if loss_name == "mse":
+            if (
+                getattr(self.network, "execution_backend", "python_fallback") == "native_cpu"
+                and native_kernels is not None
+                and native_kernels.is_native_available()
+            ):
+                return native_kernels.mse_loss_grad(y_true, y_pred)
+            loss = xp.mean(0.5 * (y_true - y_pred) ** 2)
+            d_a = (y_pred - y_true) / y_true.size
+            return loss, d_a
+
+        if loss_name == "mae":
+            if (
+                getattr(self.network, "execution_backend", "python_fallback") == "native_cpu"
+                and native_kernels is not None
+                and native_kernels.is_native_available()
+            ):
+                return native_kernels.mae_loss_grad(y_true, y_pred)
+            loss = xp.mean(xp.abs(y_true - y_pred))
+            d_a = xp.sign(y_pred - y_true) / y_true.size
+            return loss, d_a
+
+        if loss_name == "cross_entropy":
+            if (
+                output_activation == "softmax"
+                and getattr(self.network, "execution_backend", "python_fallback") == "native_cpu"
+                and native_kernels is not None
+                and native_kernels.is_native_available()
+            ):
+                loss, _, d_z = native_kernels.softmax_cross_entropy(y_pred, y_true)
+                return loss, d_z
+            y_pred_clipped = xp.clip(y_pred, eps, 1 - eps)
+            loss = -xp.sum(y_true * xp.log(y_pred_clipped)) / batch_size
+            if output_activation == "softmax":
+                d_z = (y_pred - y_true) / batch_size
+                return loss, d_z
+            d_a = -y_true / y_pred_clipped / batch_size
+            return loss, d_a
+
+        loss = self.loss_function(y_true, y_pred)
+        # Numerical finite-diff fallback for unknown loss functions is intentionally omitted.
+        raise ValueError(
+            f"Unsupported loss function for manual backprop: {getattr(self.loss_function, '__name__', self.loss_function)}"
+        )
+
+    def _backward(self, caches: List[Dict[str, Any]], y_true, y_pred):
+        grads: List[Any] = []
+        output_activation = caches[-1]["layer"].activation_name
+        loss, d_last = self._compute_loss_and_output_grad(y_true, y_pred, output_activation)
+
+        d_a = None
+        d_z = d_last
+
+        for idx in reversed(range(len(caches))):
+            cache = caches[idx]
+            layer = cache["layer"]
+            a_prev = self._ensure_2d(cache["a_prev"])
+            z = self._ensure_2d(cache["z"])
+            a = self._ensure_2d(cache["a"])
+            w = layer.weights
+
+            if not (idx == len(caches) - 1 and output_activation == "softmax" and self._loss_name() == "cross_entropy"):
+                if d_a is None:
+                    d_a = self._ensure_2d(d_last)
+                d_z = self._activation_backward(d_a, z, a, layer.activation_name)
+
+            if (
+                getattr(self.network, "execution_backend", "python_fallback") == "native_cpu"
+                and native_kernels is not None
+                and native_kernels.is_native_available()
+            ):
+                d_w, d_b, d_a = native_kernels.linear_backward(d_z, a_prev, w)
+            else:
+                batch_size = max(1, int(a_prev.shape[0]))
+                d_w = self.xp.dot(d_z.T, a_prev) / batch_size
+                d_b = self.xp.sum(d_z, axis=0) / batch_size
+                d_a = self.xp.dot(d_z, w)
+
+            grads.insert(0, d_b)
+            grads.insert(0, d_w)
+
+        return loss, grads
+
+    def train_step(self, x, y_true, clip_gradients: bool = False, max_norm: float = 5.0) -> float:
+        x_d = self._ensure_2d(to_device(x, self.xp, getattr(self.network, "dtype", np.float32)))
+        y_d = self._ensure_2d(to_device(y_true, self.xp, getattr(self.network, "dtype", np.float32)))
+
+        y_pred, caches = self.network.forward(x_d, return_cache=True)
+        y_pred = self._ensure_2d(y_pred)
+
+        loss, gradients_structured = self._backward(caches, y_d, y_pred)
+
         if clip_gradients:
-            try:
-                from utils import MathUtils
-                gradients_structured = MathUtils.clip_gradients(gradients_structured, max_norm)
-            except ImportError:
-                # Fallback: simple gradient clipping if MathUtils not available
-                global_norm = anp.sqrt(sum(anp.sum(g**2) for g in gradients_structured))
-                if global_norm > max_norm:
-                    clip_ratio = max_norm / global_norm
+            if (
+                getattr(self.network, "execution_backend", "python_fallback") == "native_cpu"
+                and native_kernels is not None
+                and native_kernels.is_native_available()
+            ):
+                gradients_structured = native_kernels.clip_by_global_norm(gradients_structured, max_norm)
+            else:
+                global_norm = self.xp.sqrt(sum(self.xp.sum(g**2) for g in gradients_structured))
+                if float(to_cpu(global_norm)) > max_norm:
+                    clip_ratio = max_norm / (global_norm + 1e-12)
                     gradients_structured = [g * clip_ratio for g in gradients_structured]
-        
-        # update params
+
+        current_params = self.network.get_all_parameters()
         updated_params = self.optimizer.update(current_params, gradients_structured)
         self.network.set_all_parameters(updated_params)
-        
-        return float(loss)
-    
-    def train(self, X: anp.ndarray, y_true: anp.ndarray, epochs: int = 1000, 
-              batch_size: Optional[int] = None, validation_data: Optional[Tuple] = None,
-              verbose: bool = True, plot_progress: bool = True,
-              clip_gradients: bool = False, max_grad_norm: float = 5.0) -> Dict:
-        """
-        Train the neural network.
-        
-        Args:
-            X: training inputs
-            y_true: training targets
-            epochs: number of training iterations
-            batch_size: size of mini-batches (None = full batch)
-            validation_data: optional (X_val, y_val) tuple
-            verbose: print progress
-            plot_progress: plot training curves
-        """
-        print(f"Starting training...")
+
+        return float(to_cpu(loss))
+
+    def train(
+        self,
+        x,
+        y_true,
+        epochs: int = 1000,
+        batch_size: Optional[int] = None,
+        validation_data: Optional[Tuple[Any, Any]] = None,
+        verbose: bool = True,
+        plot_progress: bool = True,
+        clip_gradients: bool = False,
+        max_grad_norm: float = 5.0,
+    ) -> Dict:
+        x_d = to_device(x, self.xp, getattr(self.network, "dtype", np.float32))
+        y_d = to_device(y_true, self.xp, getattr(self.network, "dtype", np.float32))
+
+        print("Starting training...")
         print(f"  Network: {self.network}")
         print(f"  Optimizer: {self.optimizer.__class__.__name__}")
-        print(f"  Training samples: {X.shape[0]}")
+        print(f"  Backend: {getattr(self.network, 'backend_name', 'numpy')} ({getattr(self.network, 'device', 'cpu')})")
+        print(f"  Training samples: {x_d.shape[0]}")
         print(f"  Epochs: {epochs}")
         print(f"  Batch size: {batch_size or 'Full batch'}")
-        
+
         start_time = time.time()
-        
+        report_interval = max(1, epochs // 10)
+
         for epoch in range(epochs):
             epoch_losses = []
-            
-            # handle batching
             if batch_size is None:
-                # full batch
-                loss = self.train_step(X, y_true, clip_gradients=clip_gradients, max_norm=max_grad_norm)
+                loss = self.train_step(x_d, y_d, clip_gradients=clip_gradients, max_norm=max_grad_norm)
                 epoch_losses.append(loss)
             else:
-                # mini-batch
-                n_samples = X.shape[0]
-                indices = anp.random.permutation(n_samples)
-                
+                n_samples = x_d.shape[0]
+                indices = self.xp.random.permutation(n_samples)
                 for i in range(0, n_samples, batch_size):
-                    batch_indices = indices[i:i + batch_size]
-                    X_batch = X[batch_indices]
-                    y_batch = y_true[batch_indices]
-                    
-                    loss = self.train_step(X_batch, y_batch, clip_gradients=clip_gradients, max_norm=max_grad_norm)
+                    batch_indices = indices[i : i + batch_size]
+                    x_batch = x_d[batch_indices]
+                    y_batch = y_d[batch_indices]
+                    loss = self.train_step(x_batch, y_batch, clip_gradients=clip_gradients, max_norm=max_grad_norm)
                     epoch_losses.append(loss)
-            
-            # record training loss
-            avg_loss = anp.mean(epoch_losses)
-            self.history['train_loss'].append(avg_loss)
-            
-            # validation loss
+
+            avg_loss = float(np.mean(epoch_losses))
+            self.history["train_loss"].append(avg_loss)
+
             if validation_data is not None:
-                X_val, y_val = validation_data
-                val_pred = self.network.forward(X_val)
-                val_loss = self.loss_function(y_val, val_pred)
-                self.history['val_loss'].append(float(val_loss))
-            
-            # progress reporting
-            if verbose and (epoch % (epochs // 10) == 0 or epoch == epochs - 1):
+                x_val, y_val = validation_data
+                x_val_d = to_device(x_val, self.xp, getattr(self.network, "dtype", np.float32))
+                y_val_d = to_device(y_val, self.xp, getattr(self.network, "dtype", np.float32))
+                val_pred = self.network.forward(x_val_d)
+                val_loss = self.loss_function(y_val_d, val_pred)
+                self.history["val_loss"].append(float(to_cpu(val_loss)))
+
+            if verbose and (epoch % report_interval == 0 or epoch == epochs - 1):
                 elapsed = time.time() - start_time
                 val_text = f", Val Loss: {self.history['val_loss'][-1]:.6f}" if validation_data else ""
                 print(f"  Epoch {epoch:4d}/{epochs}: Loss: {avg_loss:.6f}{val_text} ({elapsed:.1f}s)")
-        
+
         training_time = time.time() - start_time
         print(f"Training complete! ({training_time:.1f}s)")
-        
-        # plot training progress
+
         if plot_progress:
             self.plot_training_history()
-        
+
         return dict(self.history)
-    
+
     def plot_training_history(self):
-        """Plot training and validation loss curves."""
-        if not self.history['train_loss']:
+        if not self.history["train_loss"]:
             print("No training history to plot.")
             return
-        
+
         plt.figure(figsize=(10, 6))
-        
-        # plot training loss
-        epochs = range(1, len(self.history['train_loss']) + 1)
-        plt.plot(epochs, self.history['train_loss'], 'b-', label='Training Loss', linewidth=2)
-        
-        # plot validation loss if availabe
-        if 'val_loss' in self.history and self.history['val_loss']:
-            plt.plot(epochs, self.history['val_loss'], 'r-', label='Validation Loss', linewidth=2)
-        
-        plt.xlabel('Epoch')
-        plt.ylabel('Loss')
-        plt.title('Training Progress')
+        epochs = range(1, len(self.history["train_loss"]) + 1)
+        plt.plot(epochs, self.history["train_loss"], "b-", label="Training Loss", linewidth=2)
+
+        if "val_loss" in self.history and self.history["val_loss"]:
+            plt.plot(epochs, self.history["val_loss"], "r-", label="Validation Loss", linewidth=2)
+
+        plt.xlabel("Epoch")
+        plt.ylabel("Loss")
+        plt.title("Training Progress")
         plt.legend()
         plt.grid(True, alpha=0.3)
-        plt.yscale('log')  # log scale often better for loss
-        
-        # add annotation
-        final_loss = self.history['train_loss'][-1]
-        plt.annotate(f'Final Loss: {final_loss:.6f}', 
-                    xy=(len(epochs), final_loss), 
-                    xytext=(len(epochs) * 0.7, final_loss * 2),
-                    arrowprops=dict(arrowstyle='->', color='black', alpha=0.7))
-        
+        plt.yscale("log")
+
+        final_loss = self.history["train_loss"][-1]
+        plt.annotate(
+            f"Final Loss: {final_loss:.6f}",
+            xy=(len(self.history["train_loss"]), final_loss),
+            xytext=(max(1, int(len(self.history["train_loss"]) * 0.7)), final_loss * 2),
+            arrowprops=dict(arrowstyle="->", color="black", alpha=0.7),
+        )
+
         plt.tight_layout()
         plt.show()
-    
-    def evaluate(self, X: anp.ndarray, y_true: anp.ndarray) -> Dict:
-        """
-        Evaluate the trained network.
-        
-        Returns dict with loss, mse, mae, predictions, and targets.
-        """
-        y_pred = self.network.forward(X)
-        loss = self.loss_function(y_true, y_pred)
-        
-        # calculate additional metrics
-        mse = anp.mean((y_true - y_pred) ** 2)
-        mae = anp.mean(anp.abs(y_true - y_pred))
-        
+
+    def evaluate(self, x, y_true) -> Dict:
+        x_d = to_device(x, self.xp, getattr(self.network, "dtype", np.float32))
+        y_d = to_device(y_true, self.xp, getattr(self.network, "dtype", np.float32))
+        y_pred = self.network.forward(x_d)
+        loss = self.loss_function(y_d, y_pred)
+
+        mse = self.xp.mean((y_d - y_pred) ** 2)
+        mae = self.xp.mean(self.xp.abs(y_d - y_pred))
+
         return {
-            'loss': float(loss),
-            'mse': float(mse),
-            'mae': float(mae),
-            'predictions': y_pred,
-            'targets': y_true
+            "loss": float(to_cpu(loss)),
+            "mse": float(to_cpu(mse)),
+            "mae": float(to_cpu(mae)),
+            "predictions": as_numpy(y_pred),
+            "targets": as_numpy(y_d),
         }
-
-
-# Learning rate schedulers
 class LearningRateScheduler:
     """Base class for LR scheduling."""
     

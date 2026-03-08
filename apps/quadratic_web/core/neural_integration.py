@@ -18,6 +18,7 @@ import numpy as np
 import json
 import time
 import threading
+import os
 from typing import Dict, List, Tuple, Optional, Any
 from dataclasses import dataclass, asdict
 from datetime import datetime
@@ -28,7 +29,10 @@ try:
     from nn_core import NeuralNetwork, mean_squared_error, mean_absolute_error
     from autodiff import TrainingEngine, Adam, SGD
     from data_utils import DataPreprocessor
-    from config.scenarios import PredictionScenario
+    try:
+        from config.scenarios import PredictionScenario
+    except ImportError:
+        from apps.quadratic_web.config.scenarios import PredictionScenario
 except ImportError as e:
     print(f"Warning: Neural Engine components not found: {e}")
     print("Make sure the Neural Engine is properly installed")
@@ -47,6 +51,7 @@ class TrainingConfig:
     patience: int = 50
     min_delta: float = 1e-6
     verbose: bool = False
+    device: str = os.getenv('NEURAL_ENGINE_DEVICE', 'auto')
 
 @dataclass
 class TrainingProgress:
@@ -94,7 +99,8 @@ class NeuralEngineIntegrator:
         try:
             network = NeuralNetwork(
                 scenario.network_architecture,
-                scenario.activations
+                scenario.activations,
+                device=os.getenv('NEURAL_ENGINE_DEVICE', 'auto')
             )
             
             self.logger.info(f"Created neural network for {scenario.name}")
@@ -131,7 +137,7 @@ class NeuralEngineIntegrator:
             else:
                 raise ValueError(f"Unsupported loss function: {config.loss_function}")
             
-            trainer = TrainingEngine(network, optimizer, loss_fn)
+            trainer = TrainingEngine(network, optimizer, loss_fn, device=config.device)
             
             self.logger.info(f"Created training engine with {config.optimizer} optimizer")
             return trainer

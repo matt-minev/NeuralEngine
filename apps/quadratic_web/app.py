@@ -35,9 +35,16 @@ try:
     from core.helpers import format_number, assess_performance, get_confidence_level
     from core.model_manager import ModelManager
 except ImportError as e:
-    print(f"Error importing components: {e}")
-    print("Please ensure all required modules are available.")
-    sys.exit(1)
+    try:
+        from apps.quadratic_web.core.data_processor import QuadraticDataProcessor
+        from apps.quadratic_web.core.predictor import QuadraticPredictor
+        from apps.quadratic_web.config.scenarios import get_default_scenarios
+        from apps.quadratic_web.core.helpers import format_number, assess_performance, get_confidence_level
+        from apps.quadratic_web.core.model_manager import ModelManager
+    except ImportError:
+        print(f"Error importing components: {e}")
+        print("Please ensure all required modules are available.")
+        sys.exit(1)
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -90,7 +97,8 @@ def health_check():
     """Health check endpoint"""
     return jsonify({
         'status': 'healthy',
-        'timestamp': datetime.now().isoformat()
+        'timestamp': datetime.now().isoformat(),
+        'location': 'Varna, Bulgaria'
     })
 
 @app.route('/api/scenarios')
@@ -239,7 +247,7 @@ def make_prediction():
             'confidences': confidences[0].tolist() if confidences is not None else [],
             'scenario': app_state['scenarios'][scenario_key].name,
             'target_features': app_state['scenarios'][scenario_key].target_features,
-            'details': prediction_details  # NEW structured data
+            'details': _json_safe(prediction_details)  # NEW structured data
         })
     except Exception as e:
         traceback.print_exc()
@@ -1602,6 +1610,19 @@ def _get_prediction_details(scenario_key, inputs, predictions, scenario_info):
         return { 'scenario_key': scenario_key, 'display_type': 'error', 'message': str(e) }
 
     return details
+
+
+def _json_safe(obj):
+    """Convert numpy scalar/container values to JSON-serializable Python types."""
+    if isinstance(obj, dict):
+        return {k: _json_safe(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_json_safe(v) for v in obj]
+    if isinstance(obj, tuple):
+        return tuple(_json_safe(v) for v in obj)
+    if isinstance(obj, np.generic):
+        return obj.item()
+    return obj
 
 def cleanup_old_uploads():
     """Clean up old uploaded files on startup"""

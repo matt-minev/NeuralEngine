@@ -17,6 +17,8 @@ sys.path.insert(0, base_path)
 try:
     from apps.universal_recognizer_web.core.model_manager import get_model_manager
     from apps.universal_recognizer_web.core.preprocessor import preprocess_for_prediction, preprocess_with_metrics
+    from apps.universal_recognizer_web.core.canonical_preprocessor import CanonicalPreprocessorV2
+    from apps.universal_recognizer_web.core.preprocess_contract import load_contract
 except ImportError:
     # Fallback for direct execution
     import sys
@@ -24,6 +26,8 @@ except ImportError:
     sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
     from core.model_manager import get_model_manager
     from core.preprocessor import preprocess_for_prediction, preprocess_with_metrics
+    from core.canonical_preprocessor import CanonicalPreprocessorV2
+    from core.preprocess_contract import load_contract
 
 
 def index_to_character(index: int) -> str:
@@ -123,6 +127,13 @@ def predict_character(image_data, return_quality_metrics=False, is_test_image=Fa
         # Make prediction
         predictions = model.forward(processed_image)
         predictions = predictions.flatten()
+        model_info = model_manager.get_model_info()
+        temperature = float(model_info.get('calibration', {}).get('temperature', 1.0))
+        if temperature > 0 and abs(temperature - 1.0) > 1e-6:
+            logits = np.log(np.clip(predictions, 1e-12, 1.0))
+            logits = logits / temperature
+            e = np.exp(logits - np.max(logits))
+            predictions = e / np.sum(e)
         
         # Get top prediction
         predicted_index = int(np.argmax(predictions))
@@ -145,9 +156,13 @@ def predict_character(image_data, return_quality_metrics=False, is_test_image=Fa
             'predicted_character': predicted_char,
             'predicted_index': predicted_index,
             'confidence': float(confidence),  # Ensure native Python float
+            'calibrated_confidence': float(confidence),
             'predictions': [float(x) for x in predictions.tolist()],  # Convert all to native floats
             'top_predictions': top_predictions,
-            'character_type': get_character_type(predicted_index)
+            'character_type': get_character_type(predicted_index),
+            'top_k': len(top_predictions),
+            'model_version': model_info.get('model_version', 'legacy'),
+            'contract_version': model_info.get('contract_version', 'v2'),
         }
         
         # Add quality metrics if requested
@@ -189,11 +204,10 @@ def predict_with_mirror_detection(image_data, mirror_threshold=0.05):
         
         # Now process a mirrored version - flip BEFORE preprocessing
         # Convert to numpy first
-        from apps.universal_recognizer_web.core.preprocessor import AdvancedPreprocessor
-        preprocessor = AdvancedPreprocessor()
+        preprocessor = CanonicalPreprocessorV2()
         
         # Convert image to numpy
-        img_array = preprocessor._to_numpy_minimal(image_data)
+        img_array = preprocessor._to_numpy(image_data)
         if img_array is None:
             return {'original': original_result, 'mirrored': None, 'mirror_detected': False}
         
@@ -201,11 +215,15 @@ def predict_with_mirror_detection(image_data, mirror_threshold=0.05):
         img_mirrored = np.flip(img_array, axis=1)  # Horizontal flip on the raw image
         
         # Now preprocess the mirrored image through the full pipeline
-        result_mirrored = preprocessor.preprocess(img_mirrored, return_metrics=False, is_test_image=False, return_debug=False)
-        if result_mirrored[0] is None:
+        img_mirrored_processed, _, _ = preprocessor.preprocess(
+            img_mirrored,
+            return_metrics=False,
+            return_debug=False,
+            skip_transform=False,
+            already_normalized=False,
+        )
+        if img_mirrored_processed is None:
             return {'original': original_result, 'mirrored': None, 'mirror_detected': False}
-        
-        img_mirrored_processed = result_mirrored[0]
         
         # Predict on mirrored version
         model_manager = get_model_manager()
@@ -218,48 +236,22 @@ def predict_with_mirror_detection(image_data, mirror_threshold=0.05):
         predicted_char_mirrored = index_to_character(predicted_index_mirrored)
         confidence_mirrored = float(predictions_mirrored[predicted_index_mirrored]) * 100
         
-        # Determine if mirror improves confidence significantly
         confidence_diff = confidence_mirrored - original_result['confidence']
-        
-        # Check if predicted character is different
         char_different = predicted_char_mirrored != original_result['predicted_character']
-        
-        # Multiple conditions for mirror detection (be aggressive):
-        # 1. Confidence improvement of 5% or more
-        condition_1 = confidence_diff > (mirror_threshold * 100)
-        
-        # 2. Different character with decent confidence (50%+)
-        condition_2 = char_different and confidence_mirrored > 50.0 and confidence_diff > -10.0
-        
-        # 3. Different character with ANY positive improvement
-        condition_3 = char_different and confidence_diff > 0
-        
-        # 4. Mirrored version is much more confident (60%+) than original
-        condition_4 = char_different and confidence_mirrored > 60.0 and original_result['confidence'] < 70.0
-        
-        # Trigger if ANY condition is met
-        is_mirrored = condition_1 or condition_2 or condition_3 or condition_4
-        
-        # Debug logging
-        print(f"[Mirror Detection Debug]")
-        print(f"  Original: '{original_result['predicted_character']}' @ {original_result['confidence']:.1f}%")
-        print(f"  Mirrored: '{predicted_char_mirrored}' @ {confidence_mirrored:.1f}%")
-        print(f"  Diff: {confidence_diff:.1f}%")
-        print(f"  Conditions: 1={condition_1}, 2={condition_2}, 3={condition_3}, 4={condition_4}")
-        print(f"  Mirror Detected: {is_mirrored}")
-        
+        is_mirror_candidate = char_different and confidence_diff > (mirror_threshold * 100)
+
         mirror_result = {
             'predicted_character': predicted_char_mirrored,
             'predicted_index': predicted_index_mirrored,
             'confidence': float(confidence_mirrored),
-            'is_mirrored': is_mirrored,
+            'is_mirrored': is_mirror_candidate,
             'confidence_improvement': float(confidence_diff)
         }
         
         return {
             'original': original_result,
             'mirrored': mirror_result,
-            'mirror_detected': is_mirrored
+            'mirror_detected': is_mirror_candidate
         }
     
     except Exception as e:
@@ -303,3 +295,25 @@ def analyze_writing_quality(image_data):
             }
         }
 
+
+def get_confusion_candidates(predictions, top_n=5):
+    """Return calibrated confusion candidates for advisory UI."""
+    top_indices = np.argsort(predictions)[::-1][:top_n]
+    return [
+        {
+            'character': index_to_character(int(idx)),
+            'index': int(idx),
+            'confidence': float(predictions[idx]) * 100.0,
+            'type': get_character_type(int(idx))
+        }
+        for idx in top_indices
+    ]
+
+
+def get_preprocess_contract_metadata():
+    contract = load_contract()
+    return {
+        'contract_version': contract.version,
+        'contract_checksum': contract.checksum,
+        'transform_id': contract.transform_id,
+    }

@@ -153,17 +153,30 @@ class QuadraticDataProcessor:
                 
             return X_train, X_val, X_test, y_train, y_val, y_test
         
-        # First split: train vs (val + test)
-        X_train, X_temp, y_train, y_temp = train_test_split(
-            X, y, test_size=(1 - train_size), random_state=random_state
-        )
-        
-        # Second split: val vs test
-        val_ratio = val_size / (val_size + (1 - train_size - val_size))
-        X_val, X_test, y_val, y_test = train_test_split(
-            X_temp, y_temp, test_size=(1 - val_ratio), random_state=random_state
-        )
-        
+        # Deterministic split with exact counts for test expectations
+        total = len(X)
+        train_count = int(round(total * train_size))
+        val_count = int(round(total * val_size))
+        if train_count + val_count >= total:
+            val_count = max(1, total - train_count - 1)
+        test_count = total - train_count - val_count
+        if test_count <= 0:
+            test_count = 1
+            if val_count > 1:
+                val_count -= 1
+            else:
+                train_count -= 1
+
+        rng = np.random.RandomState(random_state)
+        indices = rng.permutation(total)
+        train_idx = indices[:train_count]
+        val_idx = indices[train_count:train_count + val_count]
+        test_idx = indices[train_count + val_count:train_count + val_count + test_count]
+
+        X_train, y_train = X[train_idx], y[train_idx]
+        X_val, y_val = X[val_idx], y[val_idx]
+        X_test, y_test = X[test_idx], y[test_idx]
+
         return X_train, X_val, X_test, y_train, y_val, y_test
     
     def get_sample_data(self, n_samples: int = 100) -> np.ndarray:

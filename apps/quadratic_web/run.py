@@ -75,7 +75,11 @@ def check_neural_engine():
         from autodiff import TrainingEngine, Adam
         
         # Create a simple test network
-        test_network = NeuralNetwork([2, 4, 1], ['relu', 'linear'])
+        test_network = NeuralNetwork(
+            [2, 4, 1],
+            ['relu', 'linear'],
+            device=os.getenv('NEURAL_ENGINE_DEVICE', 'auto')
+        )
         test_optimizer = Adam(learning_rate=0.001)
         
         logger.info("✅ Neural Engine basic functionality verified")

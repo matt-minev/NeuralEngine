@@ -5,7 +5,7 @@ window.updateAccessibilityDisplay = function(result) {
     return;
   }
 
-  updateMirrorDetection(result.mirror_detection);
+  updateMirrorDetection(result.advisory?.mirror_candidate);
   updateWritingQuality(result.quality_metrics);
   updateSuggestions(result.accessibility);
   updateResources(result.accessibility);
@@ -23,25 +23,22 @@ function clearAccessibilityDisplay() {
 function updateMirrorDetection(mirrorData) {
   const container = document.getElementById("mirrorStatus");
   
-  if (!mirrorData || !mirrorData.mirror_detected) {
+  if (!mirrorData || !mirrorData.detected) {
     container.innerHTML = `
       <div class="mirror-status mirror-not-detected">
-        No mirror writing detected. Character orientation looks correct!
+        No strong mirror candidate detected. Orientation looks consistent.
       </div>
     `;
     return;
   }
 
-  const original = mirrorData.original_prediction;
-  const mirrored = mirrorData.mirrored_prediction;
+  const mirrored = mirrorData.mirror_alt;
   
   container.innerHTML = `
     <div class="mirror-status mirror-detected">
-      <strong>Mirror Detected!</strong>
-      <p>Your character appears to be mirrored.</p>
-      <p>Original: "${original.predicted_character}" (${original.confidence.toFixed(1)}% confidence)</p>
-      <p>Mirrored: "${mirrored.predicted_character}" (${mirrored.confidence.toFixed(1)}% confidence)</p>
-      <p>Did you mean to write "${mirrored.predicted_character}"?</p>
+      <strong>Mirror Candidate</strong>
+      <p>Advisory only: no auto-correction applied.</p>
+      <p>Alternative: "${mirrored.predicted_character}" (${mirrored.confidence.toFixed(1)}% confidence)</p>
     </div>
   `;
 }
@@ -168,4 +165,3 @@ function updateResources(accessibility) {
 document.addEventListener("DOMContentLoaded", () => {
   clearAccessibilityDisplay();
 });
-

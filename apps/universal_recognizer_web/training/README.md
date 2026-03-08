@@ -53,6 +53,15 @@ Or with default config:
 python training/train.py --config default
 ```
 
+### Step 3: Calibrate Preprocess Contract (recommended)
+
+```bash
+python training/calibrate_preprocess_contract.py
+```
+
+This writes transform selection and normalization statistics to:
+`apps/universal_recognizer_web/contracts/preprocess_contract_v2.json`
+
 ## Training Configuration
 
 ### Default Configuration

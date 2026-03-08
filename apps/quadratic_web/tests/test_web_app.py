@@ -29,7 +29,7 @@ try:
     from core.data_processor import QuadraticDataProcessor
     from core.predictor import QuadraticPredictor
     from config.scenarios import get_default_scenarios
-    from helpers import format_number, assess_performance
+    from helpers import format_number, assess_performance, get_confidence_level
 except ImportError as e:
     print(f"Import error: {e}")
     print("Please ensure all modules are available")

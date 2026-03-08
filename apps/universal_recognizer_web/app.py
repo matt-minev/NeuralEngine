@@ -5,6 +5,7 @@ Flask web application for universal character recognition with accessibility fea
 import os
 import sys
 import time
+import numpy as np
 from flask import Flask, render_template, request, jsonify, send_from_directory
 from flask_cors import CORS
 from pathlib import Path
@@ -20,6 +21,8 @@ try:
         predict_character,
         predict_with_mirror_detection,
         analyze_writing_quality,
+        get_confusion_candidates,
+        get_preprocess_contract_metadata,
         index_to_character,
         get_character_type
     )
@@ -32,6 +35,8 @@ except ImportError:
         predict_character,
         predict_with_mirror_detection,
         analyze_writing_quality,
+        get_confusion_candidates,
+        get_preprocess_contract_metadata,
         index_to_character,
         get_character_type
     )
@@ -91,14 +96,20 @@ def predict():
         
         prediction_time = (time.time() - start_time) * 1000  # Convert to milliseconds
         
+        contract_meta = get_preprocess_contract_metadata()
         response = {
             'predicted_character': result['predicted_character'],
             'predicted_index': result['predicted_index'],
             'confidence': result['confidence'],
+            'calibrated_confidence': result.get('calibrated_confidence', result['confidence']),
             'character_type': result['character_type'],
             'predictions': result['predictions'],
             'top_predictions': result['top_predictions'],
-            'prediction_time': prediction_time
+            'top_k': result.get('top_k', len(result['top_predictions'])),
+            'model_version': result.get('model_version', 'legacy'),
+            'contract_version': result.get('contract_version', contract_meta['contract_version']),
+            'contract_checksum': contract_meta['contract_checksum'],
+            'prediction_time': prediction_time,
         }
         
         # Add quality metrics if available (for advanced metrics panel)
@@ -118,7 +129,7 @@ def predict():
 
 @app.route('/predict/accessibility', methods=['POST'])
 def predict_with_accessibility():
-    """Handle prediction requests with full accessibility analysis."""
+    """Handle prediction requests with advisory-only accessibility analysis."""
     try:
         start_time = time.time()
         
@@ -141,25 +152,41 @@ def predict_with_accessibility():
         # Analyze writing quality
         quality_metrics = analyze_writing_quality(image_data)
         
-        # Generate accessibility report
+        mirror_for_report = mirror_result.get('mirrored') or {}
+        if mirror_for_report:
+            mirror_for_report = dict(mirror_for_report)
+            mirror_for_report['mirror_detected'] = mirror_result.get('mirror_detected', False)
         accessibility_report = format_accessibility_report(
             mirror_result['original'],
-            mirror_result.get('mirrored'),
+            mirror_for_report,
             quality_metrics
         )
+
+        confusion_candidates = get_confusion_candidates(
+            np.array(mirror_result['original']['predictions'], dtype=np.float32),
+            top_n=5
+        )
+        mirror_alt = mirror_result.get('mirrored')
+        contract_meta = get_preprocess_contract_metadata()
         
         prediction_time = (time.time() - start_time) * 1000
         
         response = {
-            'prediction': mirror_result['original'],
-            'mirror_detection': {
-                'mirror_detected': mirror_result.get('mirror_detected', False),
-                'mirrored_prediction': mirror_result.get('mirrored'),
-                'original_prediction': mirror_result['original']
+            'prediction': mirror_result['original'],  # primary prediction is never overridden
+            'advisory': {
+                'mirror_candidate': {
+                    'detected': mirror_result.get('mirror_detected', False),
+                    'mirror_alt': mirror_alt
+                },
+                'confusion_candidates': confusion_candidates,
+                'notes': 'Advisory only. Primary prediction is not auto-corrected.'
             },
             'quality_metrics': quality_metrics,
             'accessibility': accessibility_report,
-            'prediction_time': prediction_time
+            'model_version': mirror_result['original'].get('model_version', 'legacy'),
+            'contract_version': mirror_result['original'].get('contract_version', contract_meta['contract_version']),
+            'contract_checksum': contract_meta['contract_checksum'],
+            'prediction_time': prediction_time,
         }
         
         return jsonify(response)
@@ -167,6 +194,36 @@ def predict_with_accessibility():
     except Exception as e:
         print(f"Accessibility prediction error: {e}")
         return jsonify({'error': f'Prediction failed: {str(e)}'}), 500
+
+
+@app.route('/api/debug/preprocess', methods=['POST'])
+def debug_preprocess():
+    """Deterministic debug endpoint for preprocess contract stages/metadata."""
+    try:
+        data = request.get_json()
+        image_data = data.get('image')
+        if not image_data:
+            return jsonify({'error': 'No image data provided'}), 400
+
+        result = predict_character(
+            image_data,
+            return_quality_metrics=True,
+            return_debug=True
+        )
+        if result is None:
+            return jsonify({'error': 'Failed to process image'}), 400
+        contract_meta = get_preprocess_contract_metadata()
+        return jsonify({
+            'model_version': result.get('model_version', 'legacy'),
+            'contract_version': result.get('contract_version', contract_meta['contract_version']),
+            'contract_checksum': contract_meta['contract_checksum'],
+            'transform_id': contract_meta['transform_id'],
+            'debug': result.get('debug_images', {}),
+            'quality_metrics': result.get('quality_metrics', {}),
+        })
+    except Exception as e:
+        print(f"Debug preprocess error: {e}")
+        return jsonify({'error': f'Debug preprocess failed: {str(e)}'}), 500
 
 
 @app.route('/api/model/info', methods=['GET'])
@@ -314,4 +371,3 @@ if __name__ == '__main__':
         print("Please ensure the model file exists at:")
         print("  apps/universal_recognizer_web/models/universal_character_model.pkl")
         sys.exit(1)
-

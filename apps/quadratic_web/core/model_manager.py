@@ -7,7 +7,10 @@ from pathlib import Path
 from typing import Dict, List, Optional, Any
 import shutil
 
-from config.config import Config
+try:
+    from config.config import Config
+except ImportError:
+    from apps.quadratic_web.config.config import Config
 
 class ModelManager:
     """Model saving and loading system for trained QuadraticPredictor models"""
@@ -317,7 +320,10 @@ class ModelManager:
             scenario = scenarios[scenario_key]
 
             # Import QuadraticPredictor here to avoid circular imports
-            from core.predictor import QuadraticPredictor
+            try:
+                from core.predictor import QuadraticPredictor
+            except ImportError:
+                from apps.quadratic_web.core.predictor import QuadraticPredictor
 
             # Create new predictor instance
             predictor = QuadraticPredictor(scenario, data_processor)

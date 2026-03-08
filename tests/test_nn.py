@@ -6,6 +6,7 @@ Run with: pytest tests/test_nn.py -v
 
 import pytest
 import numpy as np
+import warnings
 import sys
 import os
 
@@ -17,6 +18,7 @@ from nn_core import Layer, NeuralNetwork, mean_squared_error, mean_absolute_erro
 from autodiff import SGD, Adam, TrainingEngine
 from data_utils import DataLoader, DataPreprocessor, DataSplitter, BatchProcessor
 from utils import ActivationFunctions, MathUtils, NetworkVisualizer, PerformanceMonitor, create_test_data, print_network_summary
+from neural_backend import default_engine_backend, resolve_backend
 
 
 class TestLayer:
@@ -287,7 +289,18 @@ class TestTrainingEngine:
         assert trainer.network == network
         assert trainer.optimizer == optimizer
         assert trainer.loss_function == mean_squared_error
-        assert hasattr(trainer, 'gradient_function')
+        assert hasattr(trainer, 'xp')
+
+    def test_device_introspection_and_predict_defaults(self):
+        """Test backend introspection fields and default CPU output."""
+        network = NeuralNetwork([2, 3, 1], device='cpu')
+        x = np.array([[1, 2]], dtype=np.float32)
+        pred = network.predict(x)
+
+        assert network.device == 'cpu'
+        assert network.backend_name == 'numpy'
+        assert network.using_gpu is False
+        assert isinstance(pred, np.ndarray)
 
     def test_single_training_step(self):
         """Test single training step."""
@@ -424,6 +437,40 @@ class TestDataUtils:
         # check that all data included
         total_samples = sum(batch[0].shape[0] for batch in batches)
         assert total_samples == 100
+
+
+class TestBackendResolution:
+    """Test device/backend selection behavior."""
+
+    def test_cpu_resolution(self):
+        xp, device, backend_name, using_gpu = resolve_backend('cpu')
+        assert device == 'cpu'
+        assert backend_name == 'numpy'
+        assert using_gpu is False
+        assert xp is np
+
+    def test_gpu_fallback_resolution(self):
+        with warnings.catch_warnings(record=True) as recorded:
+            warnings.simplefilter('always')
+            xp, device, backend_name, using_gpu = resolve_backend('gpu', warn=True)
+
+        if backend_name == 'cupy':
+            assert device == 'gpu'
+            assert using_gpu is True
+        else:
+            assert xp is np
+            assert device == 'cpu'
+            assert using_gpu is False
+            assert any('Falling back to CPU' in str(w.message) for w in recorded)
+
+    def test_default_engine_backend_native(self, monkeypatch):
+        monkeypatch.delenv("NEURAL_ENGINE_BACKEND", raising=False)
+        assert default_engine_backend() == "native"
+
+    def test_network_execution_backend_attr(self):
+        network = NeuralNetwork([2, 3, 1], device="cpu")
+        assert hasattr(network, "execution_backend")
+        assert network.execution_backend in {"native_cpu", "python_fallback", "cupy_gpu"}
 
 
 class TestUtilities:

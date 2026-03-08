@@ -28,7 +28,8 @@ def create_enhanced_digit_model():
     # optimized architecture for larger dataset
     model = NeuralNetwork(
         layer_sizes=[784, 512, 256, 128, 10],
-        activations=['relu', 'relu', 'relu', 'softmax']
+        activations=['relu', 'relu', 'relu', 'softmax'],
+        device=os.getenv('NEURAL_ENGINE_DEVICE', 'auto')
     )
 
     print(f"  Enhanced Architecture: 784 -> 512 -> 256 -> 128 -> 10")
@@ -66,7 +67,7 @@ def train_enhanced_digit_model():
     # phase 1: fast learning
     print(f"\nPHASE 1: Fast Learning (Epochs 1-50)")
     optimizer_phase1 = Adam(learning_rate=0.001)
-    trainer_phase1 = TrainingEngine(model, optimizer_phase1, cross_entropy_loss)
+    trainer_phase1 = TrainingEngine(model, optimizer_phase1, cross_entropy_loss, device=os.getenv('NEURAL_ENGINE_DEVICE', 'auto'))
 
     start_time = time.time()
 
@@ -81,7 +82,7 @@ def train_enhanced_digit_model():
     # phase 2: fine-tuning
     print(f"\nPHASE 2: Fine-tuning (Epochs 51-100)")
     optimizer_phase2 = Adam(learning_rate=0.0005)
-    trainer_phase2 = TrainingEngine(model, optimizer_phase2, cross_entropy_loss)
+    trainer_phase2 = TrainingEngine(model, optimizer_phase2, cross_entropy_loss, device=os.getenv('NEURAL_ENGINE_DEVICE', 'auto'))
 
     history_phase2 = trainer_phase2.train(
         X_train, y_train,
@@ -94,7 +95,7 @@ def train_enhanced_digit_model():
     # phase 3: final optimization
     print(f"\nPHASE 3: Final Optimization (Epochs 101-150)")
     optimizer_phase3 = Adam(learning_rate=0.0001)
-    trainer_phase3 = TrainingEngine(model, optimizer_phase3, cross_entropy_loss)
+    trainer_phase3 = TrainingEngine(model, optimizer_phase3, cross_entropy_loss, device=os.getenv('NEURAL_ENGINE_DEVICE', 'auto'))
 
     history_phase3 = trainer_phase3.train(
         X_train, y_train,

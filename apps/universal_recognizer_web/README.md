@@ -57,15 +57,17 @@ The application will be available at `http://localhost:8000`
 
 - `GET /` - Main web interface
 - `POST /predict` - Standard character prediction
-- `POST /predict/accessibility` - Prediction with full accessibility analysis
+- `POST /predict/accessibility` - Prediction with advisory accessibility analysis
 - `GET /api/model/info` - Model information
 - `GET /health` - Health check
 - `GET /api/characters` - List of supported characters
+- `POST /api/debug/preprocess` - Deterministic preprocessing debug metadata
 
 ## Accessibility Features
 
-### Mirror Detection
-Automatically detects if a character appears mirrored and suggests the correct orientation.
+### Mirror Advisory
+Detects mirror candidates and reports alternatives as advisory guidance only.
+Primary prediction is never auto-corrected by accessibility heuristics.
 
 ### Writing Quality Assessment
 Analyzes:
@@ -120,4 +122,3 @@ apps/universal_recognizer_web/
 ## License
 
 Part of the NeuralEngine project.
-

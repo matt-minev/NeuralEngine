@@ -6,8 +6,6 @@ gradient clipping, checkpointing, and proper validation monitoring.
 """
 
 import numpy as np
-import autograd.numpy as anp
-from autograd import grad
 from typing import List, Tuple, Dict, Callable, Optional, Any
 import time
 import os
@@ -24,7 +22,8 @@ if base_path not in sys.path:
     sys.path.insert(0, base_path)
 
 from nn_core import NeuralNetwork, cross_entropy_loss
-from autodiff import Optimizer, Adam
+from autodiff import Optimizer, Adam, TrainingEngine
+from neural_backend import to_cpu
 
 # Handle both script and module execution
 try:
@@ -135,7 +134,7 @@ class EarlyStopping:
         return False
 
 
-def clip_gradients(gradients: List[anp.ndarray], max_norm: float = 5.0) -> List[anp.ndarray]:
+def clip_gradients(gradients: List[np.ndarray], max_norm: float = 5.0) -> List[np.ndarray]:
     """
     Clip gradients to prevent explosion.
     
@@ -149,8 +148,8 @@ def clip_gradients(gradients: List[anp.ndarray], max_norm: float = 5.0) -> List[
     # Calculate global norm
     total_norm = 0.0
     for grad in gradients:
-        total_norm += anp.sum(grad ** 2)
-    total_norm = anp.sqrt(total_norm)
+        total_norm += np.sum(grad ** 2)
+    total_norm = np.sqrt(total_norm)
     
     # Clip if necessary
     if total_norm > max_norm:
@@ -193,41 +192,9 @@ class EnhancedTrainingEngine:
         self.best_val_loss = float('inf')
         self.best_val_accuracy = 0.0
         self.best_model_state = None
-        
-        # Create gradient function
-        self._create_gradient_function()
+        self.base_engine = TrainingEngine(network, optimizer, loss_function)
     
-    def _create_gradient_function(self):
-        """Create automatic gradient computation function."""
-        def loss_with_params(params_flat, X, y_true):
-            """Compute loss given flattened params."""
-            params_structured = self._unflatten_params(params_flat)
-            self.network.set_all_parameters(params_structured)
-            y_pred = self.network.forward(X)
-            return self.loss_function(y_true, y_pred)
-        
-        self.gradient_function = grad(loss_with_params, argnum=0)
-    
-    def _flatten_params(self, params: List[anp.ndarray]) -> anp.ndarray:
-        """Flatten parameter list."""
-        return anp.concatenate([p.flatten() for p in params])
-    
-    def _unflatten_params(self, params_flat: anp.ndarray) -> List[anp.ndarray]:
-        """Reshape flattened params back to structure."""
-        params = []
-        start_idx = 0
-        original_params = self.network.get_all_parameters()
-        
-        for original_param in original_params:
-            param_size = original_param.size
-            param_data = params_flat[start_idx:start_idx + param_size]
-            param_reshaped = param_data.reshape(original_param.shape)
-            params.append(param_reshaped)
-            start_idx += param_size
-        
-        return params
-    
-    def train_step(self, X_batch: anp.ndarray, y_batch: anp.ndarray) -> float:
+    def train_step(self, X_batch: np.ndarray, y_batch: np.ndarray) -> float:
         """
         Perform single training step on a batch.
         
@@ -238,27 +205,11 @@ class EnhancedTrainingEngine:
         Returns:
             Loss value
         """
-        # Get current parameters
-        current_params = self.network.get_all_parameters()
-        params_flat = self._flatten_params(current_params)
-        
-        # Compute loss
-        loss = self.loss_function(y_batch, self.network.forward(X_batch))
-        
-        # Compute gradients
-        gradients_flat = self.gradient_function(params_flat, X_batch, y_batch)
-        gradients_structured = self._unflatten_params(gradients_flat)
-        
-        # Clip gradients
-        gradients_structured = clip_gradients(gradients_structured, self.max_grad_norm)
-        
-        # Update parameters
-        updated_params = self.optimizer.update(current_params, gradients_structured)
-        self.network.set_all_parameters(updated_params)
-        
-        return float(loss)
+        return self.base_engine.train_step(
+            X_batch, y_batch, clip_gradients=True, max_norm=self.max_grad_norm
+        )
     
-    def evaluate(self, X: anp.ndarray, y_true: anp.ndarray) -> Dict[str, float]:
+    def evaluate(self, X: np.ndarray, y_true: np.ndarray) -> Dict[str, float]:
         """
         Evaluate model on data.
         
@@ -273,19 +224,19 @@ class EnhancedTrainingEngine:
         loss = self.loss_function(y_true, y_pred)
         
         # Calculate accuracy
-        predicted_classes = anp.argmax(y_pred, axis=1)
-        true_classes = anp.argmax(y_true, axis=1)
-        accuracy = anp.mean(predicted_classes == true_classes) * 100
+        predicted_classes = np.argmax(to_cpu(y_pred), axis=1)
+        true_classes = np.argmax(to_cpu(y_true), axis=1)
+        accuracy = np.mean(predicted_classes == true_classes) * 100
         
         return {
-            'loss': float(loss),
+            'loss': float(to_cpu(loss)),
             'accuracy': float(accuracy),
             'predictions': y_pred
         }
     
     def train(self, 
-              X_train: anp.ndarray, y_train: anp.ndarray,
-              X_val: Optional[anp.ndarray] = None, y_val: Optional[anp.ndarray] = None,
+              X_train: np.ndarray, y_train: np.ndarray,
+              X_val: Optional[np.ndarray] = None, y_val: Optional[np.ndarray] = None,
               epochs: int = 100,
               batch_size: int = 64,
               lr_scheduler: Optional[LearningRateScheduler] = None,
@@ -411,7 +362,7 @@ class EnhancedTrainingEngine:
             
             checkpoint = {
                 'epoch': epoch,
-                'model_state': [p.copy() for p in self.network.get_all_parameters()],
+                'model_state': [to_cpu(p.copy()) for p in self.network.get_all_parameters()],
                 'optimizer_state': self.optimizer.__dict__.copy(),
                 'history': dict(self.history),
                 'best_val_loss': self.best_val_loss,
@@ -431,4 +382,3 @@ class EnhancedTrainingEngine:
                 raise IOError("Checkpoint file verification failed")
         except Exception as e:
             print(f"  Warning: Checkpoint save failed at epoch {epoch}: {e}")
-

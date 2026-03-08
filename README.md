@@ -77,6 +77,38 @@ pip install -r requirements.txt
 
 # Run core tests to verify installation
 pytest tests/test_nn.py -v
+
+# Optional GPU backend (install the CuPy wheel that matches your CUDA runtime)
+# Example for CUDA 12.x:
+pip install cupy-cuda12x
+```
+
+### Runtime Backend Selection
+
+Use `NEURAL_ENGINE_DEVICE` and `NEURAL_ENGINE_BACKEND` to control execution:
+
+```bash
+# native execution backend (default)
+export NEURAL_ENGINE_BACKEND=native
+
+# python fallback backend (debug/rollback)
+export NEURAL_ENGINE_BACKEND=python
+
+# auto (default): use GPU if available, otherwise CPU
+export NEURAL_ENGINE_DEVICE=auto
+
+# force CPU
+export NEURAL_ENGINE_DEVICE=cpu
+
+# request GPU (falls back to CPU with a warning if unavailable)
+export NEURAL_ENGINE_DEVICE=gpu
+```
+
+```python
+from nn_core import NeuralNetwork
+
+network = NeuralNetwork([2, 8, 1], ['relu', 'linear'])
+print(network.backend_name, network.device, network.using_gpu, network.execution_backend)
 ```
 
 ### Your First Neural Network
@@ -114,7 +146,7 @@ NeuralEngine/
 │
 ├── main.py                  # Entry point with educational demonstrations
 ├── nn_core.py               # Core neural network implementation
-├── autodiff.py              # Automatic differentiation and optimizers
+├── autodiff.py              # Manual backprop training engine and optimizers
 ├── data_utils.py            # Data loading, preprocessing, and utilities
 ├── utils.py                 # Activation functions and helper tools
 ├── cleanup.py               # Utility scripts for cleanup
@@ -469,6 +501,7 @@ app.run(debug=True, host='0.0.0.0', port=8001)
 - Use smaller network architecture
 - Enable early stopping
 - Reduce number of epochs
+- Use GPU execution (`NEURAL_ENGINE_DEVICE=auto` or `gpu`)
 
 **Low Accuracy**:
 - Check data preprocessing matches training
@@ -483,7 +516,6 @@ app.run(debug=True, host='0.0.0.0', port=8001)
 
 ### Planned Features
 
-- [ ] GPU acceleration support
 - [ ] Distributed training
 - [ ] Model quantization for deployment
 - [ ] Additional activation functions
@@ -496,6 +528,7 @@ app.run(debug=True, host='0.0.0.0', port=8001)
 
 ### Recent Improvements
 
+- ✅ NumPy/CuPy backend with optional GPU acceleration and CPU fallback
 - ✅ Multi-phase training with learning rate scheduling
 - ✅ Early stopping and model checkpointing
 - ✅ Enhanced dataset generator for quadratic equations

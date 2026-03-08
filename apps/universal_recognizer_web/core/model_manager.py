@@ -6,6 +6,7 @@ import os
 import sys
 import pickle
 import numpy as np
+from .preprocess_contract import load_contract
 
 # Add NeuralEngine to path
 base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
@@ -64,6 +65,7 @@ class ModelManager:
                 model_data = pickle.load(f)
             
             self.model = model_data['model']
+            contract = load_contract()
             self.model_info = {
                 'accuracy': model_data.get('accuracy', 0.0),
                 'architecture': model_data.get('architecture', 'universal_character_recognizer'),
@@ -73,7 +75,14 @@ class ModelManager:
                 'character_type_accuracies': model_data.get('character_type_accuracies', {}),
                 'layer_sizes': self.model.layer_sizes,
                 'total_parameters': self.model.count_parameters(),
-                'activations': [layer.activation_name for layer in self.model.layers]
+                'activations': [layer.activation_name for layer in self.model.layers],
+                'model_version': model_data.get('model_version', 'universal_v1_legacy'),
+                'contract_version': model_data.get('contract_version', contract.version),
+                'contract_checksum': contract.checksum,
+                'calibration': model_data.get('calibration', {'temperature': 1.0}),
+                'engine_backend': getattr(self.model, 'execution_backend', 'python_fallback'),
+                'device': getattr(self.model, 'device', 'cpu'),
+                'backend_name': getattr(self.model, 'backend_name', 'numpy'),
             }
             
             print(f"Model loaded successfully!")
@@ -112,4 +121,3 @@ def get_model_manager(model_path=None):
     if _model_manager is None:
         _model_manager = ModelManager(model_path)
     return _model_manager
-

@@ -66,17 +66,19 @@ class QuadraticPredictor:
         self.performance_stats = {}
         self.input_scaler = None
         self.target_scaler = None
+        self.device = os.getenv('NEURAL_ENGINE_DEVICE', 'auto')
         
     def create_network(self):
         """Create neural network for this scenario"""
         self.network = NeuralNetwork(
             self.scenario.network_architecture,
-            self.scenario.activations
+            self.scenario.activations,
+            device=self.device
         )
         
         # Create trainer with Adam optimizer
         optimizer = Adam(learning_rate=0.001, beta1=0.9, beta2=0.999)
-        self.trainer = TrainingEngine(self.network, optimizer, mean_squared_error)
+        self.trainer = TrainingEngine(self.network, optimizer, mean_squared_error, device=self.device)
         
     def prepare_data(self, data: np.ndarray, normalize: bool = True):
         """Prepare data for training/prediction"""

@@ -1,5 +1,6 @@
 import numpy as np
 import time
+import os
 from typing import Tuple, Optional, Dict, Any
 import sys
 from pathlib import Path
@@ -11,8 +12,14 @@ sys.path.insert(0, str(neural_engine_root))
 
 from nn_core import NeuralNetwork, mean_squared_error, mean_absolute_error
 from autodiff import TrainingEngine, Adam
-from config.scenarios import PredictionScenario
-from core.data_processor import QuadraticDataProcessor
+try:
+    from config.scenarios import PredictionScenario
+except ImportError:
+    from apps.quadratic_web.config.scenarios import PredictionScenario
+try:
+    from core.data_processor import QuadraticDataProcessor
+except ImportError:
+    from apps.quadratic_web.core.data_processor import QuadraticDataProcessor
 
 class QuadraticPredictor:
     """Neural network predictor for quadratic equations"""
@@ -28,17 +35,19 @@ class QuadraticPredictor:
         # Ensemble support
         self.ensemble_networks = []  # List of trained networks for ensemble
         self.use_ensemble = False
+        self.device = os.getenv('NEURAL_ENGINE_DEVICE', 'auto')
         
     def create_network(self, learning_rate: float = 0.001):
         """Create neural network for this scenario"""
         self.network = NeuralNetwork(
             self.scenario.network_architecture,
-            self.scenario.activations
+            self.scenario.activations,
+            device=self.device,
         )
         
         # Create trainer with Adam optimizer and MSE loss function
         optimizer = Adam(learning_rate=learning_rate, beta1=0.9, beta2=0.999)
-        self.trainer = TrainingEngine(self.network, optimizer, mean_squared_error)
+        self.trainer = TrainingEngine(self.network, optimizer, mean_squared_error, device=self.device)
         
     def train(self, epochs: int = 1000, learning_rate: float = 0.001, verbose: bool = True, 
               use_multi_phase: bool = True, early_stopping_patience: int = 50,

@@ -1,5 +1,6 @@
 import numpy as np
 import time
+import os
 from typing import Tuple, Optional, Dict, Any
 import sys
 sys.path.append('../..')
@@ -21,17 +22,19 @@ class QuadraticPredictor:
         self.is_trained = False
         self.training_history = {}
         self.performance_stats = {}
+        self.device = os.getenv('NEURAL_ENGINE_DEVICE', 'auto')
 
     def create_network(self):
         """Create neural network for this senario"""
         self.network = NeuralNetwork(
             self.scenario.network_architecture,
-            self.scenario.activations
+            self.scenario.activations,
+            device=self.device
         )
 
         # create trainer with adam optimizer and MSE loss function
         optimizer = Adam(learning_rate=0.001, beta1=0.9, beta2=0.999)
-        self.trainer = TrainingEngine(self.network, optimizer, mean_squared_error)
+        self.trainer = TrainingEngine(self.network, optimizer, mean_squared_error, device=self.device)
 
     def train(self, epochs: int = 1000, verbose: bool = True) -> Dict[str, Any]:
         """Train the neural network"""

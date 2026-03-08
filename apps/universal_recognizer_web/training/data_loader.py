@@ -29,6 +29,16 @@ except ImportError:
         sys.path.insert(0, training_dir)
     from data_augmentation import DataAugmentation, create_augmentation_pipeline
 
+try:
+    from apps.universal_recognizer_web.core.preprocess_contract import load_contract, with_stats, save_contract
+    from apps.universal_recognizer_web.core.canonical_preprocessor import apply_transform
+except ImportError:
+    core_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'core')
+    if core_dir not in sys.path:
+        sys.path.insert(0, core_dir)
+    from preprocess_contract import load_contract, with_stats, save_contract
+    from canonical_preprocessor import apply_transform
+
 
 # Character mapping utilities
 def index_to_character(index: int) -> str:
@@ -148,24 +158,24 @@ def read_idx_labels(filename: str) -> np.ndarray:
         return labels
 
 
-def fix_emnist_orientation(images: np.ndarray) -> np.ndarray:
+def fix_emnist_orientation(images: np.ndarray, transform_id: Optional[str] = None) -> np.ndarray:
     """
     Fix EMNIST image orientation.
     EMNIST images are rotated 90 degrees CCW and flipped horizontally.
     """
-    print("Fixing EMNIST image orientation...")
-    
-    # Step 1: Flip horizontally
-    flipped = np.flip(images, axis=2)
-    
-    # Step 2: Rotate 90 degrees clockwise
-    rotated = np.rot90(flipped, k=-1, axes=(1, 2))
-    
+    t = transform_id or load_contract().transform_id
+    print(f"Fixing EMNIST image orientation with transform: {t}...")
+    fixed = np.stack([apply_transform(img, t) for img in images], axis=0)
     print("  Orientation fixed successfully")
-    return rotated
+    return fixed
 
 
-def preprocess_data(X: np.ndarray, normalize: bool = True) -> np.ndarray:
+def preprocess_data(
+    X: np.ndarray,
+    normalize: bool = True,
+    mean: Optional[np.ndarray] = None,
+    std: Optional[np.ndarray] = None,
+) -> np.ndarray:
     """
     Preprocess data with proper normalization.
     
@@ -189,11 +199,16 @@ def preprocess_data(X: np.ndarray, normalize: bool = True) -> np.ndarray:
         X = X / 255.0
     
     if normalize:
-        # Center and normalize to [-1, 1]
-        mean = np.mean(X, axis=0, keepdims=True)
-        std = np.std(X, axis=0, keepdims=True) + 1e-8
-        X = (X - mean) / std
-        # Scale to [-1, 1] using tanh
+        if mean is None:
+            mean = np.mean(X, axis=0, keepdims=True)
+        else:
+            mean = mean.reshape(1, -1)
+        if std is None:
+            std = np.std(X, axis=0, keepdims=True)
+        else:
+            std = std.reshape(1, -1)
+        X = (X - mean) / (std + 1e-8)
+        X = np.clip(X, -5.0, 5.0)
         X = np.tanh(X)
     
     return X.reshape(original_shape)
@@ -249,19 +264,31 @@ def load_emnist_data(data_dir: str = None) -> Tuple[Tuple[np.ndarray, np.ndarray
     print(f"  Image size: {X_train.shape[1]}x{X_train.shape[2]}")
     print(f"  Classes: {len(np.unique(y_train))}")
     
-    # Fix image orientation
-    X_train = fix_emnist_orientation(X_train)
-    X_test = fix_emnist_orientation(X_test)
+    contract = load_contract()
+    X_train = fix_emnist_orientation(X_train, contract.transform_id)
+    X_test = fix_emnist_orientation(X_test, contract.transform_id)
     
     # Flatten images for neural network
     print("Flattening images...")
     X_train = X_train.reshape(X_train.shape[0], -1)
     X_test = X_test.reshape(X_test.shape[0], -1)
     
-    # Preprocess
+    # Preprocess with shared train-derived stats (contract-aligned)
     print("Preprocessing data...")
-    X_train = preprocess_data(X_train, normalize=True)
-    X_test = preprocess_data(X_test, normalize=True)
+    train_float = X_train.astype(np.float32)
+    if train_float.max() > 1.0:
+        train_float = train_float / 255.0
+    train_mean = np.mean(train_float, axis=0).astype(np.float32)
+    train_std = np.std(train_float, axis=0).astype(np.float32)
+    train_std = np.where(train_std < 1e-6, 1e-6, train_std)
+    X_train = preprocess_data(X_train, normalize=True, mean=train_mean, std=train_std)
+    X_test = preprocess_data(X_test, normalize=True, mean=train_mean, std=train_std)
+
+    # Persist normalization stats into contract for inference parity
+    mean_existing, std_existing, _, _, _ = contract.get_stats()
+    if mean_existing is None or std_existing is None:
+        updated_contract = with_stats(contract, train_mean, train_std)
+        save_contract(updated_contract)
     
     # Create one-hot encoding
     y_train_onehot = create_one_hot(y_train, 62)

@@ -106,6 +106,14 @@ dmypy.json
 .pyre/
 
 # Neural Network Engine specific
+# Native extension build artifacts
+neural_engine_native/build/
+neural_engine_native/build-*/
+neural_engine_native/.pytest_cache/
+neural_engine_native/**/__pycache__/
+neural_engine_native/_kernels*.so
+neural_engine_native/_kernels*.dylib
+
 # Data files
 *.csv
 *.json

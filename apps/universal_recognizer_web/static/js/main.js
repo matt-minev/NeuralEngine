@@ -219,9 +219,13 @@ class UniversalCharacterRecognizer {
       prediction.predicted_character;
     document.getElementById("characterType").textContent =
       prediction.character_type;
+    const conf =
+      prediction.calibrated_confidence !== undefined
+        ? prediction.calibrated_confidence
+        : prediction.confidence;
     document.getElementById(
       "confidence"
-    ).textContent = `Confidence: ${prediction.confidence.toFixed(1)}%`;
+    ).textContent = `Confidence: ${conf.toFixed(1)}%`;
     document.getElementById(
       "predictionTime"
     ).textContent = `${predictionTime.toFixed(0)}ms`;
