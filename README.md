@@ -22,6 +22,18 @@
 
 The Neural Network Engine is a powerful yet beginner-friendly library designed to solve **function approximation problems** using neural networks. Built with educational clarity and mathematical rigor, it demonstrates how modern deep learning works under the hood.
 
+## Showcase
+
+### Hand Drawn Digit Recognizer
+
+[![Hand Drawn Digit Recognizer Web Application Video Showcase](documentation/assets/digit_recognizer_web_thubnail_play.png)](https://www.youtube.com/watch?v=kk1jcvemtKw)
+
+### Neural Networks for Quadratic Equations
+
+[![Neural networks for Quadratic Equations Web Application Video Showcase](documentation/assets/quadratic_nn_web_thumbnail_play.png)](https://www.youtube.com/watch?v=m0iJYkEDGsc)
+
+Find additional information on the [Neural Engine Official Website](https://neural.mattmaster.com).
+
 ### 🔬 Core Concept
 
 Neural networks solve the fundamental machine learning problem:
@@ -37,6 +49,7 @@ Method: Gradient descent using automatic differentiation
 ## ✨ Key Features
 
 ### Core Engine
+
 - **🔥 Automatic Differentiation**: Uses `autograd` for effortless gradient computation
 - **🏗️ Modular Architecture**: Clean, extensible design for experimentation
 - **📚 Educational Focus**: Extensively commented code explaining every concept
@@ -45,6 +58,7 @@ Method: Gradient descent using automatic differentiation
 - **📊 Comprehensive Testing**: Robust test suite ensures reliability and correctness
 
 ### Advanced Training Features
+
 - **🔄 Multi-Phase Training**: Fast learning → Fine-tuning → Optimization phases
 - **📈 Learning Rate Scheduling**: Cosine annealing and step decay for optimal convergence
 - **⏹️ Early Stopping**: Automatic training termination to prevent overfitting
@@ -52,6 +66,7 @@ Method: Gradient descent using automatic differentiation
 - **💾 Model Checkpointing**: Save and restore best models during training
 
 ### Application Suite
+
 - **🔢 Digit Recognizer Web**: Interactive web app for handwritten digit recognition with smooth animations
 - **📐 Quadratic Equation Solver**: Neural network solution for quadratic equations with web interface
 - **🔤 Universal Character Recognizer**: Advanced character recognition (0-9, A-Z, a-z) with accessibility features
@@ -224,6 +239,7 @@ NetworkVisualizer.plot_training_metrics(history)
 **Description**: Interactive web application for recognizing handwritten digits (0-9) with a beautiful, modern interface.
 
 **Features**:
+
 - Real-time digit recognition as you draw
 - Multiple model selection (Enhanced, Bulletproof, Optimized, Basic)
 - Smooth animations and micro-interactions
@@ -234,6 +250,7 @@ NetworkVisualizer.plot_training_metrics(history)
 - Confidence visualization with animated bars
 
 **To Run**:
+
 ```bash
 cd apps/digit_recognizer_web
 python app.py
@@ -241,6 +258,7 @@ python app.py
 ```
 
 **Usage**:
+
 1. Draw a digit (0-9) on the canvas
 2. View real-time predictions with confidence scores
 3. Switch between different trained models
@@ -253,6 +271,7 @@ python app.py
 **Description**: Neural network solution for finding roots of quadratic equations. Available as both desktop GUI and web application.
 
 **Features**:
+
 - Multiple prediction scenarios (coefficients to roots, roots to coefficients, etc.)
 - High-quality dataset generator for school-grade equations
 - Multi-phase training with learning rate scheduling
@@ -262,6 +281,7 @@ python app.py
 - Model comparison and ranking
 
 **To Run (Web)**:
+
 ```bash
 cd apps/quadratic_web
 python app.py
@@ -269,6 +289,7 @@ python app.py
 ```
 
 **To Run (Desktop)**:
+
 ```bash
 cd apps/quadratic_equation
 python main.py
@@ -276,12 +297,14 @@ python main.py
 
 **Dataset Generator**:
 The web app includes an advanced dataset generator that creates:
+
 - Equations with whole number coefficients
 - Perfect square discriminants
 - Integer roots
 - Easy-to-solve problems suitable for 10th graders
 
 **Training Features**:
+
 - Multi-phase training (Fast Learning → Fine-tuning → Optimization)
 - Learning rate scheduling (cosine annealing)
 - Early stopping with configurable patience
@@ -294,6 +317,7 @@ The web app includes an advanced dataset generator that creates:
 **Description**: Advanced web application for recognizing all alphanumeric characters (0-9, A-Z, a-z) with accessibility features.
 
 **Features**:
+
 - Universal character recognition (62 classes)
 - Mirror detection for dyslexic users
 - Writing quality analysis
@@ -303,6 +327,7 @@ The web app includes an advanced dataset generator that creates:
 - Modern dashboard design
 
 **To Run**:
+
 ```bash
 cd apps/universal_recognizer_web
 python app.py
@@ -310,12 +335,14 @@ python app.py
 ```
 
 **Training**:
+
 ```bash
 cd apps/universal_recognizer_web
 python training/train.py --config high_accuracy
 ```
 
 **Usage**:
+
 1. Draw any alphanumeric character on the canvas
 2. View predictions organized by type (Digits, Uppercase, Lowercase)
 3. Check accessibility panel for mirror detection and suggestions
@@ -376,33 +403,40 @@ history = trainer.train(
 #### Digit Recognizer Web
 
 **Endpoint**: `POST /predict`
+
 - **Request**: `{ "image": "data:image/png;base64,..." }`
 - **Response**: `{ "predicted_digit": 5, "confidence": 95.2, "predictions": [...], "prediction_time": 12.3 }`
 
 **Endpoint**: `POST /switch_model`
+
 - **Request**: `{ "model_name": "enhanced_digit_model.pkl" }`
 - **Response**: `{ "status": "success", "model_info": {...} }`
 
 #### Quadratic Web
 
 **Endpoint**: `POST /api/training/start`
+
 - **Request**: `{ "scenarios": [...], "epochs": 1000, "learning_rate": 0.001 }`
 - **Response**: `{ "status": "started" }`
 
 **Endpoint**: `GET /api/training/status`
+
 - **Response**: `{ "is_training": true, "progress": 45, "current_scenario": "...", "logs": [...] }`
 
 **Endpoint**: `POST /api/predict`
+
 - **Request**: `{ "scenario": "...", "input": [a, b, c] }`
 - **Response**: `{ "prediction": [...], "confidence": 0.95 }`
 
 #### Universal Recognizer Web
 
 **Endpoint**: `POST /predict`
+
 - **Request**: `{ "image": "data:image/png;base64,...", "debug": true }`
 - **Response**: `{ "prediction": {...}, "debug": {...} }`
 
 **Endpoint**: `POST /predict/accessibility`
+
 - **Request**: `{ "image": "data:image/png;base64,..." }`
 - **Response**: `{ "prediction": {...}, "mirror_detection": {...}, "quality_metrics": {...} }`
 
@@ -413,12 +447,14 @@ history = trainer.train(
 The project includes a comprehensive test suite covering the core engine and individual applications.
 
 **Run Core Engine Tests**:
+
 ```bash
 # Run all core tests with verbose output
 pytest tests/test_nn.py -v
 ```
 
 **Run Application-Specific Tests**:
+
 ```bash
 # Digit recognizer
 pytest apps/digit_recognizer/comprehensive_test.py
@@ -431,6 +467,7 @@ pytest apps/quadratic_web/tests/test_web_app.py
 ```
 
 **Test Coverage Includes**:
+
 - ✅ Core engine: Layers, network, optimizers, loss functions
 - ✅ Utilities: Data processing and helper functions
 - ✅ Integration Workflows: End-to-end training and prediction
@@ -443,16 +480,19 @@ pytest apps/quadratic_web/tests/test_web_app.py
 ### Training Performance
 
 **Digit Recognizer**:
+
 - Training time: ~2-4 hours on M4 Mac mini (24GB RAM)
 - Accuracy: 95%+ on MNIST test set
 - Architecture: [784, 512, 256, 128, 10]
 
 **Universal Character Recognizer**:
+
 - Training time: ~4-5 hours on M4 Mac mini (24GB RAM)
 - Accuracy: 86.61% overall (94.9% digits, 83.6% uppercase, 72.4% lowercase)
 - Architecture: [784, 512, 256, 128, 62]
 
 **Quadratic Equation Solver**:
+
 - Training time: Varies by dataset size (typically 5-30 minutes)
 - Target accuracy: >90% R² score for root prediction
 - Multi-phase training reduces training time by 20-30%
@@ -472,6 +512,7 @@ pytest apps/quadratic_web/tests/test_web_app.py
 ### Common Issues
 
 **Import Errors**:
+
 ```bash
 # Ensure you're in the virtual environment
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
@@ -481,6 +522,7 @@ pip install -r requirements.txt
 ```
 
 **Model Not Found**:
+
 ```bash
 # Check model file exists
 ls apps/universal_recognizer_web/models/universal_character_model.pkl
@@ -491,12 +533,14 @@ python training/train.py --config high_accuracy
 ```
 
 **Port Already in Use**:
+
 ```python
 # Change port in app.py
 app.run(debug=True, host='0.0.0.0', port=8001)
 ```
 
 **Training Too Slow**:
+
 - Reduce dataset size for testing
 - Use smaller network architecture
 - Enable early stopping
@@ -504,6 +548,7 @@ app.run(debug=True, host='0.0.0.0', port=8001)
 - Use GPU execution (`NEURAL_ENGINE_DEVICE=auto` or `gpu`)
 
 **Low Accuracy**:
+
 - Check data preprocessing matches training
 - Verify model architecture
 - Increase training epochs

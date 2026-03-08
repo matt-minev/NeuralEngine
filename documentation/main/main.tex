@@ -57,24 +57,23 @@
 \includegraphics[width=\textwidth]{uchimi_logo_black.jpg}
 \end{center}
 
-% Use flexible space to center the remaining content
-\vspace*{\fill}
+% Keep the title block close to the logo so all elements fit comfortably
+\vspace{1.2em}
 
 % Center all content below logo
 \begin{center}
 
 % Overline
 {\LARGE\bfseries
-ДВАДЕСЕТ И ШЕСТА\\
-УЧЕНИЧЕСКА КОНФЕРЕНЦИЯ\\
-УК$'$26
+ДВАДЕСЕТ И ШЕСТА УЧЕНИЧЕСКА СЕКЦИЯ\\
+на Пролетната конференция на СМБ\\
+УС$'$26\\
+5 -- 8 април 2026 г., Трявна
 \par}
 
 \vspace{0.5em}
 
-{\large\mdseries Януари 2026 г.}
-
-\vspace{2em}
+\vspace{1.2em}
 
 % Main title (bilingual)
 {\Huge\textbf{Neural Network Engine}\par}
@@ -91,7 +90,7 @@
 {\large\itshape Цялостно Решение за Дълбоко Обучение с Автоматична Диференциация\par}
 {\normalsize\itshape и научноизследователски софтуер за образование и експерименти по невронни мрежи\par}
 
-\vspace{2.5em}
+\vspace{1.8em}
 
 % Project Website - nice centered hyperlink and description
 \begin{center}
@@ -106,7 +105,7 @@ Access the \textbf{Code Repository}, demonstration videos, and additional inform
 }
 \end{center}
 
-\vspace{2.5em}
+\vspace{1.8em}
 
 % Author section - larger with bold name and institution
 {\large
@@ -116,7 +115,7 @@ Access the \textbf{Code Repository}, demonstration videos, and additional inform
 \texttt{matt.minev@gmail.com}
 }
 
-\vspace{2.5em}
+\vspace{1.8em}
 
 % Scientific Advisor section - institution split to two lines
 {\large
@@ -127,15 +126,15 @@ Access the \textbf{Code Repository}, demonstration videos, and additional inform
 \texttt{keleved@gmail.com}
 }
 
-\vspace{2.5em}
+\vspace{1.8em}
 
 % Date at the bottom - bigger
 {\large\today}
 
 \end{center}
 
-% Flexible space to balance the page
-\vspace*{\fill}
+% Small bottom spacer
+\vspace{0.5em}
 
 \newpage
 
@@ -1196,6 +1195,16 @@ The Neural Network Engine makes several technical contributions that distinguish
 
 \textbf{Instrumentation Layer}: Decorators for automatic performance measurement, memory usage monitoring, and gradient statistics. This layer exposes internal dynamics for research and debugging, enabling analysis of training behavior, identification of bottlenecks, and optimization of computational efficiency.
 
+\subsection{Recent Innovations \& Improvements}
+
+Recent development cycles introduced a major performance and architecture upgrade focused on production readiness of the web applications.
+
+\textbf{GPU Acceleration via Backend Abstraction (Completed)}: The engine now supports explicit device selection with automatic backend resolution (\texttt{cpu}, \texttt{gpu}, \texttt{auto}) and safe fallback behavior. A CuPy execution path was integrated for CUDA-capable systems, while preserving deterministic CPU operation as default fallback. This enables transparent acceleration without breaking existing API usage.
+
+\textbf{Native C++ Core Pipeline (Completed)}: Core numerical execution was reworked around a native C++ extension pathway to reduce Python overhead in hot execution paths. The native runtime is now treated as a first-class backend in the engine architecture, with Python fallback retained for compatibility and debugging.
+
+\textbf{Universal Recognizer CNN Migration (Completed Foundation)}: The Universal Recognizer pipeline was migrated from a dense-only baseline toward a CNN-first training path, with strict preprocessing contract integration and model metadata/version linkage. This establishes the required foundation for high-accuracy retraining and calibrated web inference.
+
 \section{Performance Analysis and Benchmarking}
 
 \subsection{Accuracy Comparison with Established Frameworks}
@@ -1276,11 +1285,13 @@ The framework's educational value extends beyond its code. Students and research
 
 Several directions offer opportunities for enhancement while maintaining the framework's educational transparency:
 
-\textbf{Engine Optimization}: Porting core tensor operations to a GPU-backed backend (e.g., CuPy) could provide 10-50× speedups on compatible hardware. Mixed-precision training (FP16) could improve throughput and reduce memory usage while maintaining accuracy. These optimizations would extend the framework's capabilities without compromising transparency.
+\textbf{Engine Optimization (Partially Completed)}: Porting core tensor operations to a GPU-backed backend (CuPy path with CPU fallback) is now implemented. Remaining work includes broader fused-kernel optimization and mixed-precision training (FP16) for higher throughput and lower memory usage.
+
+\textbf{macOS Metal GPU Backend (Planned)}: Add a dedicated Metal-accelerated backend for Apple Silicon systems to provide native GPU training/inference on macOS where CUDA/CuPy is unavailable. This includes kernel parity testing, deterministic fallback rules, and performance benchmarking against native CPU.
 
 \textbf{Algorithmic Extensions}: Adding second-order optimizers (L-BFGS, K-FAC) and newer adaptive methods (AdaBelief, Lion) would broaden experimental scope. Advanced regularization techniques (dropout, layer normalization, stochastic depth) would enable training of deeper networks and improve generalization.
 
-\textbf{Application Expansion}: Incorporating higher-degree polynomial datasets (cubic, quartic) would evaluate scaling behavior. Integrating symbolic features (discriminant, coefficient ratios) would study hybrid analytical + learned approaches. Training on real-world handwritten datasets (USPS, NIST SD-19) would evaluate domain-shift robustness.
+\textbf{Application Expansion (Partially Completed)}: The Universal Recognizer has begun migration to a CNN-based pipeline with stricter preprocessing contracts. Next steps are full-scale retraining and calibration to satisfy hard accuracy gates on EMNIST ByClass and web-canvas benchmarks. Additional plans include higher-degree polynomial datasets (cubic, quartic), symbolic feature integration (discriminant, coefficient ratios), and domain-shift evaluation on datasets such as USPS and NIST SD-19.
 
 \textbf{Infrastructure Enhancement}: Bayesian hyperparameter optimization and population-based training would enable systematic hyperparameter search. Interactive Jupyter tutorials illustrating gradient flow, activation dynamics, and optimizer behavior would enhance educational value. Community contributions through open-source collaboration would accelerate development.
 
@@ -1315,6 +1326,9 @@ The Neural Network Engine stands as proof that deep learning can be understood d
 \noindent
 \includegraphics[width=\textwidth]{uchimi_logo.jpg}
 I would like to express my sincere gratitude to Emil Kelevedjiev for his invaluable support and mentorship throughout the course of this project. His generous provision of resources, insightful feedback, and expert guidance were instrumental in the successful completion of this work. I am deeply appreciative of his time, expertise, and commitment to this research endeavor.
+
+\medskip
+\noindent\textit{Disclaimer: Selected parts of this document were formatted and linguistically refined with the assistance of artificial intelligence tools. All technical content, claims, and conclusions were reviewed and validated by the author.}
 
 \newpage
 \nocite{*}
