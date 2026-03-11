@@ -28,6 +28,10 @@ The Neural Network Engine is a powerful yet beginner-friendly library designed t
 
 [![Hand Drawn Digit Recognizer Web Application Video Showcase](documentation/assets/digit_recognizer_web_thubnail_play.png)](https://www.youtube.com/watch?v=kk1jcvemtKw)
 
+### Hand Drawn Universal Character Recognizer
+
+[![Hand Drawn Universal Character Recognizer Web Application Video Showcase](documentation/assets/universal_recognizer_web_thubnail_play.png)](https://youtu.be/-3283s2_8Yw)
+
 ### Neural Networks for Quadratic Equations
 
 [![Neural networks for Quadratic Equations Web Application Video Showcase](documentation/assets/quadratic_nn_web_thumbnail_play.png)](https://www.youtube.com/watch?v=m0iJYkEDGsc)
