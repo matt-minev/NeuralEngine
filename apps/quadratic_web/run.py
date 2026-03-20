@@ -44,7 +44,7 @@ def setup_logging(config_class):
     
     # Get logger
     logger = logging.getLogger(__name__)
-    logger.info("🚀 Quadratic Neural Network Web Application")
+    logger.info("[START] Quadratic Neural Network Web Application")
     logger.info("=" * 60)
     logger.info(f"Version: {VERSION_INFO['version']}")
     logger.info(f"Author: {VERSION_INFO['author']}")
@@ -65,9 +65,9 @@ def check_neural_engine():
         for module_name in required_modules:
             try:
                 __import__(module_name)
-                logger.info(f"✅ Neural Engine module '{module_name}' available")
+                logger.info(f"[OK] Neural Engine module '{module_name}' available")
             except ImportError as e:
-                logger.error(f" Neural Engine module '{module_name}' not found: {e}")
+                logger.error(f"[ERROR] Neural Engine module '{module_name}' not found: {e}")
                 return False
         
         # Test basic functionality
@@ -82,11 +82,11 @@ def check_neural_engine():
         )
         test_optimizer = Adam(learning_rate=0.001)
         
-        logger.info("✅ Neural Engine basic functionality verified")
+        logger.info("[OK] Neural Engine basic functionality verified")
         return True
         
     except Exception as e:
-        logger.error(f" Neural Engine verification failed: {e}")
+        logger.error(f"[ERROR] Neural Engine verification failed: {e}")
         return False
 
 def check_dependencies():
@@ -108,10 +108,10 @@ def check_dependencies():
     for package in required_packages:
         try:
             __import__(package.replace('-', '_'))
-            logger.debug(f"✅ Package '{package}' available")
+            logger.debug(f"[OK] Package '{package}' available")
         except ImportError:
             missing_packages.append(package)
-            logger.error(f" Package '{package}' not found")
+            logger.error(f"[ERROR] Package '{package}' not found")
     
     if missing_packages:
         logger.error("Missing required packages:")
@@ -120,7 +120,7 @@ def check_dependencies():
         logger.error("Install missing packages with: pip install " + " ".join(missing_packages))
         return False
     
-    logger.info("✅ All required dependencies available")
+    logger.info("[OK] All required dependencies available")
     return True
 
 def create_app():
@@ -140,11 +140,11 @@ def create_app():
         # Initialize configuration
         config_class.init_app(app)
         
-        logger.info(f"✅ Flask application created with {config_class.__name__}")
+        logger.info(f"[OK] Flask application created with {config_class.__name__}")
         return app
         
     except Exception as e:
-        logger.error(f" Failed to create Flask application: {e}")
+        logger.error(f"[ERROR] Failed to create Flask application: {e}")
         return None
 
 def setup_signal_handlers(app):
@@ -152,7 +152,7 @@ def setup_signal_handlers(app):
     logger = logging.getLogger(__name__)
     
     def signal_handler(signum, frame):
-        logger.info(f"🛑 Received signal {signum}, shutting down gracefully...")
+        logger.info(f"[STOP] Received signal {signum}, shutting down gracefully...")
         
         # Cleanup operations
         try:
@@ -160,19 +160,19 @@ def setup_signal_handlers(app):
             from app import app_state
             if app_state.get('training_status', {}).get('is_training', False):
                 app_state['training_status']['is_training'] = False
-                logger.info("🔄 Stopped running training processes")
+                logger.info("[STOP] Stopped running training processes")
             
             # Clear temporary files
             temp_dir = Path('temp')
             if temp_dir.exists():
                 import shutil
                 shutil.rmtree(temp_dir)
-                logger.info("🗑️ Cleaned up temporary files")
+                logger.info("[CLEAN] Cleaned up temporary files")
                 
         except Exception as e:
-            logger.error(f" Error during cleanup: {e}")
+            logger.error(f"[ERROR] Error during cleanup: {e}")
         
-        logger.info("👋 Shutdown complete. Goodbye!")
+        logger.info("[DONE] Shutdown complete. Goodbye!")
         sys.exit(0)
     
     # Register signal handlers
@@ -195,20 +195,20 @@ def open_browser(url, delay=2):
 def print_banner():
     """Print application banner"""
     banner = f"""
-    ╔══════════════════════════════════════════════════════════════════════════════╗
-    ║                                                                              ║
-    ║                   🧠 QUADRATIC NEURAL NETWORK WEB APP 🧠                    ║
-    ║                                                                              ║
-    ║                        Advanced Neural Network Analysis                      ║
-    ║                         for Quadratic Equations                             ║
-    ║                                                                              ║
-    ║                            Version: {VERSION_INFO['version']}                              ║
-    ║                            Author: {VERSION_INFO['author']}                               ║
-    ║                         Location: {VERSION_INFO['location']}                      ║
-    ║                                                                              ║
-    ║                        🌐 Beautiful Apple-like Design 🌐                    ║
-    ║                                                                              ║
-    ╚══════════════════════════════════════════════════════════════════════════════╝
+    +------------------------------------------------------------------------------+
+    |                                                                              |
+    |                 QUADRATIC NEURAL NETWORK WEB APP                            |
+    |                                                                              |
+    |                      Advanced Neural Network Analysis                        |
+    |                       for Quadratic Equations                                |
+    |                                                                              |
+    |                          Version: {VERSION_INFO['version']}                              |
+    |                          Author: {VERSION_INFO['author']}                               |
+    |                          Location: {VERSION_INFO['location']}                      |
+    |                                                                              |
+    |                      Beautiful Apple-like Design                             |
+    |                                                                              |
+    +------------------------------------------------------------------------------+
     """
     print(banner)
 
@@ -217,43 +217,43 @@ def print_startup_info(host, port, debug_mode):
     logger = logging.getLogger(__name__)
     
     info = f"""
-    🚀 APPLICATION STARTUP INFORMATION
+    APPLICATION STARTUP INFORMATION
     {'=' * 50}
     
-    📍 Server Information:
-       • Host: {host}
-       • Port: {port}
-       • Debug Mode: {'ON' if debug_mode else 'OFF'}
-       • Environment: {os.environ.get('FLASK_ENV', 'development')}
+    Server Information:
+       - Host: {host}
+       - Port: {port}
+       - Debug Mode: {'ON' if debug_mode else 'OFF'}
+       - Environment: {os.environ.get('FLASK_ENV', 'development')}
     
-    🌐 Access URLs:
-       • Local: http://localhost:{port}
-       • Network: http://{host}:{port}
+    Access URLs:
+       - Local: http://localhost:{port}
+       - Network: http://{host}:{port}
     
-    📋 Application Features:
-       • 📊 Dataset Management & Analysis
-       • 🧠 Multi-Scenario Neural Network Training
-       • 🎯 Interactive Prediction Interface
-       • 📈 Advanced Performance Analysis
-       • ⚖️ Model Comparison & Benchmarking
+    Application Features:
+       - Dataset Management & Analysis
+       - Multi-Scenario Neural Network Training
+       - Interactive Prediction Interface
+       - Advanced Performance Analysis
+       - Model Comparison & Benchmarking
     
-    🛠️ Technical Stack:
-       • Backend: Flask + Custom Neural Engine
-       • Frontend: Modern JavaScript + Chart.js
-       • Design: Apple-like UI/UX
-       • AI Engine: Custom TensorFlow Alternative
+    Technical Stack:
+       - Backend: Flask + Custom Neural Engine
+       - Frontend: Modern JavaScript + Chart.js
+       - Design: Apple-like UI/UX
+       - AI Engine: Custom TensorFlow Alternative
     
-    💡 Quick Start:
+    Quick Start:
        1. Open browser to http://localhost:{port}
        2. Upload quadratic equation dataset (CSV format)
        3. Select training scenarios
        4. Train neural network models
        5. Make predictions and analyze results
     
-    🔧 Controls:
-       • Press Ctrl+C to stop the server
-       • Check logs in 'logs/quadratic_app.log'
-       • Configuration in 'config.py'
+    Controls:
+       - Press Ctrl+C to stop the server
+       - Check logs in 'logs/quadratic_app.log'
+       - Configuration in 'config.py'
     
     {'=' * 50}
     """
@@ -268,10 +268,10 @@ def validate_environment():
     # Check Python version
     python_version = sys.version_info
     if python_version < (3, 8):
-        logger.error(f" Python 3.8+ required, found {python_version.major}.{python_version.minor}")
+        logger.error(f"[ERROR] Python 3.8+ required, found {python_version.major}.{python_version.minor}")
         return False
     
-    logger.info(f"✅ Python {python_version.major}.{python_version.minor}.{python_version.micro}")
+    logger.info(f"[OK] Python {python_version.major}.{python_version.minor}.{python_version.micro}")
     
     # Check dependencies
     if not check_dependencies():
@@ -287,9 +287,9 @@ def validate_environment():
         dir_path = Path(dir_name)
         if not dir_path.exists():
             dir_path.mkdir(parents=True, exist_ok=True)
-            logger.info(f"📁 Created directory: {dir_name}")
+            logger.info(f"[DIR] Created directory: {dir_name}")
     
-    logger.info("✅ Environment validation complete")
+    logger.info("[OK] Environment validation complete")
     return True
 
 def run_development_server(app, host='127.0.0.1', port=5000, debug=True, open_browser_flag=True):
@@ -307,14 +307,14 @@ def run_development_server(app, host='127.0.0.1', port=5000, debug=True, open_br
         if open_browser_flag:
             open_browser(f'http://localhost:{port}')
         
-        logger.info(f"🚀 Starting development server on {host}:{port}")
-        logger.info("🌐 Application ready for connections")
+        logger.info(f"[START] Starting development server on {host}:{port}")
+        logger.info("[READY] Application ready for connections")
         
         # Run the application
         app.run(host=host, port=port, debug=debug, use_reloader=False)
         
     except Exception as e:
-        logger.error(f" Server startup failed: {e}")
+        logger.error(f"[ERROR] Server startup failed: {e}")
         return False
     
     return True
@@ -353,16 +353,16 @@ def run_production_server(app, host='0.0.0.0', port=5000, workers=4):
             'log_level': 'info'
         }
         
-        logger.info(f"🚀 Starting production server with {workers} workers")
+        logger.info(f"[START] Starting production server with {workers} workers")
         print_startup_info(host, port, False)
         
         StandaloneApplication(app, options).run()
         
     except ImportError:
-        logger.error(" Gunicorn not available, falling back to development server")
+        logger.error("[ERROR] Gunicorn not available, falling back to development server")
         return run_development_server(app, host, port, debug=False, open_browser_flag=False)
     except Exception as e:
-        logger.error(f" Production server startup failed: {e}")
+        logger.error(f"[ERROR] Production server startup failed: {e}")
         return False
     
     return True
@@ -395,22 +395,22 @@ def main():
     
     # Validate environment
     if not validate_environment():
-        logger.error(" Environment validation failed")
+        logger.error("[ERROR] Environment validation failed")
         sys.exit(1)
     
     # Create Flask application
     app = create_app()
     if not app:
-        logger.error(" Failed to create application")
+        logger.error("[ERROR] Failed to create application")
         sys.exit(1)
     
     # Run server
     try:
         if args.production:
-            logger.info("🏭 Running in production mode")
+            logger.info("[PROD] Running in production mode")
             success = run_production_server(app, args.host, args.port, args.workers)
         else:
-            logger.info("🚧 Running in development mode")
+            logger.info("[DEV] Running in development mode")
             success = run_development_server(
                 app, 
                 args.host, 
@@ -420,13 +420,13 @@ def main():
             )
         
         if not success:
-            logger.error(" Server failed to start")
+            logger.error("[ERROR] Server failed to start")
             sys.exit(1)
             
     except KeyboardInterrupt:
-        logger.info("🛑 Server stopped by user")
+        logger.info("[STOP] Server stopped by user")
     except Exception as e:
-        logger.error(f" Unexpected error: {e}")
+        logger.error(f"[ERROR] Unexpected error: {e}")
         sys.exit(1)
 
 if __name__ == '__main__':

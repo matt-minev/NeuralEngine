@@ -56,18 +56,29 @@ APPS = [
 
 processes = []
 
+
+def ascii_text(value):
+    """Convert text to ASCII-only output for safer Windows console printing."""
+    return str(value).encode('ascii', 'replace').decode('ascii')
+
+
+def safe_print(message):
+    """Print ASCII-only text to avoid terminal encoding issues."""
+    print(ascii_text(message))
+
+
 def print_header():
     """Print startup header"""
-    print(f"\n{Colors.HEADER}{Colors.BOLD}{'='*70}")
-    print("🧠 NEURAL ENGINE - LAUNCHING ALL APPLICATIONS")
-    print(f"{'='*70}{Colors.END}\n")
+    safe_print(f"\n{Colors.HEADER}{Colors.BOLD}{'='*70}")
+    safe_print("NEURAL ENGINE - LAUNCHING ALL APPLICATIONS")
+    safe_print(f"{'='*70}{Colors.END}\n")
 
 def print_app_info(app):
     """Print application information"""
-    print(f"{app['color']}▶ {app['name']}{Colors.END}")
-    print(f"   Port: {Colors.BOLD}{app['port']}{Colors.END}")
-    print(f"   URL: {Colors.BOLD}http://localhost:{app['port']}{Colors.END}")
-    print(f"   {app['description']}\n")
+    safe_print(f"{app['color']}[START] {app['name']}{Colors.END}")
+    safe_print(f"   Port: {Colors.BOLD}{app['port']}{Colors.END}")
+    safe_print(f"   URL: {Colors.BOLD}http://localhost:{app['port']}{Colors.END}")
+    safe_print(f"   {app['description']}\n")
 
 def start_app(app):
     """Start a Flask application"""
@@ -76,12 +87,12 @@ def start_app(app):
         script_path = Path(__file__).parent / app['path']
         
         if not script_path.exists():
-            print(f"{Colors.RED}✗ Error: {app['path']} not found{Colors.END}")
+            safe_print(f"{Colors.RED}[ERROR] {app['path']} not found{Colors.END}")
             return None
         
-        print(f"{app['color']}Starting {app['name']}...{Colors.END}")
-        print(f"{app['color']}  Script: {script_path}{Colors.END}")
-        print(f"{app['color']}  Command: {sys.executable} {script_path}{Colors.END}")
+        safe_print(f"{app['color']}Starting {app['name']}...{Colors.END}")
+        safe_print(f"{app['color']}  Script: {script_path}{Colors.END}")
+        safe_print(f"{app['color']}  Command: {sys.executable} {script_path}{Colors.END}")
         
         # Start the Flask app with unbuffered output
         process = subprocess.Popen(
@@ -89,36 +100,38 @@ def start_app(app):
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,  # Combine stderr into stdout
             text=True,
+            encoding='utf-8',
+            errors='replace',
             bufsize=1,
             universal_newlines=True,
             cwd=str(Path(__file__).parent)  # Set working directory
         )
         
-        print(f"{app['color']}  Process ID: {process.pid}{Colors.END}")
-        print(f"{app['color']}  Status: Started{Colors.END}\n")
+        safe_print(f"{app['color']}  Process ID: {process.pid}{Colors.END}")
+        safe_print(f"{app['color']}  Status: Started{Colors.END}\n")
         
         return process
     except Exception as e:
-        print(f"{Colors.RED}✗ Error starting {app['name']}: {e}{Colors.END}")
+        safe_print(f"{Colors.RED}[ERROR] Error starting {app['name']}: {e}{Colors.END}")
         import traceback
         traceback.print_exc()
         return None
 
 def signal_handler(sig, frame):
     """Handle Ctrl+C gracefully"""
-    print(f"\n\n{Colors.YELLOW}Shutting down all applications...{Colors.END}")
+    safe_print(f"\n\n{Colors.YELLOW}Shutting down all applications...{Colors.END}")
     
     for i, process in enumerate(processes):
         if process and process.poll() is None:
             app = APPS[i]
-            print(f"{app['color']}Stopping {app['name']}...{Colors.END}")
+            safe_print(f"{app['color']}Stopping {app['name']}...{Colors.END}")
             process.terminate()
             try:
                 process.wait(timeout=5)
             except subprocess.TimeoutExpired:
                 process.kill()
     
-    print(f"{Colors.GREEN}All applications stopped.{Colors.END}\n")
+    safe_print(f"{Colors.GREEN}All applications stopped.{Colors.END}\n")
     sys.exit(0)
 
 def main():
@@ -130,7 +143,7 @@ def main():
     signal.signal(signal.SIGTERM, signal_handler)
     
     # Start all applications
-    print(f"{Colors.BOLD}Starting applications...{Colors.END}\n")
+    safe_print(f"{Colors.BOLD}Starting applications...{Colors.END}\n")
     
     for app in APPS:
         print_app_info(app)
@@ -142,15 +155,15 @@ def main():
             processes.append(None)
     
     # Print summary
-    print(f"\n{Colors.GREEN}{Colors.BOLD}{'='*70}")
-    print("✓ All applications started successfully!")
-    print(f"{'='*70}{Colors.END}\n")
+    safe_print(f"\n{Colors.GREEN}{Colors.BOLD}{'='*70}")
+    safe_print("All applications started successfully!")
+    safe_print(f"{'='*70}{Colors.END}\n")
     
-    print(f"{Colors.BOLD}Access the applications at:{Colors.END}")
+    safe_print(f"{Colors.BOLD}Access the applications at:{Colors.END}")
     for app in APPS:
-        print(f"  {app['color']}• {app['name']}:{Colors.END} {Colors.BOLD}http://localhost:{app['port']}{Colors.END}")
+        safe_print(f"  {app['color']}[APP] {app['name']}:{Colors.END} {Colors.BOLD}http://localhost:{app['port']}{Colors.END}")
     
-    print(f"\n{Colors.YELLOW}Press Ctrl+C to stop all applications{Colors.END}\n")
+    safe_print(f"\n{Colors.YELLOW}Press Ctrl+C to stop all applications{Colors.END}\n")
     
     # Start output readers for each process
     import threading
@@ -162,9 +175,9 @@ def main():
         try:
             for line in iter(process.stdout.readline, ''):
                 if line:
-                    print(f"{color}[{app_name}]{Colors.END} {line.rstrip()}")
+                    safe_print(f"{color}[{app_name}]{Colors.END} {line.rstrip()}")
         except Exception as e:
-            print(f"{Colors.RED}Error reading output from {app_name}: {e}{Colors.END}")
+            safe_print(f"{Colors.RED}Error reading output from {app_name}: {e}{Colors.END}")
     
     # Start output reader threads
     output_threads = []
@@ -188,16 +201,16 @@ def main():
                 if process and process.poll() is not None:
                     app = APPS[i]
                     return_code = process.returncode
-                    print(f"\n{Colors.RED}⚠ {app['name']} has stopped unexpectedly{Colors.END}")
-                    print(f"{Colors.RED}  Return code: {return_code}{Colors.END}")
-                    print(f"{Colors.RED}  Process ID: {process.pid}{Colors.END}")
+                    safe_print(f"\n{Colors.RED}[WARN] {app['name']} has stopped unexpectedly{Colors.END}")
+                    safe_print(f"{Colors.RED}  Return code: {return_code}{Colors.END}")
+                    safe_print(f"{Colors.RED}  Process ID: {process.pid}{Colors.END}")
                     
                     # Try to read any remaining output
                     try:
                         remaining_output = process.stdout.read()
                         if remaining_output:
-                            print(f"{Colors.RED}  Last output:{Colors.END}")
-                            print(remaining_output)
+                            safe_print(f"{Colors.RED}  Last output:{Colors.END}")
+                            safe_print(remaining_output)
                     except:
                         pass
                     
