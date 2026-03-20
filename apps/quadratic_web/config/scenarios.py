@@ -24,8 +24,8 @@ def get_default_scenarios():
             target_features=['x1', 'x2'],
             input_indices=[0, 1, 2],
             target_indices=[3, 4],
-            network_architecture=[3, 16, 32, 16, 2],
-            activations=['relu', 'relu', 'relu', 'linear'],
+            network_architecture=[3, 64, 64, 32, 2],
+            activations=['swish', 'swish', 'relu', 'linear'],
             color='#FF6B6B'
         ),
         'partial_coeff_to_missing': PredictionScenario(
@@ -35,8 +35,8 @@ def get_default_scenarios():
             target_features=['c', 'x2'],
             input_indices=[0, 1, 3],
             target_indices=[2, 4],
-            network_architecture=[3, 20, 24, 12, 2],
-            activations=['relu', 'swish', 'relu', 'linear'],
+            network_architecture=[3, 64, 64, 32, 2],
+            activations=['swish', 'swish', 'relu', 'linear'],
             color='#4ECDC4'
         ),
         'roots_to_coeff': PredictionScenario(
@@ -46,8 +46,8 @@ def get_default_scenarios():
             target_features=['a', 'b', 'c'],
             input_indices=[3, 4],
             target_indices=[0, 1, 2],
-            network_architecture=[2, 20, 32, 20, 3],
-            activations=['relu', 'swish', 'relu', 'linear'],
+            network_architecture=[2, 64, 64, 32, 3],
+            activations=['swish', 'swish', 'relu', 'linear'],
             color='#45B7D1'
         ),
         'single_missing': PredictionScenario(
@@ -57,8 +57,8 @@ def get_default_scenarios():
             target_features=['x2'],
             input_indices=[0, 1, 2, 3],
             target_indices=[4],
-            network_architecture=[4, 24, 32, 16, 1],
-            activations=['relu', 'swish', 'relu', 'linear'],
+            network_architecture=[4, 64, 64, 32, 1],
+            activations=['swish', 'swish', 'relu', 'linear'],
             color='#96CEB4'
         ),
         'verify_equation': PredictionScenario(
@@ -68,8 +68,8 @@ def get_default_scenarios():
             target_features=['error'],
             input_indices=[0, 1, 2, 3, 4],
             target_indices=[5],
-            network_architecture=[5, 32, 24, 16, 1],
-            activations=['relu', 'swish', 'relu', 'sigmoid'],
+            network_architecture=[5, 64, 48, 24, 1],
+            activations=['swish', 'swish', 'relu', 'linear'],
             color='#FFEAA7'
         )
     }

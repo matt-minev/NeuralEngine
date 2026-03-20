@@ -23,6 +23,9 @@ class QuadraticDataProcessor:
                 raise ValueError("Dataset must have exactly 5 columns: a, b, c, x1, x2")
                 
             self.data = df.values.astype(np.float32)
+
+            # Canonicalize raw equations so learning targets are consistent.
+            self._canonicalize_equations()
             
             # Add error column for verification scenario
             self._add_error_column()
@@ -39,6 +42,63 @@ class QuadraticDataProcessor:
             if self.verbose:
                 print(f"❌ Failed to load data: {str(e)}")
             return False
+
+    def _canonicalize_equations(self):
+        """
+        Canonicalize root ordering in the base dataset.
+        Enforces x1 <= x2, which removes label permutation ambiguity.
+        """
+        if self.data is None or self.data.shape[1] < 5:
+            return
+
+        x1 = self.data[:, 3]
+        x2 = self.data[:, 4]
+        left = np.minimum(x1, x2)
+        right = np.maximum(x1, x2)
+        self.data[:, 3] = left
+        self.data[:, 4] = right
+
+    def _scenario_uses_roots_as_input(self, scenario) -> bool:
+        return set(scenario.input_features) == {'x1', 'x2'}
+
+    def _scenario_predicts_two_roots(self, scenario) -> bool:
+        return set(scenario.target_features) == {'x1', 'x2'}
+
+    def _apply_scenario_input_constraints(self, scenario, X: np.ndarray) -> np.ndarray:
+        """
+        Apply scenario-specific input canonicalization to avoid equivalent-input ambiguity.
+        """
+        Xc = np.asarray(X, dtype=np.float32).copy()
+        if self._scenario_uses_roots_as_input(scenario) and Xc.shape[1] >= 2:
+            x1 = Xc[:, 0]
+            x2 = Xc[:, 1]
+            Xc[:, 0] = np.minimum(x1, x2)
+            Xc[:, 1] = np.maximum(x1, x2)
+        return Xc
+
+    def _apply_scenario_target_constraints(self, scenario, y: np.ndarray) -> np.ndarray:
+        """
+        Apply scenario-specific target canonicalization.
+        - root outputs are sorted (x1 <= x2)
+        - roots->coeff uses monic canonical form (a=1, b/a, c/a)
+        """
+        yc = np.asarray(y, dtype=np.float32).copy()
+
+        if self._scenario_predicts_two_roots(scenario) and yc.shape[1] >= 2:
+            r1 = yc[:, 0]
+            r2 = yc[:, 1]
+            yc[:, 0] = np.minimum(r1, r2)
+            yc[:, 1] = np.maximum(r1, r2)
+            return yc
+
+        if scenario.name == "Roots → Coefficients" and yc.shape[1] >= 3:
+            a = yc[:, 0]
+            safe_a = np.where(np.abs(a) < 1e-8, 1.0, a)
+            yc[:, 0] = 1.0
+            yc[:, 1] = yc[:, 1] / safe_a
+            yc[:, 2] = yc[:, 2] / safe_a
+
+        return yc
     
     def _add_error_column(self):
         """Add error column for equation verification"""
@@ -94,6 +154,8 @@ class QuadraticDataProcessor:
         # Extract input and target data
         X = self.data[:, scenario.input_indices]
         y = self.data[:, scenario.target_indices]
+        X = self._apply_scenario_input_constraints(scenario, X)
+        y = self._apply_scenario_target_constraints(scenario, y)
         
         if normalize:
             # Create scenario-specific scalers
@@ -108,6 +170,53 @@ class QuadraticDataProcessor:
             y = self.scalers[target_scaler_key].fit_transform(y)
         
         return X.astype(np.float32), y.astype(np.float32)
+
+    def prepare_scenario_splits(
+        self,
+        scenario,
+        normalize: bool = True,
+        train_size: float = 0.7,
+        val_size: float = 0.15,
+        random_state: int = 42
+    ) -> Tuple[np.ndarray, ...]:
+        """
+        Prepare train/val/test for a scenario with leakage-safe scaling.
+        Scalers are fit on training data only.
+        """
+        X_raw, y_raw = self.prepare_scenario_data(scenario, normalize=False)
+        X_train, X_val, X_test, y_train, y_val, y_test = self.split_data(
+            X_raw, y_raw, train_size=train_size, val_size=val_size, random_state=random_state
+        )
+
+        if not normalize:
+            return (
+                X_train.astype(np.float32), X_val.astype(np.float32), X_test.astype(np.float32),
+                y_train.astype(np.float32), y_val.astype(np.float32), y_test.astype(np.float32)
+            )
+
+        scaler_key = f"{scenario.name}_input"
+        target_scaler_key = f"{scenario.name}_target"
+
+        input_scaler = StandardScaler()
+        target_scaler = StandardScaler()
+        X_train_n = input_scaler.fit_transform(X_train)
+        y_train_n = target_scaler.fit_transform(y_train)
+        X_val_n = input_scaler.transform(X_val)
+        X_test_n = input_scaler.transform(X_test)
+        y_val_n = target_scaler.transform(y_val)
+        y_test_n = target_scaler.transform(y_test)
+
+        self.scalers[scaler_key] = input_scaler
+        self.scalers[target_scaler_key] = target_scaler
+
+        return (
+            X_train_n.astype(np.float32),
+            X_val_n.astype(np.float32),
+            X_test_n.astype(np.float32),
+            y_train_n.astype(np.float32),
+            y_val_n.astype(np.float32),
+            y_test_n.astype(np.float32),
+        )
     
     def transform_input(self, scenario, input_data: np.ndarray) -> np.ndarray:
         """Transform input data using scenario-specific scaler"""
@@ -118,8 +227,9 @@ class QuadraticDataProcessor:
             
         if input_data.ndim == 1:
             input_data = input_data.reshape(1, -1)
-            
-        return self.scalers[scaler_key].transform(input_data)
+
+        constrained = self._apply_scenario_input_constraints(scenario, input_data)
+        return self.scalers[scaler_key].transform(constrained)
     
     def inverse_transform_output(self, scenario, output_data: np.ndarray) -> np.ndarray:
         """Inverse transform output data using scenario-specific scaler"""
@@ -128,7 +238,9 @@ class QuadraticDataProcessor:
         if target_scaler_key not in self.scalers:
             raise ValueError(f"Target scaler for scenario '{scenario.name}' not found. Train model first.")
             
-        return self.scalers[target_scaler_key].inverse_transform(output_data)
+        output = self.scalers[target_scaler_key].inverse_transform(output_data)
+        output = self._apply_scenario_target_constraints(scenario, output)
+        return output
     
     def split_data(self, X: np.ndarray, y: np.ndarray, 
                    train_size: float = 0.7, val_size: float = 0.15, 

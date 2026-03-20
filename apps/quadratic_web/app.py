@@ -233,18 +233,38 @@ def make_prediction():
         input_array = np.array(input_values).reshape(1, -1)
         predictions, confidences = predictor.predict(input_array, return_confidence=True)
 
+        # Normalize output shapes for single-sample web requests.
+        # Some backend paths may return 1D outputs; avoid indexing into scalars.
+        predictions_arr = np.asarray(predictions)
+        if predictions_arr.ndim == 0:
+            prediction_vector = np.array([predictions_arr.item()], dtype=np.float64)
+        elif predictions_arr.ndim == 1:
+            prediction_vector = predictions_arr
+        else:
+            prediction_vector = np.asarray(predictions_arr[0]).reshape(-1)
+
+        confidence_vector = None
+        if confidences is not None:
+            confidences_arr = np.asarray(confidences)
+            if confidences_arr.ndim == 0:
+                confidence_vector = np.array([confidences_arr.item()], dtype=np.float64)
+            elif confidences_arr.ndim == 1:
+                confidence_vector = confidences_arr
+            else:
+                confidence_vector = np.asarray(confidences_arr[0]).reshape(-1)
+
         # NEW: Get detailed analysis for the frontend
         prediction_details = _get_prediction_details(
             scenario_key, 
             input_values, 
-            predictions[0], 
+            prediction_vector, 
             app_state['scenarios'][scenario_key]
         )
 
         return jsonify({
             'success': True,
-            'predictions': predictions[0].tolist(),
-            'confidences': confidences[0].tolist() if confidences is not None else [],
+            'predictions': prediction_vector.tolist(),
+            'confidences': confidence_vector.tolist() if confidence_vector is not None else [],
             'scenario': app_state['scenarios'][scenario_key].name,
             'target_features': app_state['scenarios'][scenario_key].target_features,
             'details': _json_safe(prediction_details)  # NEW structured data
@@ -1504,6 +1524,24 @@ def _get_prediction_details(scenario_key, inputs, predictions, scenario_info):
     }
 
     try:
+        # Defensive normalization: keep details generation robust across
+        # NumPy/CuPy/scalar/list shape variations.
+        expected_input_count = len(scenario_info.input_features)
+        expected_output_count = len(scenario_info.target_features)
+
+        inputs = np.asarray(inputs, dtype=np.float64).reshape(-1)
+        predictions = np.asarray(predictions, dtype=np.float64).reshape(-1)
+
+        if inputs.size < expected_input_count:
+            inputs = np.pad(inputs, (0, expected_input_count - inputs.size), constant_values=np.nan)
+        elif inputs.size > expected_input_count:
+            inputs = inputs[:expected_input_count]
+
+        if predictions.size < expected_output_count:
+            predictions = np.pad(predictions, (0, expected_output_count - predictions.size), constant_values=np.nan)
+        elif predictions.size > expected_output_count:
+            predictions = predictions[:expected_output_count]
+
         # --- FIX: Renamed 'partial_coeff' to match the key from the error message ---
         if scenario_key == 'partial_coeff_to_missing': 
             # This logic was previously under 'partial_coeff'
@@ -1533,7 +1571,15 @@ def _get_prediction_details(scenario_key, inputs, predictions, scenario_info):
             actual_sols_result = _calculate_quadratic_solutions(inputs, return_type=True)
             details['analysis']['actual_solution_type'] = actual_sols_result['type']
             if actual_sols_result['roots']:
-                x1_actual, x2_actual = sorted(actual_sols_result['roots'])
+                roots = list(actual_sols_result['roots'])
+
+                # Handle repeated/linear roots that return a single value.
+                if len(roots) == 1:
+                    x1_actual = roots[0]
+                    x2_actual = roots[0]
+                else:
+                    x1_actual, x2_actual = sorted(roots[:2])
+
                 details['actual_values'] = {'x₁': x1_actual, 'x₂': x2_actual}
                 
                 # Calculate errors with sorted values

@@ -12,6 +12,7 @@ sys.path.insert(0, str(neural_engine_root))
 
 from nn_core import NeuralNetwork, mean_squared_error, mean_absolute_error
 from autodiff import TrainingEngine, Adam
+from neural_backend import as_numpy
 try:
     from config.scenarios import PredictionScenario
 except ImportError:
@@ -36,6 +37,19 @@ class QuadraticPredictor:
         self.ensemble_networks = []  # List of trained networks for ensemble
         self.use_ensemble = False
         self.device = os.getenv('NEURAL_ENGINE_DEVICE', 'auto')
+
+    def _as_numpy(self, value):
+        """Convert backend tensors (NumPy/CuPy) to NumPy arrays for sklearn/JSON paths."""
+        return np.asarray(as_numpy(value))
+
+    def _is_coeff_to_roots_scenario(self) -> bool:
+        return (
+            set(self.scenario.input_features) == {'a', 'b', 'c'}
+            and set(self.scenario.target_features) == {'x1', 'x2'}
+        )
+
+    def _is_two_root_target(self) -> bool:
+        return set(self.scenario.target_features) == {'x1', 'x2'}
         
     def create_network(self, learning_rate: float = 0.001):
         """Create neural network for this scenario"""
@@ -52,7 +66,7 @@ class QuadraticPredictor:
     def train(self, epochs: int = 1000, learning_rate: float = 0.001, verbose: bool = True, 
               use_multi_phase: bool = True, early_stopping_patience: int = 50,
               clip_gradients: bool = True, max_grad_norm: float = 5.0,
-              lr_scheduler: str = 'cosine', use_augmentation: bool = True,
+              lr_scheduler: str = 'onecycle', use_augmentation: bool = False,
               ensemble_size: int = 1) -> Dict[str, Any]:
         """
         Train the neural network with multi-phase training, learning rate scheduling, and early stopping
@@ -69,15 +83,14 @@ class QuadraticPredictor:
             use_augmentation: Whether to use data augmentation (default: True)
             ensemble_size: Number of models to train for ensemble (default: 1, no ensemble)
         """
-        # Prepare data
-        X, y = self.data_processor.prepare_scenario_data(self.scenario, normalize=True)
-        
-        # Apply data augmentation if enabled
+        # Prepare leakage-safe split data (scalers are fit on train only).
+        X_train, X_val, X_test, y_train, y_val, y_test = self.data_processor.prepare_scenario_splits(
+            self.scenario, normalize=True
+        )
+
+        # Apply data augmentation only on training split.
         if use_augmentation:
-            X, y = self._augment_data(X, y)
-        
-        # Split data
-        X_train, X_val, X_test, y_train, y_val, y_test = self.data_processor.split_data(X, y)
+            X_train, y_train = self._augment_data(X_train, y_train)
         
         start_time = time.time()
         
@@ -303,31 +316,14 @@ class QuadraticPredictor:
         """
         augmented_X = [X]
         augmented_y = [y]
-        
-        # Determine scenario type from input/output shapes
-        # For quadratic equations, we typically have 3 inputs (a, b, c) and 2 outputs (x1, x2)
-        n_samples = X.shape[0]
-        
-        # Only augment if we have the right structure (3 inputs, 2 outputs for root prediction)
-        if X.shape[1] == 3 and y.shape[1] == 2:
-            # Root swapping: swap x1 and x2
-            y_swapped = y.copy()
-            y_swapped[:, [0, 1]] = y_swapped[:, [1, 0]]  # Swap columns
-            augmented_X.append(X)
-            augmented_y.append(y_swapped)
-            
-            # Sign flipping: negate all coefficients (creates equivalent equation)
-            # For ax² + bx + c = 0, negating gives -ax² - bx - c = 0 (same roots)
-            X_flipped = -X.copy()
-            augmented_X.append(X_flipped)
-            augmented_y.append(y.copy())  # Roots remain the same
-            
-            # Coefficient scaling: multiply by small constants (0.5, 2.0)
-            # This creates equivalent equations: k(ax² + bx + c) = 0 has same roots
-            for scale in [0.5, 2.0]:
-                X_scaled = X * scale
-                augmented_X.append(X_scaled)
-                augmented_y.append(y.copy())  # Roots remain the same
+
+        # Keep augmentation conservative and scenario-specific.
+        # Generic 3->2 augmentation is harmful for non-root tasks.
+        if self._is_coeff_to_roots_scenario() and X.shape[1] == 3 and y.shape[1] == 2:
+            # Small feature-space jitter improves robustness without changing label semantics.
+            noise = np.random.normal(0.0, 0.01, X.shape).astype(np.float32)
+            augmented_X.append((X + noise).astype(np.float32))
+            augmented_y.append(y.copy())
         
         # Concatenate all augmented data
         X_augmented = np.vstack(augmented_X)
@@ -380,9 +376,7 @@ class QuadraticPredictor:
             # Update learning rate if it changed significantly
             if abs(current_lr - lr) / current_lr > 0.1:
                 current_lr = lr
-                self.create_network(current_lr)
-                if best_network_state:
-                    self.network.set_all_parameters(best_network_state)
+                self.trainer.optimizer.learning_rate = float(current_lr)
             
             # Train for one epoch
             epoch_history = self.trainer.train(
@@ -407,9 +401,7 @@ class QuadraticPredictor:
                 new_lr = scheduler.get_lr(epoch)
                 if abs(current_lr - new_lr) / current_lr > 0.1:
                     current_lr = new_lr
-                    self.create_network(current_lr)
-                    if best_network_state:
-                        self.network.set_all_parameters(best_network_state)
+                    self.trainer.optimizer.learning_rate = float(current_lr)
             
             # Early stopping check
             if val_loss < best_val_loss:
@@ -456,7 +448,8 @@ class QuadraticPredictor:
                 predictions.append(pred)
             
             # Average predictions
-            y_pred_transformed = np.mean(predictions, axis=0)
+            xp = self.network.xp
+            y_pred_transformed = xp.mean(xp.stack(predictions, axis=0), axis=0)
             
             # Restore primary network
             if self.network is not None:
@@ -466,7 +459,8 @@ class QuadraticPredictor:
             y_pred_transformed = self.network.forward(X_transformed)
         
         # Inverse transform predictions
-        y_pred = self.data_processor.inverse_transform_output(self.scenario, y_pred_transformed)
+        y_pred_np = self._as_numpy(y_pred_transformed)
+        y_pred = self.data_processor.inverse_transform_output(self.scenario, y_pred_np)
         
         # Refine predictions if requested
         if refine_predictions:
@@ -501,7 +495,7 @@ class QuadraticPredictor:
         refined = predictions.copy()
         
         # If predicting roots from coefficients
-        if self.scenario.name in ['coeff_to_roots', 'coeff_to_x1', 'coeff_to_x2', 'coeff_to_both_roots']:
+        if self._is_coeff_to_roots_scenario():
             # Ensure predictions are 2D
             if refined.ndim == 1:
                 refined = refined.reshape(1, -1)
@@ -534,7 +528,13 @@ class QuadraticPredictor:
                             continue
                         
                         # Calculate confidence for this prediction
-                        pred_confidence = confidence[i] if confidence is not None and i < len(confidence) else 0.5
+                        pred_confidence = 0.5
+                        if confidence is not None and i < len(confidence):
+                            pred_conf_raw = confidence[i]
+                            if np.isscalar(pred_conf_raw):
+                                pred_confidence = float(pred_conf_raw)
+                            else:
+                                pred_confidence = float(np.mean(pred_conf_raw))
                         
                         # Determine refinement strategy based on confidence
                         # Low confidence (< 0.7): aggressive refinement (3 iterations)
@@ -630,19 +630,20 @@ class QuadraticPredictor:
         
         return averaged
     
-    def _estimate_confidence(self, X_transformed: np.ndarray, n_samples: int = 50) -> np.ndarray:
+    def _estimate_confidence(self, X_transformed: np.ndarray, n_samples: int = 24) -> np.ndarray:
         """Estimate prediction confidence using Monte Carlo dropout simulation"""
         predictions = []
         
         # Get current parameters
         original_params = self.network.get_all_parameters()
+        xp = self.network.xp
         
         # Generate multiple predictions with small parameter perturbations
         for _ in range(n_samples):
             # Add small noise to parameters
             perturbed_params = []
             for param in original_params:
-                noise = np.random.normal(0, 0.01, param.shape)
+                noise = xp.random.normal(0, 0.01, param.shape)
                 perturbed_params.append(param + noise)
             
             # Set perturbed parameters
@@ -656,13 +657,13 @@ class QuadraticPredictor:
         self.network.set_all_parameters(original_params)
         
         # Calculate confidence metrics
-        predictions = np.array(predictions)
-        std_pred = np.std(predictions, axis=0)
+        predictions = xp.stack(predictions, axis=0)
+        std_pred = xp.std(predictions, axis=0)
         
         # Confidence as inverse of normalized standard deviation
         confidence = 1.0 / (1.0 + std_pred)
         
-        return confidence
+        return self._as_numpy(confidence)
     
     def evaluate(self, X_test: np.ndarray, y_test: np.ndarray) -> Dict[str, float]:
         """Evaluate model performance"""
@@ -670,21 +671,27 @@ class QuadraticPredictor:
             raise ValueError("Model must be trained before evaluation")
         
         # Make predictions
-        y_pred = self.network.forward(X_test)
+        y_pred = self._as_numpy(self.network.forward(X_test))
+        y_test_np = np.asarray(y_test, dtype=np.float32)
+
+        # Permutation-invariant evaluation for root-pair outputs.
+        if self._is_two_root_target() and y_pred.ndim == 2 and y_pred.shape[1] == 2:
+            y_pred = np.sort(y_pred, axis=1)
+            y_test_np = np.sort(y_test_np, axis=1)
         
         # Calculate metrics
-        mse = np.mean((y_test - y_pred) ** 2)
-        mae = np.mean(np.abs(y_test - y_pred))
+        mse = np.mean((y_test_np - y_pred) ** 2)
+        mae = np.mean(np.abs(y_test_np - y_pred))
         rmse = np.sqrt(mse)
         
         # R² score
-        ss_res = np.sum((y_test - y_pred) ** 2)
-        ss_tot = np.sum((y_test - np.mean(y_test)) ** 2)
+        ss_res = np.sum((y_test_np - y_pred) ** 2)
+        ss_tot = np.sum((y_test_np - np.mean(y_test_np)) ** 2)
         r2 = 1 - (ss_res / ss_tot) if ss_tot != 0 else 0
         
         # Accuracy within tolerance
         tolerance = 0.1
-        relative_error = np.abs((y_test - y_pred) / (y_test + 1e-8))
+        relative_error = np.abs((y_test_np - y_pred) / (y_test_np + 1e-8))
         accuracy = np.mean(relative_error < tolerance) * 100
         
         return {
