@@ -3,328 +3,195 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dataset Showcase - Neural Engine</title>
-
-    <!-- main styles -->
-    <link rel="stylesheet" href="static/css/showcase.css" />
-
-    <!-- google fonts for better typography -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-
-    <!-- Neural Engine Logo Favicon -->
+    <title>Neural Engine • Dataset Showcase</title>
     <link
       rel="icon"
       type="image/png"
-      href="/assets/neural-engine-logo.png"
+      href="{{ url_for('serve_assets', filename='neural-engine-logo.png') }}"
     />
-
-    <!-- inter font looks clean -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
-
-    <!-- d3.js needed for the network graph visualization -->
-    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/buttons.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/cards.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/forms.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/overlays.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/showcase.css') }}" />
   </head>
+  <body class="theme-neural page-showcase">
+    <div class="page-shell page-shell--showcase">
+      <div class="ambient-grid" aria-hidden="true"></div>
+      <div class="ambient-glow ambient-glow--cyan" aria-hidden="true"></div>
+      <div class="ambient-glow ambient-glow--amber" aria-hidden="true"></div>
 
-  <body>
-    <!-- animated background with floating shapes -->
-    <div class="animated-background">
-      <div class="floating-shapes">
-        <div class="shape shape-1"></div>
-        <div class="shape shape-2"></div>
-        <div class="shape shape-3"></div>
-        <div class="shape shape-4"></div>
-        <div class="shape shape-5"></div>
-      </div>
-    </div>
-
-    <div class="showcase-container">
-      <!-- main header section -->
-      <header class="showcase-header">
-        <div class="header-content">
-          <div class="showcase-logo-container">
-            <img src="/assets/neural-engine-logo.png" alt="Neural Engine Logo" class="showcase-logo" />
-            <h1 class="showcase-title">Neural Engine Dataset Showcase</h1>
+      <header class="topbar topbar--showcase">
+        <div class="topbar__brand">
+          <div class="brand-mark">
+            <div class="brand-mark__logo">
+              <img
+                src="{{ url_for('serve_assets', filename='neural-engine-logo.png') }}"
+                alt="Neural Engine logo"
+              />
+            </div>
+            <div class="brand-mark__text">
+              <span class="brand-mark__eyebrow">Neural Engine</span>
+              <strong class="brand-mark__title">Dataset Showcase</strong>
+              <span class="brand-mark__subtitle">Signal-flow inference lab</span>
+            </div>
           </div>
-          <p class="showcase-subtitle">
-            Explore real-time neural network predictions on dataset samples
-          </p>
         </div>
-
-        <!-- controls in the header -->
-        <div class="header-controls">
-          <!-- toggle for switching between real and synthetic data -->
-          <div class="data-source-toggle">
-            <label class="toggle-label">
-              <span class="toggle-text">Real Data</span>
-              <div class="toggle-switch">
-                <input
-                  type="checkbox"
-                  id="dataSourceToggle"
-                  aria-label="Toggle between real and synthetic data"
-                />
-                <span class="slider"></span>
-              </div>
-              <span class="toggle-text">Synthetic</span>
-            </label>
-          </div>
-
-          <!-- back button to go to drawing mode -->
-          <button
-            id="backToDrawBtn"
-            class="btn btn-secondary"
-            aria-label="Back to drawing mode"
-          >
-            <span class="btn-icon">✏️</span>
-            Drawing Mode
-          </button>
+        <div class="topbar__actions">
+          <a id="backToDrawBtn" class="button button--ghost" href="{{ url_for('index') }}">Back To Drawing</a>
         </div>
       </header>
 
-      <main class="showcase-main">
-        <!-- section where we display the current sample -->
-        <section class="sample-section">
-          <div class="sample-container">
-            <!-- canvas for drawing the digit sample -->
-            <div class="sample-image-wrapper">
-              <canvas
-                id="sampleCanvas"
-                width="280"
-                height="280"
-                aria-label="Dataset sample digit"
-                title="Click to load next sample"
-              ></canvas>
+      <main class="showcase-layout">
+        <section class="showcase-hero surface-card surface-card--hero">
+          <div class="showcase-hero__copy">
+            <span class="section-kicker">Dataset Intelligence</span>
+            <h1>Inspect live samples, then trace the network’s decision path.</h1>
+            <p>Cycle through real or synthetic digits, compare predictions, and step through a clearer signal-flow view of the network.</p>
+          </div>
+          <div class="showcase-hero__actions">
+            <label class="toggle-card" for="dataSourceToggle">
+              <span class="toggle-card__label">Sample source</span>
+              <div class="toggle-switch">
+                <span class="toggle-text">Real</span>
+                <input type="checkbox" id="dataSourceToggle" aria-label="Toggle between real and synthetic data" />
+                <span class="toggle-slider"></span>
+                <span class="toggle-text">Synthetic</span>
+              </div>
+            </label>
+            <div class="compact-metrics">
+              <div class="metric-tile">
+                <span class="metric-tile__label">Sample</span>
+                <span class="metric-tile__value" id="sampleCounter">0</span>
+              </div>
+              <div class="metric-tile">
+                <span class="metric-tile__label">Model accuracy</span>
+                <span class="metric-tile__value" id="modelAccuracy">{{ "%.2f" | format(model_info.accuracy) }}%</span>
+              </div>
+            </div>
+          </div>
+        </section>
 
-              <!-- loading overlay shows while fetching data -->
-              <div class="sample-overlay loading" id="sampleOverlay">
+        <section class="sample-panel surface-card">
+          <div class="panel-heading">
+            <div>
+              <span class="section-kicker">Input Sample</span>
+              <h2>Current specimen</h2>
+            </div>
+            <button id="nextSampleBtn" class="button button--primary">Load Next Sample</button>
+          </div>
+
+          <div class="sample-panel__content">
+            <div class="sample-canvas-shell">
+              <canvas id="sampleCanvas" width="320" height="320" aria-label="Dataset sample digit"></canvas>
+              <div class="sample-overlay" id="sampleOverlay">
                 <div class="loading-spinner"></div>
-                <p>Loading sample...</p>
+                <strong>Loading specimen</strong>
               </div>
-
-              <!-- hint to tell users they can click -->
-              <div class="click-hint" id="clickHint">
-                <span>Click to load next sample</span>
-              </div>
+              <div class="sample-canvas-shell__hint" id="clickHint">Click the sample surface to advance</div>
             </div>
 
-            <!-- prediction results display -->
-            <div class="prediction-display">
-              <div
-                class="predicted-digit"
-                id="predictedDigit"
-                aria-live="polite"
-              >
-                -
+            <div class="sample-summary">
+              <div class="prediction-badge">
+                <span class="prediction-badge__label">Predicted digit</span>
+                <span class="prediction-badge__value" id="predictedDigit">-</span>
               </div>
-
-              <!-- shows confidence and actual label -->
-              <div class="prediction-details">
-                <div class="confidence-display">
-                  <span class="confidence-label">Confidence</span>
-                  <span class="confidence-value" id="confidenceValue">--%</span>
+              <div class="sample-summary__grid">
+                <div class="data-block">
+                  <span class="data-block__label">Confidence</span>
+                  <strong class="data-block__value" id="confidenceValue">--%</strong>
                 </div>
-                <div class="actual-label-display">
-                  <span class="actual-label">Actual</span>
-                  <span class="actual-value" id="actualValue">-</span>
+                <div class="data-block">
+                  <span class="data-block__label">Actual label</span>
+                  <strong class="data-block__value" id="actualValue">-</strong>
                 </div>
               </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- controls for loading samples and switching models -->
-        <section class="sample-controls-section">
-          <div class="controls-container">
-            <!-- main button to load next sample -->
-            <button
-              id="nextSampleBtn"
-              class="btn btn-primary btn-large"
-              aria-label="Load next sample"
-            >
-              <span class="btn-icon">🔄</span>
-              Next Sample
-            </button>
-
-            <!-- stats and model selector -->
-            <div class="sample-stats">
-              <!-- counter showing which sample we're on -->
-              <div class="sample-counter">
-                <span class="counter-label">Sample</span>
-                <span class="counter-value" id="sampleCounter">1</span>
-              </div>
-
-              <!-- display model accuracy -->
-              <div class="accuracy-display">
-                <span class="accuracy-label">Model Accuracy</span>
-                <span class="accuracy-value" id="modelAccuracy">--%</span>
-              </div>
-
-              <!-- dropdown to select different models -->
-              <div class="model-selector-container">
-                <label class="model-selector-label">Neural Model</label>
-                <div class="model-selector-wrapper">
-                  <select
-                    id="modelSelector"
-                    class="model-selector"
-                    aria-label="Select neural network model"
-                  >
-                    <!-- available model options -->
-                    <option value="enhanced_digit_model.pkl">
-                      Enhanced Model
-                    </option>
+              <div class="field-group">
+                <label class="field-label" for="modelSelector">Recognition model</label>
+                <div class="select-field">
+                  <select id="modelSelector" aria-label="Select neural network model">
+                    <option value="enhanced_digit_model.pkl">Enhanced Model</option>
+                    <option value="digit_model_bulletproof.pkl">Bulletproof Model</option>
+                    <option value="digit_model_optimized.pkl">Optimized Model</option>
                     <option value="digit_model.pkl">Basic Model</option>
-                    <option value="digit_model_optimized.pkl">
-                      Optimized Model
-                    </option>
-                    <option value="digit_model_bullterproof.pkl">
-                      Advanced Model
-                    </option>
                   </select>
-
-                  <!-- dropdown arrow icon -->
-                  <div class="model-selector-icon">
-                    <svg width="12" height="8" viewBox="0 0 12 8" fill="none">
-                      <path
-                        d="M1 1L6 6L11 1"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                    </svg>
-                  </div>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        <!-- neural network visualization using d3.js -->
-        <section class="network-section">
-          <div class="network-container">
-            <div class="network-header">
-              <h2>Advanced Neural Network Visualization</h2>
+        <section class="network-panel surface-card">
+          <div class="panel-heading">
+            <div>
+              <span class="section-kicker">Signal Flow</span>
+              <h2>Inference visualization</h2>
+            </div>
+            <div class="network-panel__controls">
+              <button id="playAnimationBtn" class="button button--primary">Play Inference</button>
+              <button id="resetNetworkBtn" class="button button--secondary">Reset</button>
+              <div class="select-field select-field--compact">
+                <label class="field-label" for="animationSpeed">Speed</label>
+                <select id="animationSpeed">
+                  <option value="1500">Slow</option>
+                  <option value="900" selected>Normal</option>
+                  <option value="550">Fast</option>
+                  <option value="300">Very Fast</option>
+                </select>
+              </div>
+            </div>
+          </div>
 
-              <!-- controls for the network animation -->
-              <div class="network-controls">
-                <button
-                  id="playAnimationBtn"
-                  class="btn btn-primary"
-                  aria-label="Play animation"
-                >
-                  <span class="btn-icon">▶️</span>
-                  Play Animation
-                </button>
-
-                <!-- reset button to clear the network -->
-                <button
-                  id="resetNetworkBtn"
-                  class="btn btn-secondary"
-                  aria-label="Reset network"
-                >
-                  <span class="btn-icon">🔄</span>
-                  Reset
-                </button>
-
-                <!-- speed selector for animation -->
-                <div class="speed-control">
-                  <label for="animationSpeed">Speed:</label>
-                  <select id="animationSpeed">
-                    <option value="3000">Slow</option>
-                    <option value="2000" selected>Normal</option>
-                    <option value="1000">Fast</option>
-                    <option value="500">Very Fast</option>
-                  </select>
+          <div class="network-panel__stage">
+            <div id="advancedNetworkContainer" class="signal-flow"></div>
+            <aside class="network-panel__sidecar">
+              <div class="insight-card">
+                <span class="section-kicker">Pipeline</span>
+                <h3>Processing stages</h3>
+                <div id="processingSteps" class="processing-steps">
+                  <div class="processing-step" data-step="0"><span>01</span><strong>Read sample pixels</strong></div>
+                  <div class="processing-step" data-step="1"><span>02</span><strong>Extract primitive features</strong></div>
+                  <div class="processing-step" data-step="2"><span>03</span><strong>Compose hidden patterns</strong></div>
+                  <div class="processing-step" data-step="3"><span>04</span><strong>Rank output classes</strong></div>
                 </div>
               </div>
-            </div>
 
-            <!-- container where d3 renders the network graph -->
-            <div class="network-visualization" id="advancedNetworkContainer">
-              <!-- network visualization gets rendered here by js -->
-            </div>
+              <div class="insight-card">
+                <span class="section-kicker">Inspector</span>
+                <h3>Selected node</h3>
+                <div id="networkInspector" class="network-inspector">
+                  <p>Click a node in the signal-flow stage to inspect its role and activation.</p>
+                </div>
+              </div>
 
-            <!-- info panel with instructions -->
-            <div class="network-info-panel">
-              <div class="info-item">
-                <span class="info-label">Click neurons</span>
-                <span class="info-value">to explore connections</span>
+              <div class="insight-card">
+                <span class="section-kicker">Result</span>
+                <h3>Decision summary</h3>
+                <div id="resultExplanation" class="result-explanation">
+                  <p>Run the inference animation to generate a live summary.</p>
+                </div>
               </div>
-              <div class="info-item">
-                <span class="info-label">Drag neurons</span>
-                <span class="info-value">to reposition</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">Scroll</span>
-                <span class="info-value">to zoom in/out</span>
-              </div>
-            </div>
+            </aside>
           </div>
         </section>
       </main>
 
-      <!-- footer with branding -->
-      <footer class="floating-footer">
-        <div class="footer-content">
-          <div class="footer-brand">
-            <span class="brand-icon">🧠</span>
-            <span class="brand-text">Digit Recognizer</span>
-          </div>
-          <div class="footer-info">
-            <span class="info-text">Powered by Neural Engine.</span>
-            <span class="version-text">v2.0</span>
-          </div>
-        </div>
-        <div class="footer-glow"></div>
-      </footer>
-
-      <!-- modal for showing model details -->
-      <div class="modal-overlay" id="modelInfoModal" aria-hidden="true">
-        <div class="modal-content" role="dialog" aria-labelledby="modalTitle">
-          <div class="modal-header">
-            <h3 id="modalTitle">Model Information</h3>
-            <button
-              class="modal-close"
-              id="closeModalBtn"
-              aria-label="Close modal"
-            >
-              ×
-            </button>
-          </div>
-
-          <!-- modal body gets populated dynamicaly -->
-          <div class="modal-body" id="modelInfoContent">
-            <!-- content added by javascript -->
-          </div>
+      <div class="toast-stack">
+        <div class="model-switch-toast" id="modelSwitchToast">
+          <span class="model-switch-toast__label" id="toastMessage">Switching model...</span>
         </div>
       </div>
-
-      <!-- progress bar for animations -->
-      <div class="progress-indicator" id="progressIndicator">
-        <div class="progress-bar" id="progressBar"></div>
-        <span class="progress-text" id="progressText">Preparing...</span>
-      </div>
-
-      <!-- toast notification for model switching -->
-      <div class="model-switch-toast" id="modelSwitchToast">
-        <div class="toast-content">
-          <span class="toast-icon">🔄</span>
-          <span class="toast-message" id="toastMessage"
-            >Switching model...</span
-          >
-        </div>
-      </div>
-
-      <!-- screen reader announcements for accesibility -->
       <div class="sr-only" aria-live="polite" id="announcements"></div>
     </div>
 
-    <!-- load the network visualization script first -->
-    <script src="static/js/advanced_neural_graph.js"></script>
-    <!-- main showcase logic -->
-    <script src="static/js/showcase.js"></script>
+    <script type="module" src="{{ url_for('static', filename='js/showcase.js') }}"></script>
   </body>
 </html>

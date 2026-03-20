@@ -17,6 +17,8 @@ import time
 import json
 import random
 import pandas as pd
+import gzip
+import struct
 
 # add NeuralEngine to path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -31,11 +33,16 @@ model_accuracy = 0.0
 model_info = {}
 test_dataset = None
 dataset_samples = []
+dataset_sources = {
+    'mnist': [],
+    'emnist_digits': [],
+}
+current_model_name = 'enhanced_digit_model.pkl'
 
 
 def load_model(model_name='enhanced_digit_model.pkl'):
     """Load the trained Neural Engine model."""
-    global neural_network, model_accuracy, model_info
+    global neural_network, model_accuracy, model_info, current_model_name
     # Use absolute path based on script location
     script_dir = os.path.dirname(os.path.abspath(__file__))
     model_path = os.path.join(script_dir, 'static', 'models', model_name)
@@ -65,20 +72,17 @@ def load_model(model_name='enhanced_digit_model.pkl'):
         return False
 
 
-def load_test_dataset():
-    """Load MNIST test dataset from CSV file."""
-    global dataset_samples
+def load_mnist_test_dataset():
+    """Load MNIST test dataset from the digit recognizer data directory."""
+    global dataset_sources
 
     try:
-        # load the MNIST CSV file
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        csv_path = os.path.join(script_dir, 'static', 'data', 'mnist_test.csv')
+        repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        csv_path = os.path.join(repo_root, 'apps', 'digit_recognizer', 'data', 'mnist_test.csv')
 
         if not os.path.exists(csv_path):
             print(f"MNIST CSV file not found at: {csv_path}")
-            print("Falling back to synthetic data generation...")
-            dataset_samples = generate_synthetic_samples(100)
-            return True
+            return False
 
         print(f"Loading MNIST test dataset from: {csv_path}")
 
@@ -120,15 +124,107 @@ def load_test_dataset():
 
             dataset_samples.append(sample)
 
+        dataset_sources['mnist'] = dataset_samples
         print(f"Loaded {len(dataset_samples)} real MNIST samples")
         print(f"  Label distribution: {get_label_distribution(dataset_samples)}")
         return True
 
     except Exception as e:
         print(f"Failed to load MNIST CSV: {e}")
-        print("Falling back to synthetic data generation...")
-        dataset_samples = generate_synthetic_samples(100)
+        return False
+
+
+def load_emnist_digits_test_dataset():
+    """Load EMNIST digits test dataset from the extended recognizer data directory."""
+    global dataset_sources
+
+    try:
+        repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        data_dir = os.path.join(repo_root, 'apps', 'digit_recognizer_extended', 'data')
+        images_path = os.path.join(data_dir, 'emnist-digits-test-images-idx3-ubyte.gz')
+        labels_path = os.path.join(data_dir, 'emnist-digits-test-labels-idx1-ubyte.gz')
+
+        if not os.path.exists(images_path) or not os.path.exists(labels_path):
+            print("EMNIST digits test files not found.")
+            return False
+
+        print(f"Loading EMNIST digits test dataset from: {data_dir}")
+
+        with gzip.open(images_path, 'rb') as image_file:
+            magic = struct.unpack('>I', image_file.read(4))[0]
+            if magic != 2051:
+                raise ValueError(f'Unexpected EMNIST image magic number: {magic}')
+            num_images = struct.unpack('>I', image_file.read(4))[0]
+            rows = struct.unpack('>I', image_file.read(4))[0]
+            cols = struct.unpack('>I', image_file.read(4))[0]
+            image_data = np.frombuffer(image_file.read(), dtype=np.uint8).reshape(num_images, rows, cols)
+
+        with gzip.open(labels_path, 'rb') as label_file:
+            magic = struct.unpack('>I', label_file.read(4))[0]
+            if magic != 2049:
+                raise ValueError(f'Unexpected EMNIST label magic number: {magic}')
+            num_labels = struct.unpack('>I', label_file.read(4))[0]
+            labels = np.frombuffer(label_file.read(), dtype=np.uint8)
+
+        subset_size = min(500, len(labels))
+        samples = []
+
+        for idx in range(subset_size):
+            # EMNIST requires flip + rotate to match on-screen orientation.
+            img_array = np.rot90(np.fliplr(image_data[idx]))
+            img_base64 = convert_array_to_base64(img_array)
+            samples.append({
+                'index': idx,
+                'image_data': img_base64,
+                'image_array': img_array.tolist(),
+                'label': int(labels[idx]),
+                'metadata': {
+                    'source': 'emnist_digits',
+                    'original_index': idx,
+                    'dataset_size': int(num_labels),
+                }
+            })
+
+        dataset_sources['emnist_digits'] = samples
+        print(f"Loaded {len(samples)} EMNIST digits samples")
+        print(f"  Label distribution: {get_label_distribution(samples)}")
         return True
+
+    except Exception as e:
+        print(f"Failed to load EMNIST digits dataset: {e}")
+        return False
+
+
+def get_active_dataset_key(model_name=None):
+    """Choose the appropriate dataset for the active model."""
+    target_model = model_name or current_model_name
+    if target_model == 'enhanced_digit_model.pkl':
+        return 'emnist_digits'
+    return 'mnist'
+
+
+def load_test_dataset():
+    """Load both supported showcase datasets."""
+    global dataset_samples
+
+    mnist_loaded = load_mnist_test_dataset()
+    emnist_loaded = load_emnist_digits_test_dataset()
+
+    if not mnist_loaded and not emnist_loaded:
+        print("No real datasets loaded. Falling back to synthetic samples.")
+        dataset_samples = generate_synthetic_samples(100)
+        dataset_sources['mnist'] = dataset_samples
+        dataset_sources['emnist_digits'] = dataset_samples
+        return True
+
+    fallback_samples = dataset_sources['mnist'] or dataset_sources['emnist_digits']
+    if not dataset_sources['mnist']:
+        dataset_sources['mnist'] = fallback_samples
+    if not dataset_sources['emnist_digits']:
+        dataset_sources['emnist_digits'] = fallback_samples
+
+    dataset_samples = dataset_sources[get_active_dataset_key()]
+    return True
 
 
 def convert_array_to_base64(img_array):
@@ -294,11 +390,13 @@ def serve_assets(filename):
 def get_dataset_sample():
     """Get a random sample from the test dataset."""
     try:
-        if not dataset_samples:
+        active_samples = dataset_sources.get(get_active_dataset_key(), dataset_samples)
+
+        if not active_samples:
             return jsonify({'error': 'No dataset samples available'}), 404
 
         # get random sample
-        sample = random.choice(dataset_samples)
+        sample = random.choice(active_samples)
 
         # make prediction on this sample
         if neural_network is None:
@@ -356,12 +454,13 @@ def get_dataset_batch():
     """Get a batch of dataset samples."""
     try:
         batch_size = min(int(request.args.get('size', 10)), 50)  # limit batch size
+        active_samples = dataset_sources.get(get_active_dataset_key(), dataset_samples)
 
-        if not dataset_samples:
+        if not active_samples:
             return jsonify({'error': 'No dataset samples available'}), 404
 
         # get random batch
-        batch = random.sample(dataset_samples, min(batch_size, len(dataset_samples)))
+        batch = random.sample(active_samples, min(batch_size, len(active_samples)))
 
         # process batch predictions
         batch_results = []
@@ -561,12 +660,13 @@ def switch_model():
             return jsonify({'error': 'No model name provided'}), 400
 
         # update the model path
-        model_path = os.path.join('static', 'models', model_name)
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        model_path = os.path.join(script_dir, 'static', 'models', model_name)
         if not os.path.exists(model_path):
             return jsonify({'error': f'Model {model_name} not found'}), 404
 
         # load the new model
-        global neural_network, model_accuracy, model_info
+        global neural_network, model_accuracy, model_info, current_model_name, dataset_samples
         with open(model_path, 'rb') as f:
             model_data = pickle.load(f)
 
@@ -578,6 +678,9 @@ def switch_model():
             'accuracy': model_accuracy,
             'activations': [layer.activation_name for layer in neural_network.layers]
         }
+        current_model_name = model_name
+        current_model_name = model_name
+        dataset_samples = dataset_sources.get(get_active_dataset_key(model_name), dataset_samples)
 
         print(f"Switched to model: {model_name}")
         print(f"  Architecture: {model_info['architecture']}")

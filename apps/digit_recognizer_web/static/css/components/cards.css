@@ -1,0 +1,58 @@
+.hero-panel,
+.canvas-panel,
+.prediction-panel,
+.rail-panel > .surface-card,
+.sample-panel,
+.network-panel,
+.showcase-hero {
+  padding: var(--space-6);
+}
+
+.hero-panel__metrics,
+.compact-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.hero-panel__copy h1,
+.showcase-hero__copy h1 {
+  font-size: clamp(1.8rem, 3vw, 2.8rem);
+  line-height: 1.02;
+  margin: 0.35rem 0 0.45rem;
+}
+
+.hero-panel__copy p,
+.showcase-hero__copy p {
+  max-width: 52rem;
+  margin: 0;
+  font-size: 0.98rem;
+  color: var(--text-base);
+}
+
+.showcase-hero__actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+  flex-wrap: wrap;
+}
+
+.hero-panel__metrics {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.insight-card {
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  background: rgba(114, 146, 170, 0.05);
+  border: 1px solid var(--line);
+}
+
+@media (max-width: 800px) {
+  .hero-panel__metrics,
+  .compact-metrics {
+    grid-template-columns: 1fr;
+  }
+}

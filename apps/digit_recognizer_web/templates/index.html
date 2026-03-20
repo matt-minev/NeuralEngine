@@ -4,176 +4,207 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Neural Engine • Digit Recognizer</title>
-
-    <!-- Neural Engine Logo Favicon -->
     <link
       rel="icon"
       type="image/png"
       href="{{ url_for('serve_assets', filename='neural-engine-logo.png') }}"
     />
-
-    <!-- main stylesheet -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
       rel="stylesheet"
-      href="{{ url_for('static', filename='css/style.css') }}"
     />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/buttons.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/cards.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/forms.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/overlays.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/draw.css') }}" />
   </head>
+  <body class="theme-neural page-draw">
+    <div class="page-shell">
+      <div class="ambient-grid" aria-hidden="true"></div>
+      <div class="ambient-glow ambient-glow--cyan" aria-hidden="true"></div>
+      <div class="ambient-glow ambient-glow--amber" aria-hidden="true"></div>
 
-  <body>
-    <div class="container">
-      <!-- header section with title -->
-      <header class="header">
-        <div class="logo-container">
-          <img src="{{ url_for('serve_assets', filename='neural-engine-logo.png') }}" alt="Neural Engine Logo" class="header-logo" />
-          <h1 class="title">Neural Engine</h1>
+      <header class="topbar">
+        <div class="topbar__brand">
+          <div class="brand-mark">
+            <div class="brand-mark__logo">
+              <img
+                src="{{ url_for('serve_assets', filename='neural-engine-logo.png') }}"
+                alt="Neural Engine logo"
+              />
+            </div>
+            <div class="brand-mark__text">
+              <span class="brand-mark__eyebrow">Neural Engine</span>
+              <strong class="brand-mark__title">Digit Recognizer</strong>
+              <span class="brand-mark__subtitle">Research-grade inference workspace</span>
+            </div>
+          </div>
         </div>
-        <p class="subtitle">Neural Network Digit Recognition</p>
+        <div class="topbar__actions">
+          <div class="status-pill">
+            <span class="status-pill__dot"></span>
+            <span>Model ready</span>
+          </div>
+          <a class="button button--ghost" href="{{ url_for('showcase') }}">Open Showcase</a>
+        </div>
       </header>
 
-      <!-- main content area -->
-      <main class="main-content">
-        <!-- left side has drawing canvas and model selector -->
-        <div class="left-column">
-          <!-- drawing canvas section -->
-          <section class="drawing-section">
-            <div class="card glass-card">
-              <h2>✏️ Draw a Digit</h2>
-
-              <!-- canvas where users draw digits -->
-              <div class="canvas-container">
-                <canvas id="drawingCanvas" width="280" height="280"></canvas>
-
-                <!-- overlay with instructions, shown on first load -->
-                <div class="canvas-overlay show">
-                  <div class="instructions">Draw a digit (0-9)</div>
-                </div>
-              </div>
-
-              <!-- brush size slider and clear button -->
-              <div class="controls">
-                <div class="brush-control">
-                  <label for="brushSize">Brush Size:</label>
-                  <input
-                    type="range"
-                    id="brushSize"
-                    min="5"
-                    max="30"
-                    value="15"
-                  />
-                  <span id="brushValue">15</span>
-                </div>
-                <button id="clearBtn" class="btn btn-secondary">
-                  🗑️ Clear
-                </button>
-              </div>
+      <main class="draw-layout">
+        <section class="hero-panel surface-card surface-card--hero">
+          <div class="hero-panel__copy">
+            <span class="section-kicker">Live Recognition</span>
+            <h1>Draw fast. Watch the network lock in.</h1>
+            <p>Sketch a handwritten digit and compare live confidence across the full output layer.</p>
+          </div>
+          <div class="hero-panel__metrics">
+            <div class="metric-tile">
+              <span class="metric-tile__label">Architecture</span>
+              <span class="metric-tile__value" id="architectureValue">{{ model_info.architecture | join(' → ') }}</span>
             </div>
-          </section>
-
-          <!-- model selection dropdown -->
-          <section class="model-selection-section">
-            <div class="card glass-card">
-              <h2>🤖 Model Selection</h2>
-              <div class="model-selector">
-                <label for="modelSelect">Choose Model:</label>
-
-                <!-- custom styled dropdown with different model options -->
-                <div class="custom-select">
-                  <select id="modelSelect">
-                    <!-- available models, enhanced is default -->
-                    <option value="enhanced_digit_model.pkl">
-                      Enhanced Model
-                    </option>
-                    <option value="digit_model_bulletproof.pkl">
-                      Bulletproof Model
-                    </option>
-                    <option value="digit_model_optimized.pkl">
-                      Optimized Model
-                    </option>
-                    <option value="digit_model.pkl">Basic Model</option>
-                  </select>
-
-                  <!-- custom dropdown arrow -->
-                  <div class="select-arrow">
-                    <svg width="12" height="8" viewBox="0 0 12 8">
-                      <path
-                        d="M1 1l5 5 5-5"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        fill="none"
-                      />
-                    </svg>
-                  </div>
-                </div>
-              </div>
+            <div class="metric-tile">
+              <span class="metric-tile__label">Parameters</span>
+              <span class="metric-tile__value" id="parametersValue">{{ "{:,}".format(model_info.parameters) }}</span>
             </div>
-          </section>
-        </div>
-
-        <!-- right side shows prediction results -->
-        <section class="prediction-section">
-          <div class="card glass-card">
-            <h2>🎯 Prediction</h2>
-
-            <!-- main prediction display -->
-            <div class="top-prediction">
-              <div class="predicted-digit" id="predictedDigit">?</div>
-              <div class="confidence" id="confidence">Confidence: --%</div>
-              <div class="prediction-time" id="predictionTime">--ms</div>
-            </div>
-
-            <!-- confidence bars for all 10 digits -->
-            <div class="confidence-bars">
-              <h3>Confidence Levels</h3>
-              <!-- bars get generated dynamicaly by js -->
-              <div id="confidenceBars"></div>
+            <div class="metric-tile">
+              <span class="metric-tile__label">Accuracy</span>
+              <span class="metric-tile__value" id="accuracyValue">{{ "%.2f" | format(model_info.accuracy) }}%</span>
             </div>
           </div>
         </section>
-      </main>
 
-      <!-- footer with model details from flask -->
-      <footer class="model-info">
-        <div class="card glass-card">
-          <h3>🤖 Model Information</h3>
-
-          <!-- model stats rendered by jinja2 template -->
-          <div class="model-stats">
-            <div class="stat">
-              <span class="label">Architecture:</span>
-              <span class="value"
-                >{{ model_info.architecture | join(' → ') }}</span
-              >
+        <section class="canvas-panel surface-card">
+          <div class="panel-heading">
+            <div>
+              <span class="section-kicker">Input Surface</span>
+              <h2>Digit canvas</h2>
             </div>
-            <div class="stat">
-              <span class="label">Parameters:</span>
-              <span class="value"
-                >{{ "{:,}".format(model_info.parameters) }}</span
-              >
-            </div>
-            <div class="stat">
-              <span class="label">Accuracy:</span>
-              <span class="value"
-                >{{ "%.2f" | format(model_info.accuracy) }}%</span
-              >
+            <div class="panel-heading__meta">
+              <span class="mono-label">Keys: C, 0-9, Esc</span>
             </div>
           </div>
-        </div>
-      </footer>
 
-      <!-- hidden pi easter egg, shows when drawing pi symbol -->
-      <div id="piSymbol" class="pi-symbol">
-        <div class="pi-content">
-          <div class="pi-icon">π</div>
-          <div class="pi-text">Pi! 🐣</div>
-          <div class="pi-subtext">3.14159...</div>
+          <div class="canvas-stage">
+            <div class="canvas-frame">
+              <canvas id="drawingCanvas" width="280" height="280" aria-label="Drawing canvas"></canvas>
+              <div class="canvas-overlay show">
+                <div class="canvas-overlay__content">
+                  <span class="canvas-overlay__label">Awaiting input</span>
+                  <strong>Draw a digit from 0 to 9</strong>
+                </div>
+              </div>
+            </div>
+
+            <aside class="canvas-sidecar">
+              <div class="data-block">
+                <span class="data-block__label">Current model</span>
+                <strong class="data-block__value" id="currentModelLabel">Enhanced Model</strong>
+              </div>
+              <button id="clearBtn" class="button button--secondary">Clear Surface</button>
+              <p class="support-copy">
+                Predictions stream while you draw and settle on release, so the experience still feels immediate.
+              </p>
+            </aside>
+          </div>
+        </section>
+
+        <section class="prediction-panel surface-card">
+          <div class="panel-heading">
+            <div>
+              <span class="section-kicker">Inference</span>
+              <h2>Prediction output</h2>
+            </div>
+            <div class="prediction-panel__status" id="predictionState">Idle</div>
+          </div>
+
+          <div class="prediction-hero">
+            <div class="predicted-digit" id="predictedDigit">?</div>
+            <div class="prediction-hero__meta">
+              <div class="data-block">
+                <span class="data-block__label">Confidence</span>
+                <strong class="data-block__value" id="confidence">Confidence: --%</strong>
+              </div>
+              <div class="data-block">
+                <span class="data-block__label">Latency</span>
+                <strong class="data-block__value" id="predictionTime">--ms</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="confidence-bars">
+            <div class="panel-subheading">
+              <h3>Class confidence</h3>
+              <span>Distribution across digits 0-9</span>
+            </div>
+            <div id="confidenceBars" class="confidence-bars__list"></div>
+          </div>
+        </section>
+
+        <aside class="rail-panel">
+          <section class="surface-card">
+            <div class="panel-heading">
+              <div>
+                <span class="section-kicker">Model Control</span>
+                <h2>Network selection</h2>
+              </div>
+            </div>
+            <div class="field-group model-selector">
+              <label class="field-label" for="modelSelect">Choose a trained model</label>
+              <div class="select-field">
+                <select id="modelSelect">
+                  <option value="enhanced_digit_model.pkl">Enhanced Model</option>
+                  <option value="digit_model_bulletproof.pkl">Bulletproof Model</option>
+                  <option value="digit_model_optimized.pkl">Optimized Model</option>
+                  <option value="digit_model.pkl">Basic Model</option>
+                </select>
+              </div>
+            </div>
+          </section>
+
+          <section class="surface-card">
+            <div class="panel-heading">
+              <div>
+                <span class="section-kicker">Recent Runs</span>
+                <h2>Prediction history</h2>
+              </div>
+            </div>
+            <div class="prediction-history" id="predictionHistory">
+              <div id="historyItems" class="prediction-history__items"></div>
+            </div>
+          </section>
+
+          <section class="surface-card">
+            <div class="panel-heading">
+              <div>
+                <span class="section-kicker">Operator Notes</span>
+                <h2>Quick guidance</h2>
+              </div>
+            </div>
+            <ul class="guidance-list">
+              <li>Use broad, centered strokes for the strongest confidence.</li>
+              <li>Switch models to compare speed, stability, and recall.</li>
+              <li>Open the showcase to inspect dataset samples and layer activations.</li>
+            </ul>
+          </section>
+        </aside>
+      </main>
+
+      <div id="piSymbol" class="pi-symbol" aria-hidden="true">
+        <div class="pi-symbol__content">
+          <span class="pi-symbol__glyph">π</span>
+          <strong>Sequence unlocked</strong>
+          <span>3 • 1 • 4</span>
         </div>
       </div>
 
-      <!-- confetti animation container for easter eggs -->
-      <div id="confettiContainer"></div>
+      <div id="confettiContainer" class="confetti-container" aria-hidden="true"></div>
+      <div id="toastStack" class="toast-stack" aria-live="polite"></div>
     </div>
 
-    <!-- main javascript file -->
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script type="module" src="{{ url_for('static', filename='js/main.js') }}"></script>
   </body>
 </html>
