@@ -8,6 +8,8 @@ export class CanvasDrawer {
     this.isDrawing = false;
     this.brushSize = 15;
     this.lastPoint = null;
+    this.strokes = [];
+    this.currentStroke = null;
 
     this.resetSurface();
     this.bindEvents();
@@ -36,6 +38,8 @@ export class CanvasDrawer {
 
   clear() {
     this.resetSurface();
+    this.strokes = [];
+    this.currentStroke = null;
     if (this.overlay) {
       this.overlay.classList.add("show");
     }
@@ -45,6 +49,30 @@ export class CanvasDrawer {
     return this.canvas.toDataURL("image/png");
   }
 
+  hasInk() {
+    return this.strokes.length > 0 || Boolean(this.currentStroke && this.currentStroke.points.length > 0);
+  }
+
+  getPredictionPayload() {
+    const allStrokes = this.currentStroke && this.currentStroke.points.length > 0
+      ? [...this.strokes, this.currentStroke]
+      : this.strokes;
+
+    return {
+      strokes: allStrokes.map((stroke) => ({
+        points: stroke.points.map((point) => ({
+          x: point.x,
+          y: point.y,
+        })),
+      })),
+      raster: this.toDataURL(),
+      canvas: {
+        width: this.canvas.width,
+        height: this.canvas.height,
+      },
+    };
+  }
+
   start(event) {
     this.isDrawing = true;
     if (typeof this.canvas.setPointerCapture === "function") {
@@ -52,6 +80,8 @@ export class CanvasDrawer {
     }
     const point = this.getPoint(event);
     this.lastPoint = point;
+    this.currentStroke = { points: [] };
+    this.addPointToStroke(point);
     if (this.overlay) {
       this.overlay.classList.remove("show");
     }
@@ -75,6 +105,7 @@ export class CanvasDrawer {
     this.ctx.moveTo(this.lastPoint.x, this.lastPoint.y);
     this.ctx.lineTo(point.x, point.y);
     this.ctx.stroke();
+    this.addPointToStroke(point);
     this.lastPoint = point;
     if (this.onStroke) {
       this.onStroke();
@@ -88,9 +119,24 @@ export class CanvasDrawer {
 
     this.isDrawing = false;
     this.lastPoint = null;
+    if (this.currentStroke && this.currentStroke.points.length > 0) {
+      this.strokes.push(this.currentStroke);
+    }
+    this.currentStroke = null;
     if (this.onCommit) {
       this.onCommit();
     }
+  }
+
+  addPointToStroke(point) {
+    if (!this.currentStroke) {
+      return;
+    }
+
+    this.currentStroke.points.push({
+      x: point.x / this.canvas.width,
+      y: point.y / this.canvas.height,
+    });
   }
 
   getPoint(event) {

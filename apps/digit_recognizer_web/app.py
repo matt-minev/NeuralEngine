@@ -23,6 +23,10 @@ import struct
 # add NeuralEngine to path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 from nn_core import NeuralNetwork
+try:
+    from .preprocessing import preprocess_live_payload, preprocess_dataset_image
+except ImportError:
+    from preprocessing import preprocess_live_payload, preprocess_dataset_image
 
 app = Flask(__name__)
 CORS(app)  # enable CORS for cross-origin requests
@@ -59,6 +63,7 @@ def load_model(model_name='enhanced_digit_model.pkl'):
             'accuracy': model_accuracy,
             'activations': [layer.activation_name for layer in neural_network.layers]
         }
+        current_model_name = model_name
 
         print(f"Neural Engine model loaded succesfully!")
         print(f"  Model: {model_name}")
@@ -322,44 +327,12 @@ def generate_synthetic_samples(num_samples=100):
     return samples
 
 
-def preprocess_image(image_data):
-    """Preprocess image data for Neural Engine prediciton."""
+def preprocess_image(image_data, source='live'):
+    """Preprocess image data for Neural Engine prediction."""
     try:
-        # handle different input types
-        if isinstance(image_data, list):
-            # direct array input (from dataset)
-            img_array = np.array(image_data, dtype=np.float32)
-            # normalize to 0-1 range
-            img_array = img_array / 255.0 if img_array.max() > 1 else img_array
-            return img_array.flatten().reshape(1, -1)
-
-        elif isinstance(image_data, str):
-            # base64 string input
-            if image_data.startswith('data:image'):
-                image_data = image_data.split(',')[1]
-            image_bytes = base64.b64decode(image_data)
-
-            # convert to PIL image
-            image = Image.open(io.BytesIO(image_bytes))
-
-            # convert to grayscale and resize to 28x28
-            image = image.convert('L')
-            image = image.resize((28, 28), Image.Resampling.LANCZOS)
-
-            # convert to numpy array and normalize
-            img_array = np.array(image, dtype=np.float32)
-            img_array = img_array / 255.0
-
-            # for MNIST, pixels are typically white on black
-            # if background is white, invert
-            if np.mean(img_array) > 0.5:
-                img_array = 1.0 - img_array
-
-            return img_array.flatten().reshape(1, -1)
-
-        else:
-            raise ValueError(f"Unsupported image data type: {type(image_data)}")
-
+        if source == 'dataset':
+            return preprocess_dataset_image(image_data)
+        return preprocess_live_payload(image_data)
     except Exception as e:
         print(f"Image preprocessing error: {e}")
         return None
@@ -404,9 +377,9 @@ def get_dataset_sample():
 
         # preprocess the sample
         if 'image_array' in sample:
-            processed_image = preprocess_image(sample['image_array'])
+            processed_image = preprocess_image(sample['image_array'], source='dataset')
         else:
-            processed_image = preprocess_image(sample['image_data'])
+            processed_image = preprocess_image(sample['image_data'], source='dataset')
 
         if processed_image is None:
             return jsonify({'error': 'Failed to process sample'}), 400
@@ -466,9 +439,9 @@ def get_dataset_batch():
         batch_results = []
         for sample in batch:
             if 'image_array' in sample:
-                processed_image = preprocess_image(sample['image_array'])
+                processed_image = preprocess_image(sample['image_array'], source='dataset')
             else:
-                processed_image = preprocess_image(sample['image_data'])
+                processed_image = preprocess_image(sample['image_data'], source='dataset')
 
             if processed_image is not None and neural_network is not None:
                 predictions = neural_network.forward(processed_image)
@@ -550,7 +523,7 @@ def predict():
             return jsonify({'error': 'No image data provided'}), 400
 
         # preprocess image
-        processed_image = preprocess_image(image_data)
+        processed_image = preprocess_image(image_data, source='live')
         if processed_image is None:
             return jsonify({'error': 'Failed to process image'}), 400
 
@@ -597,7 +570,7 @@ def get_neural_activations():
             return jsonify({'error': 'No image data provided'}), 400
 
         # preprocess image
-        processed_image = preprocess_image(image_data)
+        processed_image = preprocess_image(image_data, source='live')
         if processed_image is None:
             return jsonify({'error': 'Failed to process image'}), 400
 
@@ -678,7 +651,6 @@ def switch_model():
             'accuracy': model_accuracy,
             'activations': [layer.activation_name for layer in neural_network.layers]
         }
-        current_model_name = model_name
         current_model_name = model_name
         dataset_samples = dataset_sources.get(get_active_dataset_key(model_name), dataset_samples)
 

@@ -79,12 +79,18 @@ class DigitRecognizerApp {
 
   clear() {
     this.canvasDrawer.clear();
+    this.predictionCache.clear();
     this.predictionPanel.reset();
   }
 
   async predict() {
-    const image = this.canvasDrawer.toDataURL();
-    const cacheKey = image.slice(0, 120);
+    if (!this.canvasDrawer.hasInk()) {
+      this.predictionPanel.reset();
+      return;
+    }
+
+    const image = this.canvasDrawer.getPredictionPayload();
+    const cacheKey = JSON.stringify(image.strokes);
 
     if (this.predictionCache.has(cacheKey)) {
       this.applyPrediction(this.predictionCache.get(cacheKey));
