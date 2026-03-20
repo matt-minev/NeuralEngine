@@ -92,19 +92,21 @@ class UniversalCNN:
         self.dtype = np.dtype(dtype)
         self.xp, self.device, self.backend_name, self.using_gpu = resolve_backend(device)
 
+        # Use numpy for weight initialization (He init), then move to device.
+        # This avoids cupy.random.randn which requires curand (may not be available).
         c1, c2 = self.config.conv1_channels, self.config.conv2_channels
         fan1 = 1 * 3 * 3
         fan2 = c1 * 3 * 3
 
-        self.w1 = (self.xp.random.randn(c1, 1, 3, 3) * self.xp.sqrt(2.0 / fan1)).astype(self.dtype)
+        self.w1 = to_device((np.random.randn(c1, 1, 3, 3) * np.sqrt(2.0 / fan1)).astype(dtype), self.xp, self.dtype)
         self.b1 = self.xp.zeros((c1,), dtype=self.dtype)
-        self.w2 = (self.xp.random.randn(c2, c1, 3, 3) * self.xp.sqrt(2.0 / fan2)).astype(self.dtype)
+        self.w2 = to_device((np.random.randn(c2, c1, 3, 3) * np.sqrt(2.0 / fan2)).astype(dtype), self.xp, self.dtype)
         self.b2 = self.xp.zeros((c2,), dtype=self.dtype)
 
         flat_dim = c2 * 7 * 7
-        self.w3 = (self.xp.random.randn(flat_dim, self.config.fc_hidden) * self.xp.sqrt(2.0 / flat_dim)).astype(self.dtype)
+        self.w3 = to_device((np.random.randn(flat_dim, self.config.fc_hidden) * np.sqrt(2.0 / flat_dim)).astype(dtype), self.xp, self.dtype)
         self.b3 = self.xp.zeros((self.config.fc_hidden,), dtype=self.dtype)
-        self.w4 = (self.xp.random.randn(self.config.fc_hidden, self.config.num_classes) * self.xp.sqrt(2.0 / self.config.fc_hidden)).astype(self.dtype)
+        self.w4 = to_device((np.random.randn(self.config.fc_hidden, self.config.num_classes) * np.sqrt(2.0 / self.config.fc_hidden)).astype(dtype), self.xp, self.dtype)
         self.b4 = self.xp.zeros((self.config.num_classes,), dtype=self.dtype)
 
         self.training = True
@@ -214,7 +216,9 @@ class UniversalCNN:
         if not self.training or p <= 0:
             return x, None
         keep = 1.0 - p
-        mask = (self.xp.random.rand(*x.shape) < keep).astype(x.dtype) / keep
+        # Use numpy for random generation (cupy.random requires curand which may be unavailable)
+        mask_np = (np.random.rand(*x.shape) < keep).astype(np.float32) / keep
+        mask = self.xp.asarray(mask_np) if self.xp is not np else mask_np
         return x * mask, mask
 
     def _softmax(self, logits):

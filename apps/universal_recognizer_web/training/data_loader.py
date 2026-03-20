@@ -284,11 +284,11 @@ def load_emnist_data(data_dir: str = None) -> Tuple[Tuple[np.ndarray, np.ndarray
     X_train = preprocess_data(X_train, normalize=True, mean=train_mean, std=train_std)
     X_test = preprocess_data(X_test, normalize=True, mean=train_mean, std=train_std)
 
-    # Persist normalization stats into contract for inference parity
-    mean_existing, std_existing, _, _, _ = contract.get_stats()
-    if mean_existing is None or std_existing is None:
-        updated_contract = with_stats(contract, train_mean, train_std)
-        save_contract(updated_contract)
+    # Always persist normalization stats into contract for inference parity.
+    # Stats must match the current transform_id, so overwrite unconditionally.
+    updated_contract = with_stats(contract, train_mean, train_std)
+    save_contract(updated_contract)
+    print(f"  Normalization stats saved to contract (transform_id={contract.transform_id})")
     
     # Create one-hot encoding
     y_train_onehot = create_one_hot(y_train, 62)
