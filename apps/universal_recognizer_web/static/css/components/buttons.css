@@ -1,0 +1,61 @@
+.button {
+  appearance: none;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0.85rem 1.25rem;
+  color: var(--text-strong);
+  background: transparent;
+  cursor: pointer;
+  transition:
+    transform var(--duration-fast) var(--ease-smooth),
+    border-color var(--duration-fast) var(--ease-smooth),
+    background var(--duration-fast) var(--ease-smooth),
+    box-shadow var(--duration-fast) var(--ease-smooth);
+}
+
+.button:hover {
+  transform: translateY(-1px);
+}
+
+.button--primary {
+  background: linear-gradient(135deg, rgba(146, 93, 255, 0.3), rgba(182, 140, 255, 0.14));
+  border-color: rgba(182, 140, 255, 0.54);
+  box-shadow: 0 0 0 1px rgba(182, 140, 255, 0.14), 0 16px 32px rgba(146, 93, 255, 0.18);
+}
+
+.button--secondary {
+  background: rgba(182, 140, 255, 0.08);
+  border-color: var(--line);
+}
+
+.button--ghost {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: var(--line);
+}
+
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.toggle-btn {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: rgba(182, 140, 255, 0.08);
+  color: var(--text-strong);
+  cursor: pointer;
+}
+
+.toggle-btn:hover {
+  background: rgba(182, 140, 255, 0.12);
+}
+
+.toggle-icon {
+  transition: transform var(--duration-fast) var(--ease-smooth);
+}

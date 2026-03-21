@@ -1,0 +1,73 @@
+<div class="mode-content" id="testModeContent">
+  <section class="surface-card test-mode-card">
+    <div class="panel-heading">
+      <div>
+        <span class="section-kicker">Dataset Evaluation</span>
+        <h2>Test Mode</h2>
+        <p class="card-subtitle">Test the model with EMNIST dataset samples</p>
+      </div>
+    </div>
+
+    <div class="test-controls">
+      <div class="test-view-toggle">
+        <button type="button" class="view-btn active" data-view="single" id="singleViewBtn">Single</button>
+        <button type="button" class="view-btn" data-view="grid" id="gridViewBtn">Grid</button>
+      </div>
+      <div class="test-actions">
+        <button type="button" id="loadTestSamples" class="button button--primary">🔄 Load Random Samples</button>
+        <label class="sr-only" for="characterFilter">Character Filter</label>
+        <div class="select-field">
+          <select id="characterFilter" class="select-input">
+            <option value="">All Characters</option>
+            <option value="0">0</option>
+            <option value="9">9</option>
+            <option value="Z">Z</option>
+            <option value="M">M</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="test-view active" id="singleTestView">
+      <div class="test-sample-single" id="singleTestContent">
+        <div class="test-placeholder" id="singleTestPlaceholder">
+          <div class="placeholder-icon">🧪</div>
+          <div class="placeholder-text">Click "Load Random Samples" to test the model</div>
+          <div class="placeholder-subtext">Test samples from EMNIST dataset will appear here</div>
+        </div>
+        <div class="test-sample-content" id="singleTestSample" style="display: none">
+          <div class="test-image-container">
+            <img id="testImageSingle" src="" alt="Test sample" />
+          </div>
+          <div class="test-results-single">
+            <div class="test-result-item">
+              <span class="result-label">Ground Truth:</span>
+              <span class="result-value" id="groundTruthSingle">--</span>
+            </div>
+            <div class="test-result-item">
+              <span class="result-label">Prediction:</span>
+              <span class="result-value" id="predictionSingle">--</span>
+            </div>
+            <div class="test-result-item">
+              <span class="result-label">Confidence:</span>
+              <span class="result-value" id="confidenceSingle">--%</span>
+            </div>
+            <div class="test-result-status" id="testStatusSingle">
+              <span class="status-badge">--</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="test-view" id="gridTestView" style="display: none">
+      <div class="test-grid" id="testGrid">
+        <div class="test-placeholder" id="gridTestPlaceholder">
+          <div class="placeholder-icon">🧪</div>
+          <div class="placeholder-text">Click "Load Random Samples" to test the model</div>
+          <div class="placeholder-subtext">Test samples from EMNIST dataset will appear here</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>

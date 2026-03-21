@@ -1,0 +1,76 @@
+:root[data-theme="dark"] {
+  --bg: #090512;
+  --bg-elevated: rgba(19, 13, 31, 0.9);
+  --bg-panel: rgba(20, 14, 35, 0.94);
+  --bg-panel-strong: rgba(12, 8, 22, 0.98);
+  --bg-soft: rgba(185, 148, 255, 0.1);
+  --text-strong: #f5f1ff;
+  --text-base: #c9bedf;
+  --text-muted: #988db3;
+  --line: rgba(197, 166, 255, 0.24);
+  --line-strong: rgba(197, 166, 255, 0.42);
+
+  --primary: #b68cff;
+  --primary-strong: #9b5cff;
+  --secondary: #d2bbff;
+  --purple-glow: #c79bff;
+  --violet-glow: #925dff;
+  --green: #63e6a6;
+  --red: #ff7f9e;
+  --amber: #ffc375;
+
+  --shadow-lg: 0 24px 80px rgba(0, 0, 0, 0.46);
+  --shadow-md: 0 14px 40px rgba(0, 0, 0, 0.32);
+
+  --radius-xl: 28px;
+  --radius-lg: 20px;
+  --radius-md: 14px;
+  --radius-sm: 10px;
+
+  --space-1: 0.375rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-7: 2rem;
+  --space-8: 3rem;
+
+  --font-display: "Space Grotesk", sans-serif;
+  --font-body: "IBM Plex Sans", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+
+  --duration-fast: 160ms;
+  --duration-medium: 280ms;
+  --duration-slow: 520ms;
+  --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --gradient-primary: linear-gradient(135deg, rgba(146, 93, 255, 0.26), rgba(182, 140, 255, 0.12));
+}
+
+:root[data-theme="light"] {
+  --bg: #f7f3ff;
+  --bg-elevated: rgba(255, 255, 255, 0.9);
+  --bg-panel: rgba(255, 255, 255, 0.95);
+  --bg-panel-strong: rgba(255, 255, 255, 0.98);
+  --bg-soft: rgba(120, 63, 255, 0.07);
+  --text-strong: #2a1f44;
+  --text-base: #4c3b6c;
+  --text-muted: #7a67a0;
+  --line: rgba(126, 87, 194, 0.25);
+  --line-strong: rgba(126, 87, 194, 0.4);
+
+  --primary: #8e5cff;
+  --primary-strong: #7337f0;
+  --secondary: #a987ff;
+  --purple-glow: #b99bff;
+  --violet-glow: #8452f6;
+  --green: #139d62;
+  --red: #da3f70;
+  --amber: #c47b1b;
+
+  --shadow-lg: 0 24px 80px rgba(74, 46, 117, 0.14);
+  --shadow-md: 0 14px 40px rgba(74, 46, 117, 0.16);
+
+  --gradient-primary: linear-gradient(135deg, rgba(134, 90, 255, 0.2), rgba(168, 128, 255, 0.12));
+}

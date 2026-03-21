@@ -1,0 +1,25 @@
+<section class="hero-panel surface-card surface-card--hero">
+  <div class="hero-panel__copy">
+    <span class="section-kicker">Live Recognition</span>
+    <h1>Draw, test, and inspect character predictions in real time.</h1>
+    <p>Switch between freehand character input and EMNIST test samples while reviewing confidence, advisories, and preprocessing diagnostics.</p>
+  </div>
+  <div class="hero-panel__metrics">
+    <div class="metric-tile">
+      <span class="metric-tile__label">Model Accuracy</span>
+      <span class="metric-tile__value" id="headerAccuracy">
+        {% if model_info %}{{ "%.1f" | format(model_info.accuracy) }}%{% else %}--{% endif %}
+      </span>
+    </div>
+    <div class="metric-tile">
+      <span class="metric-tile__label">Classes</span>
+      <span class="metric-tile__value">62</span>
+    </div>
+    <div class="metric-tile">
+      <span class="metric-tile__label">Architecture</span>
+      <span class="metric-tile__value" id="headerArchitecture">
+        {% if model_info %}{{ model_info.layer_sizes | join(' → ') }}{% else %}--{% endif %}
+      </span>
+    </div>
+  </div>
+</section>

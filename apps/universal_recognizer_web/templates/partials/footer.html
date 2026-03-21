@@ -1,0 +1,14 @@
+<footer class="dashboard-footer surface-card">
+  <div class="footer-content">
+    <div class="footer-stat">
+      <span class="footer-label">Parameters:</span>
+      <span class="footer-value" id="footerParameters">
+        {% if model_info %}{{ "{:,}".format(model_info.total_parameters) }}{% else %}--{% endif %}
+      </span>
+    </div>
+    <div class="footer-stat">
+      <span class="footer-label">Dataset:</span>
+      <span class="footer-value">EMNIST ByClass</span>
+    </div>
+  </div>
+</footer>

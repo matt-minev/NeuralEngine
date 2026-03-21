@@ -1,0 +1,224 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--font-body);
+  background:
+    radial-gradient(circle at top left, rgba(199, 155, 255, 0.2), transparent 30%),
+    radial-gradient(circle at 86% 12%, rgba(146, 93, 255, 0.18), transparent 25%),
+    linear-gradient(180deg, #090512 0%, #0d091a 45%, #08050f 100%);
+  color: var(--text-base);
+  overflow-x: hidden;
+  transition: background var(--duration-medium) var(--ease-smooth), color var(--duration-medium) var(--ease-smooth);
+}
+
+:root[data-theme="light"] body {
+  background:
+    radial-gradient(circle at top left, rgba(187, 162, 255, 0.23), transparent 28%),
+    radial-gradient(circle at 86% 12%, rgba(136, 84, 255, 0.2), transparent 24%),
+    linear-gradient(180deg, #f8f4ff 0%, #f5f0ff 45%, #f6f2ff 100%);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(197, 166, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(197, 166, 255, 0.06) 1px, transparent 1px);
+  background-size: 70px 70px;
+  opacity: 0.42;
+  pointer-events: none;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.page-shell {
+  position: relative;
+  width: min(1480px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: var(--space-6) 0 var(--space-8);
+}
+
+.ambient-grid,
+.ambient-glow {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ambient-glow {
+  filter: blur(96px);
+  opacity: 0.2;
+}
+
+.ambient-glow--purple {
+  background: radial-gradient(circle, var(--purple-glow) 0%, transparent 58%);
+  width: 28rem;
+  height: 28rem;
+  left: -6rem;
+  top: 8rem;
+}
+
+.ambient-glow--violet {
+  background: radial-gradient(circle, var(--violet-glow) 0%, transparent 58%);
+  width: 24rem;
+  height: 24rem;
+  right: -4rem;
+  bottom: 4rem;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-6);
+  margin-bottom: var(--space-7);
+}
+
+.topbar__actions {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.brand-mark {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.brand-mark__logo {
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(160deg, rgba(182, 140, 255, 0.2), rgba(146, 93, 255, 0.14));
+  border: 1px solid var(--line-strong);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.brand-mark__logo img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+
+.brand-mark__text {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.brand-mark__eyebrow,
+.section-kicker,
+.mono-label,
+.footer-label {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.brand-mark__title,
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  color: var(--text-strong);
+}
+
+.brand-mark__title {
+  font-size: 1.35rem;
+}
+
+.brand-mark__subtitle,
+.card-subtitle,
+.support-copy,
+.footer-value,
+.placeholder-subtext {
+  color: var(--text-base);
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.7rem 1rem;
+  border-radius: 999px;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+}
+
+.status-pill__dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  background: var(--green);
+  box-shadow: 0 0 16px rgba(99, 230, 166, 0.65);
+}
+
+.metric-tile,
+.data-block {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.metric-tile__label,
+.data-block__label {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.metric-tile__value,
+.data-block__value,
+.footer-value {
+  color: var(--text-strong);
+  font-size: clamp(1rem, 2vw, 1.1rem);
+  font-weight: 600;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 960px) {
+  .page-shell {
+    width: min(100% - 1rem, 1480px);
+    padding-top: var(--space-4);
+  }
+
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

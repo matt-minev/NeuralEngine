@@ -1,0 +1,37 @@
+<section class="surface-card prediction-panel">
+  <div class="panel-heading">
+    <div>
+      <span class="section-kicker">Inference</span>
+      <h2>Prediction output</h2>
+    </div>
+  </div>
+
+  <div class="prediction-hero">
+    <div class="predicted-character" id="predictedCharacter">?</div>
+    <div class="prediction-hero__meta">
+      <div class="data-block">
+        <span class="data-block__label">Character Type</span>
+        <strong class="data-block__value" id="characterType">--</strong>
+      </div>
+      <div class="data-block">
+        <span class="data-block__label">Confidence</span>
+        <strong class="data-block__value" id="confidence">Confidence: --%</strong>
+      </div>
+      <div class="data-block">
+        <span class="data-block__label">Latency</span>
+        <strong class="data-block__value" id="predictionTime">--ms</strong>
+      </div>
+    </div>
+  </div>
+
+  <div class="character-tabs">
+    <button class="tab-btn active" data-tab="all" type="button">All</button>
+    <button class="tab-btn" data-tab="digits" type="button">0-9</button>
+    <button class="tab-btn" data-tab="uppercase" type="button">A-Z</button>
+    <button class="tab-btn" data-tab="lowercase" type="button">a-z</button>
+  </div>
+
+  <div class="top-predictions" id="topPredictions">
+    <p class="no-prediction">Draw a character to see predictions</p>
+  </div>
+</section>

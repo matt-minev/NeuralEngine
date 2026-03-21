@@ -1,0 +1,70 @@
+.surface-card {
+  position: relative;
+  background: linear-gradient(180deg, var(--bg-panel), var(--bg-panel-strong));
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(14px);
+}
+
+.surface-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  pointer-events: none;
+}
+
+.surface-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.surface-card--hero {
+  padding: 1.2rem 1.4rem;
+}
+
+.panel-heading,
+.panel-subheading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.panel-heading h2,
+.panel-subheading h3 {
+  font-size: clamp(1.25rem, 2vw, 1.7rem);
+}
+
+.card-subtitle {
+  margin-top: 0.5rem;
+}
+
+.accessibility-item {
+  margin-bottom: 1.25rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.accessibility-item:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.accessibility-item h3 {
+  margin-bottom: 0.75rem;
+  font-size: 1.08rem;
+}
+
+.advanced-metrics-section {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
+}
+
+.advanced-metrics-content {
+  margin-top: 1rem;
+}

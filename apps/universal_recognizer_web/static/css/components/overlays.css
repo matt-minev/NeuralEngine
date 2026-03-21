@@ -1,0 +1,31 @@
+.canvas-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  display: grid;
+  place-items: center;
+  background: rgba(7, 4, 14, 0.72);
+  transition: opacity var(--duration-medium) var(--ease-smooth);
+  pointer-events: none;
+}
+
+.canvas-overlay.show {
+  opacity: 1;
+}
+
+.canvas-overlay:not(.show) {
+  opacity: 0;
+}
+
+.canvas-overlay__content {
+  display: grid;
+  gap: 0.35rem;
+  text-align: center;
+}
+
+.canvas-overlay__label {
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.72rem;
+}

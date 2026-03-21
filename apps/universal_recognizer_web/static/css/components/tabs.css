@@ -1,0 +1,39 @@
+.mode-toggle {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.mode-btn,
+.tab-btn,
+.view-btn {
+  padding: 0.62rem 1rem;
+  background: rgba(182, 140, 255, 0.08);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--text-base);
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-smooth), transform var(--duration-fast) var(--ease-smooth);
+}
+
+.mode-btn:hover,
+.tab-btn:hover,
+.view-btn:hover {
+  background: rgba(182, 140, 255, 0.14);
+  transform: translateY(-1px);
+}
+
+.mode-btn.active,
+.tab-btn.active,
+.view-btn.active {
+  background: linear-gradient(135deg, rgba(146, 93, 255, 0.5), rgba(182, 140, 255, 0.26));
+  border-color: rgba(182, 140, 255, 0.55);
+  color: var(--text-strong);
+}
+
+.character-tabs,
+.test-view-toggle {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}

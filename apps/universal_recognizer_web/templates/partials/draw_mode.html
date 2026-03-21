@@ -1,0 +1,32 @@
+<div class="mode-content active" id="drawModeContent">
+  <div class="dashboard-grid">
+    <section class="surface-card canvas-panel">
+      <div class="panel-heading">
+        <div>
+          <span class="section-kicker">Input Surface</span>
+          <h2>Draw Character</h2>
+          <p class="card-subtitle">Draw any character (0-9, A-Z, a-z)</p>
+        </div>
+      </div>
+      <div class="canvas-stage">
+        <div class="canvas-frame">
+          <canvas id="drawingCanvas" width="280" height="280" aria-label="Drawing canvas"></canvas>
+          <div class="canvas-overlay show" id="canvasOverlay">
+            <div class="canvas-overlay__content">
+              <span class="canvas-overlay__label">Awaiting input</span>
+              <strong>Draw here</strong>
+            </div>
+          </div>
+        </div>
+        <div class="canvas-controls">
+          <button id="clearBtn" class="button button--secondary" type="button">🗑️ Clear</button>
+          <button id="predictBtn" class="button button--primary" type="button">🔍 Predict</button>
+        </div>
+      </div>
+    </section>
+
+    {% include "partials/prediction_panel.html" %}
+
+    {% include "partials/accessibility_panel.html" %}
+  </div>
+</div>

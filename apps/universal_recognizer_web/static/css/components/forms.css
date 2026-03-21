@@ -1,0 +1,28 @@
+.select-field {
+  position: relative;
+}
+
+.select-input,
+select {
+  appearance: none;
+  background: rgba(182, 140, 255, 0.08);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--text-strong);
+  padding: 0.62rem 2rem 0.62rem 0.9rem;
+  min-width: 12rem;
+}
+
+.select-field::after {
+  content: "▾";
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+:root[data-theme="light"] select {
+  background: rgba(120, 63, 255, 0.08);
+}
