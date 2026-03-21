@@ -342,11 +342,17 @@ class CanonicalPreprocessorV2:
 
 def preprocess_for_prediction(image_data, is_test_image: bool = False, return_debug: bool = False):
     pp = CanonicalPreprocessorV2()
+    # IMPORTANT: Always skip the EMNIST orientation transform for predictions.
+    # The flip_h_rot90 transform exists ONLY to fix raw EMNIST data during
+    # training data loading (in data_loader.py). By the time images reach
+    # this function, they are already correctly oriented:
+    #   - Test images: already fixed + normalized by load_emnist_data()
+    #   - Canvas drawings: user draws correctly, no fix needed
     out, _, debug = pp.preprocess(
         image_data,
         return_metrics=False,
         return_debug=return_debug,
-        skip_transform=is_test_image,
+        skip_transform=True,
         already_normalized=is_test_image,
         strict_mode=(False if is_test_image else None),
     )
@@ -357,11 +363,12 @@ def preprocess_for_prediction(image_data, is_test_image: bool = False, return_de
 
 def preprocess_with_metrics(image_data, is_test_image: bool = False, return_debug: bool = False):
     pp = CanonicalPreprocessorV2()
+    # See comment in preprocess_for_prediction above.
     out, metrics, debug = pp.preprocess(
         image_data,
         return_metrics=True,
         return_debug=return_debug,
-        skip_transform=is_test_image,
+        skip_transform=True,
         already_normalized=is_test_image,
         strict_mode=(False if is_test_image else None),
     )

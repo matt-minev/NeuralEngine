@@ -259,7 +259,7 @@ def predict_with_mirror_detection(image_data, mirror_threshold=0.05):
             mirrored_payload,
             return_metrics=False,
             return_debug=False,
-            skip_transform=False,
+            skip_transform=True,  # Never apply EMNIST transform to canvas input
             already_normalized=False,
             strict_mode=None,
         )

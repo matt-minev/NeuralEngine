@@ -1,0 +1,199 @@
+
+C:\Users\Matt\Desktop\NECNN\NeuralEngine>python apps\universal_recognizer_web\training\train_cnn.py --device gpu --epochs 75 --batch-size 256 --lr 0.001
+C:\Users\Matt\AppData\Roaming\Python\Python313\site-packages\cupy\_environment.py:275: UserWarning: CUDA path could not be detected. Set CUDA_PATH environment variable if CuPy fails to load.
+  warnings.warn(
+======================================================================
+  NEURALENGINE CNN TRAINING
+  Started: 2026-03-20 22:32:51
+======================================================================
+
+[1/5] CONTRACT CHECK
+  Version    : v3
+  Transform  : flip_h_rot90
+  Checksum   : fe7a0697e39194c6...
+
+[2/5] LOADING DATA
+Loading EMNIST ByClass from: C:\Users\Matt\Desktop\NECNN\NeuralEngine\apps\universal_recognizer_web\data
+
+Loading training data...
+Reading images from C:\Users\Matt\Desktop\NECNN\NeuralEngine\apps\universal_recognizer_web\data\emnist-byclass-train-images-idx3-ubyte.gz
+  Loading 697,932 images of size 28x28
+  Successfully loaded 697,932 images
+Reading labels from C:\Users\Matt\Desktop\NECNN\NeuralEngine\apps\universal_recognizer_web\data\emnist-byclass-train-labels-idx1-ubyte.gz
+  Loading 697,932 labels
+  Successfully loaded 697,932 labels
+
+Loading test data...
+Reading images from C:\Users\Matt\Desktop\NECNN\NeuralEngine\apps\universal_recognizer_web\data\emnist-byclass-test-images-idx3-ubyte.gz
+  Loading 116,323 images of size 28x28
+  Successfully loaded 116,323 images
+Reading labels from C:\Users\Matt\Desktop\NECNN\NeuralEngine\apps\universal_recognizer_web\data\emnist-byclass-test-labels-idx1-ubyte.gz
+  Loading 116,323 labels
+  Successfully loaded 116,323 labels
+
+Raw data loaded:
+  Training: 697,932 images
+  Test: 116,323 images
+  Image size: 28x28
+  Classes: 62
+Fixing EMNIST image orientation with transform: flip_h_rot90...
+  Orientation fixed successfully
+Fixing EMNIST image orientation with transform: flip_h_rot90...
+  Orientation fixed successfully
+Flattening images...
+Preprocessing data...
+  Normalization stats saved to contract (transform_id=flip_h_rot90)
+Creating one-hot encoding for 697,932 labels...
+  One-hot encoding complete: (697932, 62)
+Creating one-hot encoding for 116,323 labels...
+  One-hot encoding complete: (116323, 62)
+
+Data loaded and preprocessed:
+  Training: 697,932 samples
+  Test: 116,323 samples
+  Data range: [-0.817, 1.000]
+
+Data splits created:
+  Training: 628,138 samples
+  Validation: 69,794 samples
+  Test: 116,323 samples
+  Data loaded in 18s
+
+[3/5] SANITY CHECKS
+  Train: (628138, 784) range [-0.817, 1.000]
+  Val  : (69794, 784) range [-0.817, 1.000]
+  Test : (116323, 784) range [-0.817, 1.000]
+  Train distribution: 62/62 classes present, 628,138 total samples
+    Top-5: '1'=34537, '7'=32179, '3'=31629, '0'=31126, '6'=30809
+    Bot-5: 'j'=1706, 'y'=2129, 'p'=2203, 'K'=2221, 'k'=2242
+  Val distribution: 62/62 classes present, 69,794 total samples
+    Top-5: '1'=3837, '7'=3575, '3'=3514, '0'=3459, '6'=3423
+    Bot-5: 'j'=190, 'y'=236, 'p'=245, 'K'=247, 'k'=249
+  NaN check: PASSED
+
+[4/5] MODEL INITIALIZATION
+  Architecture: Conv32 -> Pool -> Conv64 -> Pool -> FC256 -> FC62
+  Parameters : 837,822
+  Device     : gpu (cupy), GPU=True
+  Dtype      : float32
+  Dropout    : 0.25
+  Moving training data to device (val/test stay on CPU to save VRAM)...
+  GPU Memory : 3086 MB free / 6144 MB total
+  Running forward pass sanity check...
+  Forward pass OK: output shape=(8, 62), prob_sum=1.0000
+  Label smoothing: 0.1 applied to training labels
+  Data augmentation: ENABLED (rot=±8°, scale=0.93-1.07, shift=±2px, elastic, noise)
+
+[5/5] TRAINING
+  Epochs       : 75
+  Batch size   : 256
+  Batches/ep   : 2454
+  LR schedule  : cosine annealing (0.001 -> 5e-05), warmup=3ep
+  Smoothing    : 0.1
+  Augmentation : ON
+----------------------------------------------------------------------
+    Epoch |        LR | Train Loss | Val Loss |  Val Acc |     Time |        ETA | Note
+----------------------------------------------------------------------
+    1/ 75  | 0.0003667 |     1.4651 |   0.5326 |   84.84% |   3m 12s | 3h 57m 20s | ★ BEST
+    2/ 75  | 0.0006833 |     1.2279 |   0.4935 |   85.89% |   3m 10s | 3h 53m 10s | ★ BEST (+1.05%)
+    3/ 75  | 0.0010000 |     1.1818 |   0.4802 |   86.22% |   3m 16s | 3h 51m 48s | ★ BEST (+0.34%)
+    4/ 75  | 0.0009995 |     1.1556 |   0.4640 |   86.40% |   3m 14s | 3h 48m 57s | ★ BEST (+0.18%)
+    5/ 75  | 0.0009982 |     1.1408 |   0.4729 |   86.50% |   3m 13s | 3h 45m 42s | ★ BEST (+0.10%)
+         ↳ Checkpoint saved (epoch 5)
+    6/ 75  | 0.0009959 |     1.1307 |   0.4438 |   86.66% |   3m 13s | 3h 42m 30s | ★ BEST (+0.16%)
+    7/ 75  | 0.0009928 |     1.1237 |   0.4487 |   86.76% |   3m 07s | 3h 38m 23s | ★ BEST (+0.10%)
+    8/ 75  | 0.0009887 |     1.1176 |   0.4494 |   86.91% |   3m 10s | 3h 34m 52s | ★ BEST (+0.15%)
+    9/ 75  | 0.0009838 |     1.1132 |   0.4663 |   87.02% |   3m 15s | 3h 32m 02s | ★ BEST (+0.10%)
+   10/ 75  | 0.0009780 |     1.1087 |   0.4568 |   86.96% |   3m 10s | 3h 28m 32s |
+         ↳ Checkpoint saved (epoch 10)
+   11/ 75  | 0.0009714 |     1.1056 |   0.4505 |   87.04% |   3m 18s | 3h 25m 56s | ★ BEST (+0.03%)
+   12/ 75  | 0.0009638 |     1.1026 |   0.4474 |   87.18% |   3m 20s | 3h 23m 24s | ★ BEST (+0.14%)
+   13/ 75  | 0.0009555 |     1.0998 |   0.4374 |   87.19% |   3m 16s | 3h 20m 22s | ★ BEST (+0.00%)
+   14/ 75  | 0.0009463 |     1.0976 |   0.4373 |   87.09% |   3m 18s | 3h 17m 28s |
+   15/ 75  | 0.0009364 |     1.0959 |   0.4455 |   87.01% |   3m 17s | 3h 14m 27s |
+         ↳ Checkpoint saved (epoch 15)
+   16/ 75  | 0.0009256 |     1.0936 |   0.4355 |   87.11% |   3m 14s | 3h 11m 13s |
+   17/ 75  | 0.0009141 |     1.0921 |   0.4477 |   87.11% |   3m 17s | 3h 08m 10s |
+   18/ 75  | 0.0009018 |     1.0906 |   0.4440 |   87.20% |   3m 24s | 3h 05m 28s | ★ BEST (+0.01%)
+   19/ 75  | 0.0008889 |     1.0892 |   0.4362 |   87.19% |   3m 22s | 3h 02m 32s |
+   20/ 75  | 0.0008752 |     1.0873 |   0.4403 |   87.25% |   3m 13s | 2h 59m 10s | ★ BEST (+0.05%)
+         ↳ Checkpoint saved (epoch 20)
+   21/ 75  | 0.0008609 |     1.0862 |   0.4452 |   87.29% |   3m 16s | 2h 55m 57s | ★ BEST (+0.04%)
+   22/ 75  | 0.0008459 |     1.0852 |   0.4416 |   87.29% |   3m 21s | 2h 52m 57s | ★ BEST (+0.00%)
+   23/ 75  | 0.0008303 |     1.0836 |   0.4357 |   87.31% |   3m 14s | 2h 49m 38s | ★ BEST (+0.02%)
+   24/ 75  | 0.0008142 |     1.0822 |   0.4395 |   87.29% |   3m 10s | 2h 46m 12s |
+   25/ 75  | 0.0007974 |     1.0818 |   0.4422 |   87.32% |   2m 38s | 2h 41m 44s | ★ BEST (+0.01%)
+         ↳ Checkpoint saved (epoch 25)
+   26/ 75  | 0.0007802 |     1.0796 |   0.4382 |   87.29% |   3m 16s | 2h 38m 35s |
+   27/ 75  | 0.0007625 |     1.0793 |   0.4355 |   87.34% |   3m 15s | 2h 35m 22s | ★ BEST (+0.02%)
+   28/ 75  | 0.0007443 |     1.0781 |   0.4384 |   87.35% |   3m 13s | 2h 32m 07s | ★ BEST (+0.01%)
+   29/ 75  | 0.0007257 |     1.0771 |   0.4336 |   87.37% |   3m 19s | 2h 29m 01s | ★ BEST (+0.02%)
+   30/ 75  | 0.0007068 |     1.0761 |   0.4315 |   87.34% |   3m 25s | 2h 26m 04s |
+         ↳ Checkpoint saved (epoch 30)
+   31/ 75  | 0.0006875 |     1.0755 |   0.4396 |   87.41% |   3m 27s | 2h 23m 06s | ★ BEST (+0.04%)
+   32/ 75  | 0.0006678 |     1.0744 |   0.4352 |   87.42% |   3m 29s | 2h 20m 11s | ★ BEST (+0.01%)
+   33/ 75  | 0.0006479 |     1.0728 |   0.4307 |   87.42% |   3m 30s | 2h 17m 14s |
+   34/ 75  | 0.0006278 |     1.0727 |   0.4357 |   87.45% |   3m 32s | 2h 14m 18s | ★ BEST (+0.03%)
+   35/ 75  | 0.0006075 |     1.0715 |   0.4351 |   87.41% |   3m 30s | 2h 11m 17s |
+         ↳ Checkpoint saved (epoch 35)
+   36/ 75  | 0.0005870 |     1.0710 |   0.4333 |   87.43% |   3m 30s | 2h 08m 15s |
+   37/ 75  | 0.0005664 |     1.0702 |   0.4342 |   87.44% |   3m 30s | 2h 05m 11s |
+   38/ 75  | 0.0005457 |     1.0694 |   0.4318 |   87.40% |   3m 30s | 2h 02m 06s |
+   39/ 75  | 0.0005250 |     1.0686 |   0.4279 |   87.47% |   3m 21s | 1h 58m 51s | ★ BEST (+0.02%)
+   40/ 75  | 0.0005043 |     1.0676 |   0.4345 |   87.46% |   3m 15s | 1h 55m 31s |
+         ↳ Checkpoint saved (epoch 40)
+   41/ 75  | 0.0004836 |     1.0668 |   0.4350 |   87.51% |   3m 18s | 1h 52m 13s | ★ BEST (+0.04%)
+   42/ 75  | 0.0004630 |     1.0663 |   0.4321 |   87.49% |   3m 12s | 1h 48m 50s |
+   43/ 75  | 0.0004425 |     1.0657 |   0.4332 |   87.51% |   3m 15s | 1h 45m 31s | ★ BEST (+0.01%)
+   44/ 75  | 0.0004222 |     1.0648 |   0.4307 |   87.46% |   3m 17s | 1h 42m 12s |
+   45/ 75  | 0.0004021 |     1.0642 |   0.4298 |   87.57% |   3m 13s | 1h 38m 52s | ★ BEST (+0.06%)
+         ↳ Checkpoint saved (epoch 45)
+   46/ 75  | 0.0003822 |     1.0636 |   0.4302 |   87.50% |   4m 19s | 1h 36m 13s |
+   47/ 75  | 0.0003625 |     1.0629 |   0.4337 |   87.50% |   4m 21s | 1h 33m 31s |
+   48/ 75  | 0.0003432 |     1.0622 |   0.4314 |   87.52% |   4m 18s | 1h 30m 43s |
+   49/ 75  | 0.0003243 |     1.0620 |   0.4303 |   87.58% |   4m 17s | 1h 40m 43s | ★ BEST (+0.01%)
+   50/ 75  | 0.0003057 |     1.0607 |   0.4260 |   87.52% |   4m 10s | 1h 36m 59s |
+         ↳ Checkpoint saved (epoch 50)
+   51/ 75  | 0.0002875 |     1.0601 |   0.4257 |   87.53% |   4m 08s | 1h 33m 14s |
+   52/ 75  | 0.0002698 |     1.0601 |   0.4290 |   87.55% |   4m 22s | 1h 29m 34s |
+   53/ 75  | 0.0002526 |     1.0590 |   0.4275 |   87.58% |   4m 28s | 1h 25m 54s | ★ BEST (+0.01%)
+   54/ 75  | 0.0002358 |     1.0588 |   0.4283 |   87.52% |   4m 29s | 1h 22m 14s |
+   55/ 75  | 0.0002197 |     1.0583 |   0.4260 |   87.60% |   4m 30s | 1h 18m 32s | ★ BEST (+0.02%)
+         ↳ Checkpoint saved (epoch 55)
+   56/ 75  | 0.0002041 |     1.0575 |   0.4278 |   87.57% |   4m 20s | 1h 14m 45s |
+   57/ 75  | 0.0001891 |     1.0571 |   0.4282 |   87.61% |   4m 30s | 1h 11m 00s | ★ BEST (+0.00%)
+   58/ 75  | 0.0001748 |     1.0573 |   0.4274 |   87.62% |   4m 38s | 1h 07m 15s | ★ BEST (+0.01%)
+   59/ 75  | 0.0001611 |     1.0566 |   0.4306 |   87.63% |   4m 02s | 1h 03m 19s | ★ BEST (+0.02%)
+   60/ 75  | 0.0001482 |     1.0562 |   0.4282 |   87.61% |   3m 17s |    59m 12s |
+         ↳ Checkpoint saved (epoch 60)
+   61/ 75  | 0.0001359 |     1.0554 |   0.4245 |   87.65% |   3m 17s |    55m 06s | ★ BEST (+0.02%)
+   62/ 75  | 0.0001244 |     1.0551 |   0.4263 |   87.61% |   3m 17s |    51m 02s |
+   63/ 75  | 0.0001136 |     1.0552 |   0.4259 |   87.60% |   3m 17s |    46m 59s |
+   64/ 75  | 0.0001037 |     1.0545 |   0.4273 |   87.60% |   3m 17s |    42m 57s |
+   65/ 75  | 0.0000945 |     1.0547 |   0.4274 |   87.65% |   3m 17s |    38m 57s | ★ BEST (+0.00%)
+         ↳ Checkpoint saved (epoch 65)
+   66/ 75  | 0.0000862 |     1.0543 |   0.4276 |   87.62% |   3m 17s |    34m 59s |
+   67/ 75  | 0.0000786 |     1.0540 |   0.4290 |   87.59% |   4m 13s |    31m 08s |
+   68/ 75  | 0.0000720 |     1.0540 |   0.4269 |   87.63% |   4m 24s |    27m 17s |
+   69/ 75  | 0.0000662 |     1.0533 |   0.4274 |   87.60% |   4m 04s |    23m 24s |
+   70/ 75  | 0.0000613 |     1.0533 |   0.4267 |   87.62% |   4m 12s |    19m 31s | stale x5
+         ↳ Checkpoint saved (epoch 70)
+   71/ 75  | 0.0000572 |     1.0530 |   0.4263 |   87.59% |   4m 17s |    15m 38s | stale x6
+   72/ 75  | 0.0000541 |     1.0529 |   0.4271 |   87.62% |   4m 17s |    11m 45s | stale x7
+   73/ 75  | 0.0000518 |     1.0526 |   0.4273 |   87.61% |   4m 25s |     7m 50s | stale x8
+   74/ 75  | 0.0000505 |     1.0528 |   0.4255 |   87.65% |   4m 29s |     3m 55s | stale x9
+   75/ 75  | 0.0000500 |     1.0530 |   0.4272 |   87.66% |   4m 30s |         0s | ★ BEST (+0.01%)
+         ↳ Checkpoint saved (epoch 75)
+----------------------------------------------------------------------
+
+======================================================================
+  TRAINING COMPLETE
+======================================================================
+  Best val accuracy : 87.66%
+  Test accuracy     : 87.75%
+  Test loss         : 0.4226
+  Total time        : 4h 55m 30s
+  Model saved to    : C:\Users\Matt\Desktop\NECNN\NeuralEngine\apps\universal_recognizer_web\models\universal_character_model.pkl
+  Contract version  : v3 (transform=flip_h_rot90)
+  Finished          : 2026-03-21 03:28:50
+======================================================================

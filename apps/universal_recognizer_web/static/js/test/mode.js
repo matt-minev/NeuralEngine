@@ -1,6 +1,49 @@
 import { getRandomTestSamples, predictTestSample } from "../core/api.js";
 import { createNotification, preserveScroll, qs, qsa } from "../core/utils.js";
 
+// Allow list of confusable character pairs — mistakes between these
+// are expected and shown in yellow instead of red.
+const CONFUSABLE_PAIRS = new Set([
+  // Numbers vs Letters
+  "O|0", "0|O",
+  "I|l", "l|I",
+  "I|1", "1|I",
+  "l|1", "1|l",
+  "q|9", "9|q",
+  "g|9", "9|g",
+  "c|C", "C|c",
+  "k|K", "K|k",
+  "m|M", "M|m",
+  "o|O", "O|o",
+  "p|P", "P|p",
+  "s|S", "S|s",
+  "u|U", "U|u",
+  "v|V", "V|v",
+  "w|W", "W|w",
+  "x|X", "X|x",
+  "y|Y", "Y|y",
+  "z|Z", "Z|z",
+  "q|g", "g|q",
+]);
+
+function classifyResult(predicted, groundTruth) {
+  if (predicted === groundTruth) return "correct";
+  if (CONFUSABLE_PAIRS.has(`${predicted}|${groundTruth}`)) return "confusable";
+  return "incorrect";
+}
+
+function statusLabel(cls) {
+  if (cls === "correct") return "✓ Correct";
+  if (cls === "confusable") return "~ Confusable";
+  return "✗ Incorrect";
+}
+
+function statusIcon(cls) {
+  if (cls === "correct") return "✓";
+  if (cls === "confusable") return "~";
+  return "✗";
+}
+
 export class TestModeHandler {
   constructor() {
     this.currentView = "single";
@@ -64,6 +107,9 @@ export class TestModeHandler {
     loadButton.disabled = true;
     loadButton.innerHTML = "⏳ Loading...";
 
+    // Show loading overlay on existing content instead of wiping it
+    this._showLoadingOverlay();
+
     try {
       const data = await preserveScroll(() => getRandomTestSamples(count, character));
       this.currentSamples = data.samples;
@@ -77,9 +123,30 @@ export class TestModeHandler {
       console.error("Error loading test samples:", error);
       this.showNotification("Failed to load test samples. Please try again.", "error");
     } finally {
+      this._hideLoadingOverlay();
       loadButton.disabled = false;
       loadButton.innerHTML = originalButtonText;
     }
+  }
+
+  _showLoadingOverlay() {
+    const containers = [qs("#singleTestContent"), qs("#testGrid")];
+    containers.forEach((container) => {
+      if (!container) return;
+      if (container.querySelector(".test-loading-overlay")) return;
+      const overlay = document.createElement("div");
+      overlay.className = "test-loading-overlay";
+      overlay.innerHTML = '<div class="test-loading-spinner"></div>';
+      container.style.position = "relative";
+      container.appendChild(overlay);
+    });
+  }
+
+  _hideLoadingOverlay() {
+    qsa(".test-loading-overlay").forEach((el) => {
+      el.classList.add("fade-out");
+      setTimeout(() => el.remove(), 200);
+    });
   }
 
   showNotification(message, type = "info") {
@@ -97,26 +164,6 @@ export class TestModeHandler {
     }, 3000);
   }
 
-  rotateImage180(imageDataUrl) {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
-        canvas.width = img.width;
-        canvas.height = img.height;
-
-        ctx.translate(canvas.width / 2, canvas.height / 2);
-        ctx.rotate(Math.PI);
-        ctx.translate(-canvas.width / 2, -canvas.height / 2);
-        ctx.drawImage(img, 0, 0);
-
-        resolve(canvas.toDataURL("image/png"));
-      };
-      img.src = imageDataUrl;
-    });
-  }
-
   async displaySingle(sample) {
     await preserveScroll(async () => {
       const placeholder = qs("#singleTestPlaceholder");
@@ -124,9 +171,7 @@ export class TestModeHandler {
       if (placeholder) placeholder.style.display = "none";
       if (content) content.style.display = "grid";
 
-      const rotatedImage = await this.rotateImage180(sample.image_data);
-      qs("#testImageSingle").src = rotatedImage;
-
+      qs("#testImageSingle").src = sample.image_data;
       qs("#groundTruthSingle").textContent = sample.ground_truth;
 
       try {
@@ -136,8 +181,8 @@ export class TestModeHandler {
         qs("#predictionSingle").textContent = prediction.character;
         qs("#confidenceSingle").textContent = `${prediction.confidence.toFixed(1)}%`;
 
-        const isCorrect = prediction.character === sample.ground_truth;
-        qs("#testStatusSingle").innerHTML = `<span class="status-badge ${isCorrect ? "correct" : "incorrect"}">${isCorrect ? "✓ Correct" : "✗ Incorrect"}</span>`;
+        const cls = classifyResult(prediction.character, sample.ground_truth);
+        qs("#testStatusSingle").innerHTML = `<span class="status-badge ${cls}">${statusLabel(cls)}</span>`;
       } catch (error) {
         console.error("Error getting prediction:", error);
         qs("#predictionSingle").textContent = "Error";
@@ -154,8 +199,6 @@ export class TestModeHandler {
         placeholder.style.display = "none";
       }
 
-      grid.innerHTML = '<div class="test-grid-loading">Loading predictions...</div>';
-
       const predictions = await Promise.all(
         this.currentSamples.map(async (sample) => {
           try {
@@ -168,26 +211,22 @@ export class TestModeHandler {
         })
       );
 
-      const rotatedImages = await Promise.all(
-        predictions.map(({ sample }) => this.rotateImage180(sample.image_data))
-      );
-
       grid.innerHTML = predictions
-        .map(({ sample, prediction }, index) => {
+        .map(({ sample, prediction }) => {
           if (!prediction) {
             return '<div class="test-grid-item error">Error</div>';
           }
 
-          const isCorrect = prediction.character === sample.ground_truth;
+          const cls = classifyResult(prediction.character, sample.ground_truth);
 
           return `
-            <div class="test-grid-item ${isCorrect ? "correct" : "incorrect"}">
-              <img src="${rotatedImages[index]}" alt="Test sample" />
+            <div class="test-grid-item ${cls}">
+              <img src="${sample.image_data}" alt="Test sample" />
               <div class="test-grid-info">
                 <div class="test-grid-label">Truth: <strong>${sample.ground_truth}</strong></div>
                 <div class="test-grid-label">Pred: <strong>${prediction.character}</strong></div>
                 <div class="test-grid-label">Conf: ${prediction.confidence.toFixed(1)}%</div>
-                <div class="test-grid-status">${isCorrect ? "✓" : "✗"}</div>
+                <div class="test-grid-status">${statusIcon(cls)}</div>
               </div>
             </div>
           `;

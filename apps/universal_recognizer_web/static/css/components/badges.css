@@ -21,3 +21,9 @@
   background: rgba(255, 127, 158, 0.12);
   color: var(--red);
 }
+
+.status-badge.confusable {
+  border-color: rgba(255, 195, 117, 0.35);
+  background: rgba(255, 195, 117, 0.12);
+  color: #ffc375;
+}
