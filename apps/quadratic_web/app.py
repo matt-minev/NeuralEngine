@@ -66,6 +66,22 @@ app_state = {
     }
 }
 
+
+def _is_comparison_scenario(scenario_key):
+    """Return True when a scenario should appear in aggregate comparison views."""
+    scenario = app_state['scenarios'].get(scenario_key)
+    return getattr(scenario, 'include_in_comparison', True) if scenario else True
+
+
+def _get_comparison_result_items():
+    """Return comparison-ready result items, falling back to all results if needed."""
+    filtered_items = [
+        (key, result)
+        for key, result in app_state['results'].items()
+        if _is_comparison_scenario(key)
+    ]
+    return filtered_items if filtered_items else list(app_state['results'].items())
+
 # Initialize Model Manager
 model_manager = ModelManager()
 
@@ -284,7 +300,8 @@ def get_results():
             'scenario_info': {
                 'name': scenario.name,
                 'description': scenario.description,
-                'color': scenario.color
+                'color': scenario.color,
+                'comparison_enabled': getattr(scenario, 'include_in_comparison', True)
             },
             'metrics': result
         }
@@ -296,17 +313,24 @@ def get_performance_analysis():
     """Get performance analysis data"""
     if not app_state['results']:
         return jsonify({'error': 'No results available'}), 400
+
+    comparison_items = _get_comparison_result_items()
     
     analysis_data = {
-        'scenarios': list(app_state['results'].keys()),
+        'scenarios': [key for key, _ in comparison_items],
         'metrics': {
-            'r2_scores': [app_state['results'][s]['r2'] for s in app_state['results'].keys()],
-            'mse_values': [app_state['results'][s]['mse'] for s in app_state['results'].keys()],
-            'mae_values': [app_state['results'][s]['mae'] for s in app_state['results'].keys()],
-            'accuracy_values': [app_state['results'][s]['accuracy_10pct'] for s in app_state['results'].keys()]
+            'r2_scores': [result['r2'] for _, result in comparison_items],
+            'mse_values': [result['mse'] for _, result in comparison_items],
+            'mae_values': [result['mae'] for _, result in comparison_items],
+            'accuracy_values': [result['accuracy_10pct'] for _, result in comparison_items]
         },
-        'colors': [app_state['scenarios'][s].color for s in app_state['results'].keys()],
-        'scenario_names': [app_state['scenarios'][s].name for s in app_state['results'].keys()]
+        'colors': [app_state['scenarios'][s].color for s, _ in comparison_items],
+        'scenario_names': [app_state['scenarios'][s].name for s, _ in comparison_items],
+        'excluded_scenarios': [
+            app_state['scenarios'][s].name
+            for s in app_state['results'].keys()
+            if not _is_comparison_scenario(s)
+        ]
     }
     
     return jsonify(analysis_data)
@@ -316,6 +340,8 @@ def get_enhanced_chart_data():
     """Get enhanced chart data with improved styling"""
     if not app_state['results']:
         return jsonify({'error': 'No results available'}), 400
+
+    comparison_items = _get_comparison_result_items()
     
     chart_data = {
         'colors': {
@@ -324,12 +350,11 @@ def get_enhanced_chart_data():
             'warning': '#ff9500',
             'error': '#ff3b30'
         },
-        'scenarios': list(app_state['results'].keys()),
+        'scenarios': [key for key, _ in comparison_items],
         'enhanced_metrics': {}
     }
     
-    for scenario_key in app_state['results'].keys():
-        result = app_state['results'][scenario_key]
+    for scenario_key, result in comparison_items:
         chart_data['enhanced_metrics'][scenario_key] = {
             'r2': result.get('r2', 0),
             'mse': result.get('mse', 0),

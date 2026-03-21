@@ -1280,8 +1280,23 @@ const DatasetGenerator = {
     }
 
     try {
-      // Redirect to main app with dataset parameter
-      window.location.href = `/?load_dataset=${this.downloadFilename}`;
+      const response = await fetch(
+        `/api/data/load/${encodeURIComponent(this.downloadFilename)}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.error || "Failed to load dataset");
+      }
+
+      // Redirect to main app with dataset parameter so the UI can sync to the loaded dataset
+      window.location.href = `/?load_dataset=${encodeURIComponent(this.downloadFilename)}`;
     } catch (error) {
       this.showNotification(
         `Failed to load dataset: ${error.message}`,

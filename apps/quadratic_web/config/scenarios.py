@@ -13,6 +13,7 @@ class PredictionScenario:
     network_architecture: List[int]
     activations: List[str]
     color: str
+    include_in_comparison: bool = True
 
 def get_default_scenarios():
     """Get default prediction scenarios"""
@@ -70,6 +71,7 @@ def get_default_scenarios():
             target_indices=[5],
             network_architecture=[5, 64, 48, 24, 1],
             activations=['swish', 'swish', 'relu', 'linear'],
-            color='#FFEAA7'
+            color='#FFEAA7',
+            include_in_comparison=False
         )
     }

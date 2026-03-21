@@ -2543,12 +2543,22 @@ const ComparisonSection = {
     // Refresh comparison data
   },
 
+  getComparableResults(results) {
+    const filtered = Object.fromEntries(
+      Object.entries(results).filter(([, result]) => {
+        return result?.scenario_info?.comparison_enabled !== false;
+      })
+    );
+
+    return Object.keys(filtered).length > 0 ? filtered : results;
+  },
+
   async generateComparison() {
     try {
-      const results = await ApiClient.request(API.results);
+      const results = this.getComparableResults(await ApiClient.request(API.results));
       if (Object.keys(results).length < 2) {
         Utils.showNotification(
-          "Need at least 2 trained models for comparison",
+          "Need at least 2 comparable models for comparison",
           "warning"
         );
         return;
@@ -2564,6 +2574,7 @@ const ComparisonSection = {
   },
 
   createComparisonChart(results) {
+    results = this.getComparableResults(results);
     const ctx = document
       .getElementById("comparison-performance-chart")
       .getContext("2d");
@@ -2736,6 +2747,7 @@ const ComparisonSection = {
   },
 
   generateComparisonReport(results) {
+    results = this.getComparableResults(results);
     const container = document.getElementById("model-rankings");
 
     // Sort scenarios by composite score (weighted average of all metrics)
@@ -2853,6 +2865,7 @@ const ComparisonSection = {
   },
 
   generateInsights(results) {
+    results = this.getComparableResults(results);
     const scenarios = Object.keys(results);
 
     // Find best performing model
@@ -3060,8 +3073,19 @@ function uploadDataset() {
 
 async function startTraining() {
   if (!AppState.dataLoaded) {
-    Utils.showNotification("Please load a dataset first", "warning");
-    return;
+    try {
+      const dataInfo = await ApiClient.request(API.dataInfo);
+
+      if (!dataInfo.loaded) {
+        Utils.showNotification("Please load a dataset first", "warning");
+        return;
+      }
+
+      updateDataStatusDisplay(dataInfo);
+    } catch (error) {
+      Utils.showNotification("Please load a dataset first", "warning");
+      return;
+    }
   }
 
   const selectedScenarios = Array.from(
