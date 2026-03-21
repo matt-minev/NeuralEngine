@@ -1,0 +1,14 @@
+<section class="apps-section">
+  <div class="panel-heading apps-section__heading">
+    <div>
+      <span class="section-kicker">Applications</span>
+      <h2>Launch a workspace</h2>
+    </div>
+  </div>
+
+  <div class="apps-grid">
+    {% for app in app_cards %}
+      {% include "partials/app_card.html" %}
+    {% endfor %}
+  </div>
+</section>

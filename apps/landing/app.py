@@ -1,14 +1,58 @@
 #!/usr/bin/env python3
-"""
-Neural Engine Landing Page
-Beautiful entry point for all Neural Engine web applications
-"""
+"""Neural Engine landing page for launching the web applications."""
 
 from flask import Flask, render_template, send_from_directory
 from pathlib import Path
-import os
 
 app = Flask(__name__)
+
+APP_CARDS = [
+    {
+        "name": "Digit Recognizer",
+        "slug": "digit",
+        "icon": "🔢",
+        "description": (
+            "Draw handwritten digits, stream live confidence across the output layer, "
+            "and jump into the showcase for dataset and activation deep-dives."
+        ),
+        "primary_url": "http://localhost:8001",
+        "primary_label": "Launch App",
+        "secondary_url": "http://localhost:8001/showcase",
+        "secondary_label": "Open Showcase",
+        "port": 8001,
+        "status": "Live inference workspace",
+    },
+    {
+        "name": "Universal Character Recognizer",
+        "slug": "universal",
+        "icon": "✍️",
+        "description": (
+            "Recognize digits, uppercase, and lowercase characters with mirror detection, "
+            "writing diagnostics, and accessibility-aware tooling."
+        ),
+        "primary_url": "http://localhost:8003",
+        "primary_label": "Launch App",
+        "secondary_url": None,
+        "secondary_label": None,
+        "port": 8003,
+        "status": "Extended character intelligence",
+    },
+    {
+        "name": "Quadratic Neural Network",
+        "slug": "quadratic",
+        "icon": "📊",
+        "description": (
+            "Generate datasets, train neural models, and predict quadratic roots with "
+            "an interactive research surface built for experimentation."
+        ),
+        "primary_url": "http://localhost:8002",
+        "primary_label": "Launch App",
+        "secondary_url": None,
+        "secondary_label": None,
+        "port": 8002,
+        "status": "Equation modeling lab",
+    },
+]
 
 # Serve shared assets from root
 @app.route('/assets/<path:filename>')
@@ -19,8 +63,8 @@ def serve_assets(filename):
 
 @app.route('/')
 def index():
-    """Render the landing page"""
-    return render_template('index.html')
+    """Render the landing page."""
+    return render_template("index.html", app_cards=APP_CARDS)
 
 if __name__ == '__main__':
     print("\n" + "="*70)
