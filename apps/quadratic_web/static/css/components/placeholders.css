@@ -1,0 +1,20 @@
+.chart-empty-state {
+  display: grid;
+  place-items: center;
+  text-align: center;
+  min-height: 260px;
+  border: 1px dashed var(--ne-line-strong);
+  border-radius: var(--radius-md);
+  background: rgba(129, 174, 209, 0.08);
+  color: var(--ne-text-muted);
+  padding: 1.4rem;
+}
+
+.chart-empty-state__icon {
+  font-size: 2rem;
+  margin-bottom: 0.55rem;
+}
+
+.chart-empty-state--hidden {
+  display: none;
+}

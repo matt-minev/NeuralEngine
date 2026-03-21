@@ -1,0 +1,104 @@
+          <section id="data" class="content-section">
+            <div class="section-header">
+              <h1 class="section-title">
+                <i class="fas fa-database"></i>
+                Dataset Management
+              </h1>
+              <button class="btn" onclick="uploadDataset()">
+                <i class="fas fa-upload"></i>
+                Upload Dataset
+              </button>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">
+                  <i class="fas fa-file-csv"></i>
+                  Dataset Information
+                </h3>
+              </div>
+              <div id="dataset-info">
+                <p
+                  style="
+                    color: var(--text-secondary);
+                    text-align: center;
+                    padding: 40px;
+                  "
+                >
+                  No dataset loaded. Please upload a CSV file to begin.
+                </p>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">
+                  <i class="fas fa-table"></i>
+                  Data Preview
+                </h3>
+              </div>
+              <div id="data-preview">
+                <div style="overflow-x: auto">
+                  <table
+                    id="data-table"
+                    style="
+                      display: none;
+                      width: 100%;
+                      border-collapse: collapse;
+                    "
+                  >
+                    <thead>
+                      <tr style="background: var(--background-color)">
+                        <th
+                          style="
+                            padding: 12px;
+                            text-align: left;
+                            border-bottom: 1px solid var(--border-color);
+                          "
+                        >
+                          a
+                        </th>
+                        <th
+                          style="
+                            padding: 12px;
+                            text-align: left;
+                            border-bottom: 1px solid var(--border-color);
+                          "
+                        >
+                          b
+                        </th>
+                        <th
+                          style="
+                            padding: 12px;
+                            text-align: left;
+                            border-bottom: 1px solid var(--border-color);
+                          "
+                        >
+                          c
+                        </th>
+                        <th
+                          style="
+                            padding: 12px;
+                            text-align: left;
+                            border-bottom: 1px solid var(--border-color);
+                          "
+                        >
+                          x1
+                        </th>
+                        <th
+                          style="
+                            padding: 12px;
+                            text-align: left;
+                            border-bottom: 1px solid var(--border-color);
+                          "
+                        >
+                          x2
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody id="data-table-body"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </section>

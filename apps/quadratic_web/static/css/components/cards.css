@@ -1,0 +1,29 @@
+.card,
+.main-content,
+.sidebar,
+.header,
+.chart-explanation-external {
+  background: linear-gradient(180deg, var(--ne-surface), var(--ne-surface-strong));
+  border: 1px solid var(--ne-line);
+  box-shadow: var(--shadow-md);
+}
+
+.section-title,
+.card-title,
+h1,
+h2,
+h3,
+h4,
+.logo,
+.sidebar h2 {
+  color: var(--ne-text-strong);
+}
+
+p,
+label,
+li,
+span,
+.form-help,
+.section-description {
+  color: var(--ne-text-base);
+}

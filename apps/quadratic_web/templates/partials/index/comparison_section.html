@@ -1,0 +1,79 @@
+          <section id="comparison" class="content-section">
+            <div class="section-header">
+              <h1 class="section-title">
+                <i class="fas fa-balance-scale"></i>
+                Model Comparison
+              </h1>
+              <button class="btn" onclick="generateComparison()">
+                <i class="fas fa-trophy"></i>
+                Compare Models
+              </button>
+            </div>
+
+            <!-- Model Rankings - Moved to First Position -->
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">
+                  <i class="fas fa-medal"></i>
+                  Model Rankings
+                </h3>
+              </div>
+              <div id="model-rankings">
+                <div class="chart-empty-state">
+                  <div>
+                    <div class="chart-empty-state__icon">🏅</div>
+                    <h4>
+                    Ready for Model Comparison
+                    </h4>
+                    <p>
+                    Train at least 2 models and click "Compare Models" to see
+                    detailed performance rankings and insights.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Performance Overview Chart - Second Position -->
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">
+                  <i class="fas fa-chart-bar"></i>
+                  Performance Overview
+                </h3>
+              </div>
+              <div class="chart-content chart-content--comparison">
+                <div class="chart-empty-state" id="comparison-performance-empty">
+                  <div>
+                    <div class="chart-empty-state__icon">🏁</div>
+                    <h4>Comparison chart is waiting</h4>
+                    <p>Train at least two models and run "Compare Models" to render the full metric overview.</p>
+                  </div>
+                </div>
+                <canvas
+                  id="comparison-performance-chart"
+                  width="800"
+                  height="400"
+                ></canvas>
+              </div>
+            </div>
+
+            <!-- Performance Insights - Third Position -->
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">
+                  <i class="fas fa-lightbulb"></i>
+                  Performance Insights
+                </h3>
+              </div>
+              <div id="comparison-insights">
+                <div class="chart-empty-state" id="comparison-insights-empty">
+                  <div>
+                    <div class="chart-empty-state__icon">💡</div>
+                    <h4>Insights will appear here</h4>
+                    <p>Once comparison runs, this panel will summarize best performer, averages, and practical recommendations.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>

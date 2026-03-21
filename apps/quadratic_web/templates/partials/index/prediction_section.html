@@ -1,0 +1,74 @@
+          <section id="prediction" class="content-section">
+            <div class="section-header">
+              <h1 class="section-title">
+                <i class="fas fa-magic"></i>
+                Neural Network Prediction
+              </h1>
+              <button class="btn" onclick="makePrediction()" id="predict-btn">
+                <i class="fas fa-brain"></i>
+                Make Prediction
+              </button>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">
+                  <i class="fas fa-sliders-h"></i>
+                  Prediction Settings
+                </h3>
+              </div>
+              <div id="prediction-config">
+                <div class="form-group">
+                  <label class="form-label">Prediction Scenario</label>
+                  <select
+                    class="form-input form-select"
+                    id="prediction-scenario"
+                  >
+                    <!-- Options will be populated here -->
+                  </select>
+                </div>
+                <div
+                  id="prediction-inputs"
+                  style="
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                    gap: 16px;
+                    margin-top: 20px;
+                  "
+                >
+                  <!-- Input fields will be populated here -->
+                </div>
+                <div style="margin-top: 20px; text-align: center">
+                  <button
+                    id="random-test-btn"
+                    class="btn"
+                    onclick="randomTest()"
+                    aria-label="Random"
+                  >
+                    <span class="btn-attention-icon" aria-hidden="true">🎲</span>
+                    <span class="random-btn-label">RANDOM</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">
+                  <i class="fas fa-chart-pie"></i>
+                  Prediction Results
+                </h3>
+              </div>
+              <div id="prediction-results">
+                <div
+                  style="
+                    color: var(--text-secondary);
+                    text-align: center;
+                    padding: 40px;
+                  "
+                >
+                  Make a prediction to see results here.
+                </div>
+              </div>
+            </div>
+          </section>

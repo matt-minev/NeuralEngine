@@ -1,0 +1,164 @@
+.button,
+.btn {
+  border-radius: 999px;
+  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.btn {
+  background: linear-gradient(135deg, rgba(38, 136, 242, 0.95), rgba(74, 164, 255, 0.92));
+  border: 1px solid rgba(123, 195, 255, 0.35);
+  box-shadow: 0 10px 24px rgba(38, 136, 242, 0.24);
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px rgba(38, 136, 242, 0.32);
+}
+
+.btn-secondary,
+.btn-outline {
+  background: rgba(129, 174, 209, 0.1);
+  border: 1px solid var(--ne-line);
+  color: var(--ne-text-strong);
+  box-shadow: none;
+}
+
+@property --random-glow-deg {
+  syntax: "<angle>";
+  inherits: true;
+  initial-value: -90deg;
+}
+
+#random-test-btn {
+  --random-border-width: 2px;
+  --random-glow-size: 18px;
+  --random-glow-intensity: 0;
+  --random-fill:
+    linear-gradient(
+      135deg,
+      rgba(52, 26, 86, 0.78) 0%,
+      rgba(63, 28, 104, 0.74) 45%,
+      rgba(34, 16, 62, 0.8) 100%
+    );
+  --random-gradient-glow:
+    red,
+    yellow,
+    green,
+    blue,
+    purple,
+    red;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  overflow: hidden;
+  isolation: isolate;
+  min-width: 228px;
+  min-height: 66px;
+  padding: 1rem 1.65rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  background:
+    var(--random-fill) padding-box,
+    conic-gradient(from var(--random-glow-deg), var(--random-gradient-glow)) border-box;
+  border: var(--random-border-width) solid transparent;
+  border-radius: 999px;
+  color: #f8fbff;
+  text-shadow: 0 1px 10px rgba(14, 8, 28, 0.2);
+  box-shadow:
+    0 16px 34px rgba(20, 9, 37, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 0 0 1px rgba(255, 255, 255, 0.06);
+  transition:
+    transform 160ms ease,
+    box-shadow 180ms ease,
+    --random-glow-deg 600ms linear,
+    --random-glow-intensity 180ms ease;
+}
+
+#random-test-btn:hover {
+  transform: translateY(-2px) scale(1.015);
+  --random-glow-intensity: 0.28;
+  box-shadow:
+    0 20px 40px rgba(20, 9, 37, 0.34),
+    0 0 28px rgba(128, 90, 213, 0.22),
+    0 0 38px rgba(84, 208, 255, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+  animation: randomButtonGlow 1.8s linear infinite;
+}
+
+#random-test-btn:focus-visible {
+  outline: none;
+  --random-glow-intensity: 0.24;
+  box-shadow:
+    0 0 0 3px rgba(244, 251, 255, 0.14),
+    0 0 0 6px rgba(128, 90, 213, 0.22),
+    0 18px 36px rgba(20, 9, 37, 0.3);
+}
+
+#random-test-btn:disabled {
+  cursor: wait;
+  opacity: 0.92;
+}
+
+#random-test-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0.45rem;
+  border-radius: inherit;
+  background: rgba(69, 28, 120, 0.2);
+  transform: scale(1.04, 0.92);
+  filter: blur(calc(var(--random-glow-size) * 0.85));
+  opacity: calc(var(--random-glow-intensity) * 0.65);
+  z-index: -1;
+}
+
+#random-test-btn::after {
+  content: "";
+  position: absolute;
+  inset: -35%;
+  border-radius: 999px;
+  background: conic-gradient(from var(--random-glow-deg), var(--random-gradient-glow));
+  filter: blur(var(--random-glow-size));
+  opacity: var(--random-glow-intensity);
+  z-index: -2;
+}
+
+#random-test-btn:hover::after,
+#random-test-btn:focus-visible::after {
+  animation: randomButtonGlow 1.8s linear infinite;
+}
+
+.btn-attention-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  font-size: 1.18rem;
+  line-height: 1;
+  filter: drop-shadow(0 2px 6px rgba(8, 22, 39, 0.36));
+}
+
+.random-btn-label {
+  flex: 0 0 auto;
+  font-size: 1rem;
+  font-weight: 800;
+  font-family: var(--font-body);
+  line-height: 1;
+  color: #f8fbff;
+  white-space: nowrap;
+}
+
+@keyframes randomButtonGlow {
+  to {
+    --random-glow-deg: 270deg;
+  }
+}
+
+@media (max-width: 768px) {
+  #random-test-btn {
+    min-width: 100%;
+  }
+}

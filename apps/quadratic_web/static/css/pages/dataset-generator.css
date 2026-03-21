@@ -1,0 +1,84 @@
+@import "../dataset_generator.css";
+
+.app-container > .header {
+  display: none;
+}
+
+.app-container {
+  background: transparent !important;
+}
+
+.main-layout {
+  max-width: 1400px;
+  margin: 0 auto !important;
+  padding: 0 0 2rem !important;
+  animation: none !important;
+}
+
+.main-content {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 360px !important;
+  gap: 1.5rem !important;
+  align-items: start !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  min-height: 0 !important;
+}
+
+.config-column,
+.recommendations-panel {
+  min-width: 0;
+}
+
+.recommendations-panel {
+  position: sticky;
+  top: 1rem;
+}
+
+.card {
+  background: linear-gradient(180deg, rgba(16, 26, 42, 0.94), rgba(10, 18, 31, 0.98)) !important;
+  border: 1px solid var(--ne-line) !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+.card-header {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(74, 164, 255, 0.03)) !important;
+}
+
+.card-title,
+.section-title,
+.preset-name,
+.checkbox-title,
+.stat-value,
+.accuracy-value,
+.accuracy-level {
+  color: var(--ne-text-strong) !important;
+}
+
+.card-description,
+.type-desc,
+.type-example,
+.checkbox-content small,
+.range-preview,
+.breakdown-label,
+.possible-equations,
+.preset-stat,
+.preset-accuracy {
+  color: var(--ne-text-base) !important;
+}
+
+.main-content > * {
+  overflow: visible !important;
+}
+
+@media (max-width: 1100px) {
+  .main-content {
+    grid-template-columns: 1fr !important;
+  }
+
+  .recommendations-panel {
+    position: static;
+  }
+}

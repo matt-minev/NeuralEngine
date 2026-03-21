@@ -1,0 +1,73 @@
+:root {
+  --ne-bg: #070f1a;
+  --ne-surface: rgba(12, 23, 38, 0.9);
+  --ne-surface-strong: rgba(9, 17, 29, 0.96);
+  --ne-line: rgba(129, 174, 209, 0.25);
+  --ne-line-strong: rgba(129, 174, 209, 0.42);
+  --ne-text-strong: #edf5ff;
+  --ne-text-base: #b6c9db;
+  --ne-text-muted: #7f97ac;
+
+  --accent-blue: #4aa4ff;
+  --accent-blue-strong: #2688f2;
+  --accent-cyan: #7bc3ff;
+  --accent-success: #63e6a6;
+  --accent-warning: #ffc071;
+  --accent-error: #ff7f97;
+
+  /* Bridge legacy quadratic variables onto the new dark palette */
+  --primary-color: var(--accent-blue);
+  --primary-hover: var(--accent-blue-strong);
+  --primary-light: #87ccff;
+  --primary-dark: #1568c0;
+  --secondary-color: #3f7fd4;
+  --secondary-hover: #3266ad;
+  --success-color: var(--accent-success);
+  --warning-color: var(--accent-warning);
+  --error-color: var(--accent-error);
+  --background-color: #081321;
+  --background-secondary: #0c1929;
+  --surface-color: rgba(13, 24, 39, 0.94);
+  --surface-elevated: rgba(16, 29, 47, 0.98);
+  --surface-overlay: rgba(11, 21, 34, 0.92);
+  --text-primary: var(--ne-text-strong);
+  --text-secondary: var(--ne-text-base);
+  --text-tertiary: var(--ne-text-muted);
+  --border-color: rgba(129, 174, 209, 0.2);
+  --border-primary: rgba(129, 174, 209, 0.28);
+  --border-secondary: rgba(129, 174, 209, 0.18);
+  --shadow-small: 0 8px 18px rgba(0, 0, 0, 0.18);
+  --shadow-light: 0 10px 24px rgba(0, 0, 0, 0.22);
+  --shadow-medium: 0 18px 40px rgba(0, 0, 0, 0.3);
+  --shadow-heavy: 0 28px 60px rgba(0, 0, 0, 0.38);
+  --chart-blue: var(--accent-blue);
+  --chart-green: var(--accent-success);
+  --chart-orange: var(--accent-warning);
+  --chart-red: var(--accent-error);
+  --chart-purple: #7aa6ff;
+  --chart-teal: var(--accent-cyan);
+  --chart-bg-primary: rgba(10, 20, 32, 0.96);
+  --chart-bg-secondary: rgba(14, 27, 43, 0.96);
+  --chart-border: rgba(129, 174, 209, 0.18);
+  --chart-text-primary: var(--ne-text-strong);
+  --chart-text-secondary: var(--ne-text-base);
+
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-7: 2rem;
+
+  --radius-xl: 28px;
+  --radius-lg: 20px;
+  --radius-md: 14px;
+  --radius-sm: 10px;
+
+  --shadow-lg: 0 26px 80px rgba(0, 0, 0, 0.45);
+  --shadow-md: 0 16px 40px rgba(0, 0, 0, 0.3);
+
+  --font-display: "Space Grotesk", sans-serif;
+  --font-body: "IBM Plex Sans", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+}

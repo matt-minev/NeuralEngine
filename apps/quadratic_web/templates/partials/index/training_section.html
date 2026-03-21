@@ -1,0 +1,116 @@
+          <section id="training" class="content-section">
+            <div class="section-header">
+              <h1 class="section-title">
+                <i class="fas fa-brain"></i>
+                Neural Network Training
+              </h1>
+              <button
+                class="btn"
+                onclick="startTraining()"
+                id="start-training-btn"
+              >
+                <i class="fas fa-play"></i>
+                Start Training
+              </button>
+              <button
+                id="stop-training-btn"
+                class="btn btn-danger"
+                onclick="stopTraining()"
+                style="display: none; margin-left: 10px"
+              >
+                <i class="fas fa-stop"></i> Stop Training
+              </button>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">
+                  <i class="fas fa-cog"></i>
+                  Training Configuration
+                </h3>
+              </div>
+              <div id="training-config">
+                <div
+                  class="training-params-row"
+                  style="display: flex; gap: 16px; margin-bottom: 20px"
+                >
+                  <div class="form-group" style="flex: 1">
+                    <label class="form-label">Training Epochs</label>
+                    <input
+                      type="number"
+                      class="form-input"
+                      id="epochs-input"
+                      value="1000"
+                      min="100"
+                      max="10000"
+                    />
+                  </div>
+                  <div class="form-group" style="flex: 1">
+                    <label class="form-label">Learning Rate</label>
+                    <input
+                      type="number"
+                      class="form-input"
+                      id="learning-rate-input"
+                      value="0.001"
+                      min="0.0001"
+                      max="0.1"
+                      step="0.0001"
+                    />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Select Scenarios to Train</label>
+                  <div
+                    id="scenarios-selection"
+                    style="
+                      display: grid;
+                      grid-template-columns: 1fr 1fr;
+                      gap: 12px;
+                      margin-top: 12px;
+                    "
+                  >
+                    <!-- Scenarios will be populated here -->
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">
+                  <i class="fas fa-tasks"></i>
+                  Training Progress
+                </h3>
+              </div>
+              <div id="training-progress">
+                <div class="progress-container">
+                  <div class="progress-bar">
+                    <div
+                      class="progress-fill"
+                      id="training-progress-fill"
+                    ></div>
+                  </div>
+                  <div class="progress-text" id="training-progress-text">
+                    Ready to train
+                  </div>
+                </div>
+                <div
+                  id="training-logs"
+                  style="
+                    background: var(--background-color);
+                    border-radius: var(--radius-medium);
+                    padding: 16px;
+                    max-height: 300px;
+                    overflow-y: auto;
+                    font-family: 'JetBrains Mono', monospace;
+                    font-size: 14px;
+                    margin-top: 16px;
+                  "
+                >
+                  <div style="color: var(--text-secondary)">
+                    Training logs will appear here...
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>

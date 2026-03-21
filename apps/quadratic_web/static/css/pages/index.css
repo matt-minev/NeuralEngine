@@ -1,0 +1,402 @@
+@import "../styles.css";
+@import "../components.css";
+
+.main-layout {
+  padding-top: 0;
+}
+
+.header {
+  display: none;
+}
+
+.charts-dashboard {
+  align-items: start;
+}
+
+.chart-wrapper {
+  background: linear-gradient(180deg, rgba(12, 23, 38, 0.94), rgba(9, 17, 29, 0.98)) !important;
+  border: 1px solid var(--ne-line) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-md) !important;
+  min-height: 0 !important;
+  margin-bottom: 1.5rem !important;
+}
+
+.chart-content {
+  position: relative;
+  min-height: 420px !important;
+  height: 420px;
+  padding: 1.1rem !important;
+  border-radius: var(--radius-md) !important;
+  background: rgba(129, 174, 209, 0.06) !important;
+  border: 1px solid rgba(129, 174, 209, 0.14);
+  overflow: hidden;
+}
+
+.chart-content--comparison {
+  min-height: 440px !important;
+  height: 440px;
+}
+
+.chart-content canvas {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.chart-wrapper > canvas#comparison-performance-chart {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.chart-content canvas.chart-ready {
+  opacity: 1;
+}
+
+.chart-full-width .chart-content {
+  min-height: 520px !important;
+  height: 520px;
+}
+
+.chart-empty-state {
+  border-radius: var(--radius-md);
+}
+
+.chart-content .chart-empty-state {
+  position: absolute;
+  inset: 1.1rem;
+  z-index: 2;
+  background:
+    radial-gradient(circle at top, rgba(74, 164, 255, 0.12), transparent 48%),
+    rgba(9, 18, 31, 0.84);
+  backdrop-filter: blur(8px);
+}
+
+.chart-explanation-external {
+  padding: 1.2rem !important;
+  margin-top: 0 !important;
+  border-radius: var(--radius-lg) !important;
+  background: linear-gradient(180deg, rgba(14, 26, 42, 0.92), rgba(10, 20, 33, 0.97)) !important;
+  border: 1px solid var(--ne-line) !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+.chart-explanation-external::before {
+  background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan)) !important;
+}
+
+.chart-title,
+.explanation-title-external,
+.metric-content-external h5,
+.guide-item-external strong,
+.comparison-header h3,
+.insight-content h4,
+.model-name {
+  color: var(--ne-text-strong) !important;
+}
+
+.chart-controls {
+  background: rgba(129, 174, 209, 0.08) !important;
+}
+
+.chart-control-btn {
+  background: rgba(129, 174, 209, 0.08) !important;
+  border-color: var(--ne-line) !important;
+  color: var(--ne-text-base) !important;
+}
+
+.chart-control-btn:hover,
+.chart-control-btn.active {
+  background: linear-gradient(135deg, rgba(38, 136, 242, 0.92), rgba(74, 164, 255, 0.92)) !important;
+  border-color: rgba(160, 216, 255, 0.44) !important;
+  color: #f4fbff !important;
+}
+
+.chart-explanation-external p,
+.chart-explanation-external li,
+.chart-explanation-external span,
+.guide-item-external,
+.metric-content-external p,
+.metric-content-external li,
+.comparison-header p,
+.model-description,
+.performance-label,
+.error-note {
+  color: var(--ne-text-base) !important;
+}
+
+.metric-explanation-external,
+.accuracy-guide-external,
+.comparison-header,
+.model-card,
+.insight-card,
+.explanation-card {
+  background: linear-gradient(180deg, rgba(18, 31, 48, 0.9), rgba(10, 21, 35, 0.96)) !important;
+  border: 1px solid var(--ne-line) !important;
+  box-shadow: none !important;
+}
+
+.metric-explanation-external:hover,
+.model-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 34px rgba(7, 16, 29, 0.35) !important;
+  border-color: rgba(123, 195, 255, 0.4) !important;
+}
+
+.metric-content-external li::before {
+  color: var(--accent-cyan) !important;
+}
+
+.guide-color-external {
+  box-shadow: 0 0 0 2px rgba(244, 251, 255, 0.06);
+}
+
+.comparison-header {
+  border-radius: var(--radius-md);
+  padding: 1rem;
+}
+
+.trend-insights-card {
+  background: rgba(129, 174, 209, 0.08);
+  border: 1px solid var(--ne-line);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  margin-top: 1rem;
+}
+
+.trend-insights-card__title {
+  color: var(--ne-text-strong) !important;
+  font-weight: 600;
+  margin-bottom: 0.55rem;
+}
+
+.trend-insights-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.trend-insights-list li {
+  position: relative;
+  padding-left: 1rem;
+  color: var(--ne-text-base) !important;
+  margin-bottom: 0.35rem;
+}
+
+.trend-insights-list li span {
+  position: absolute;
+  left: 0;
+  color: var(--accent-cyan) !important;
+}
+
+#comparison-insights,
+#model-rankings {
+  min-height: 180px;
+}
+
+#comparison-insights .chart-empty-state,
+#model-rankings .chart-empty-state {
+  position: static;
+  inset: auto;
+  min-height: 180px;
+  background:
+    radial-gradient(circle at top, rgba(74, 164, 255, 0.08), transparent 48%),
+    rgba(9, 18, 31, 0.72);
+}
+
+#analysis .chart-wrapper {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08) !important;
+}
+
+#analysis .chart-content {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0;
+}
+
+#analysis .chart-title,
+#analysis .metric-content-external h5 {
+  color: #1e293b !important;
+}
+
+#analysis .chart-controls {
+  background: #f8fafc !important;
+}
+
+#analysis .chart-control-btn {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #475569 !important;
+}
+
+#analysis .chart-control-btn:hover,
+#analysis .chart-control-btn.active {
+  background: linear-gradient(135deg, #007aff, #5ac8fa) !important;
+  border-color: #007aff !important;
+  color: #ffffff !important;
+}
+
+#analysis .chart-explanation-external {
+  background: linear-gradient(180deg, rgba(14, 26, 42, 0.94), rgba(10, 20, 33, 0.98)) !important;
+  border: 1px solid var(--ne-line) !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+#analysis .explanation-title-external,
+#analysis .chart-explanation-external h4,
+#analysis .chart-explanation-external h5,
+#analysis .trend-insights-card__title,
+#analysis .guide-item-external strong,
+#analysis .metric-content-external li strong {
+  color: var(--ne-text-strong) !important;
+}
+
+#analysis .chart-explanation-external p,
+#analysis .chart-explanation-external li,
+#analysis .chart-explanation-external span,
+#analysis .guide-item-external,
+#analysis .metric-content-external p,
+#analysis .metric-content-external li {
+  color: var(--ne-text-base) !important;
+}
+
+#analysis .metric-explanation-external,
+#analysis .accuracy-guide-external,
+#analysis .trend-insights-card {
+  background: linear-gradient(180deg, rgba(18, 31, 48, 0.9), rgba(10, 21, 35, 0.96)) !important;
+  border: 1px solid var(--ne-line) !important;
+  box-shadow: none !important;
+}
+
+#analysis .guide-color-external {
+  box-shadow: 0 0 0 2px rgba(244, 251, 255, 0.06);
+}
+
+#comparison .chart-content--comparison {
+  background: rgba(129, 174, 209, 0.08) !important;
+}
+
+#comparison #comparison-performance-chart.chart-ready {
+  opacity: 1;
+}
+
+#comparison .insights-section {
+  margin-top: 0;
+  padding: 0;
+}
+
+#comparison .insight-cards,
+#comparison .explanation-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  align-items: stretch;
+}
+
+#comparison .insight-card,
+#comparison .explanation-card {
+  display: grid;
+  grid-template-columns: 3.25rem minmax(0, 1fr);
+  align-items: start;
+  gap: 1rem;
+  padding: 1.5rem;
+}
+
+#comparison .insight-content,
+#comparison .explanation-content {
+  min-width: 0;
+}
+
+#comparison .insight-content p,
+#comparison .explanation-content p,
+#comparison .recommendation-list li,
+#comparison .performance-summary,
+#comparison .error-note {
+  color: var(--ne-text-base) !important;
+}
+
+#comparison .insight-content strong,
+#comparison .explanation-content h5,
+#comparison .metric-explanations h4 {
+  color: var(--ne-text-strong) !important;
+}
+
+#comparison .insight-icon,
+#comparison .metric-badge {
+  display: grid;
+  place-items: center;
+}
+
+#comparison .performance-summary {
+  display: inline-block;
+  margin-top: 0.85rem;
+  padding: 0.85rem 1rem;
+  background: rgba(11, 38, 68, 0.82);
+  border: 1px solid rgba(38, 136, 242, 0.35);
+  border-radius: var(--radius-md);
+}
+
+#comparison .recommendation-list {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+#comparison .recommendation-list li + li {
+  margin-top: 0.45rem;
+}
+
+#comparison .comparison-metric-explanations {
+  margin-top: 1.75rem;
+}
+
+#comparison .comparison-metric-explanations h4 {
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 768px) {
+  #comparison .insight-card,
+  #comparison .explanation-card {
+    grid-template-columns: 1fr;
+  }
+}
+
+.scale.excellent {
+  background: rgba(99, 230, 166, 0.16) !important;
+  color: #9af0c2 !important;
+}
+
+.scale.good {
+  background: rgba(74, 164, 255, 0.16) !important;
+  color: #95d0ff !important;
+}
+
+.scale.fair {
+  background: rgba(255, 192, 113, 0.16) !important;
+  color: #ffd7a1 !important;
+}
+
+.scale.poor {
+  background: rgba(255, 127, 151, 0.16) !important;
+  color: #ffb0c0 !important;
+}
+
+@media (max-width: 1200px) {
+  .chart-content,
+  .chart-full-width .chart-content {
+    min-height: 360px !important;
+    height: 360px;
+  }
+}
+
+@media (max-width: 768px) {
+  .chart-content,
+  .chart-full-width .chart-content {
+    min-height: 320px !important;
+    height: 320px;
+  }
+}

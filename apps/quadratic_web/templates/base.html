@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}Neural Engine • Quadratic Neural Network{% endblock %}</title>
+    <link rel="icon" type="image/png" href="{{ url_for('serve_assets', filename='neural-engine-logo.png') }}" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/buttons.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/cards.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/checkboxes.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/placeholders.css') }}" />
+    {% block page_styles %}{% endblock %}
+  </head>
+  <body>
+    <div class="page-shell">
+      <div class="ambient-grid" aria-hidden="true"></div>
+      <div class="ambient-glow ambient-glow--blue" aria-hidden="true"></div>
+      <div class="ambient-glow ambient-glow--cyan" aria-hidden="true"></div>
+
+      {% include "partials/topbar.html" %}
+
+      {% block content %}{% endblock %}
+    </div>
+    {% block scripts %}{% endblock %}
+  </body>
+</html>

@@ -1,0 +1,97 @@
+          <aside class="recommendations-panel">
+            <!-- Quick Presets -->
+            <section class="card presets-card">
+              <div class="card-header">
+                <h2 class="card-title">
+                  <span class="card-icon">⚡</span>
+                  Quick Presets
+                </h2>
+              </div>
+              <div class="presets-section">
+                <div class="presets-grid">
+                  <div class="preset-card preset-fast" data-preset="fast">
+                    <div class="preset-header">
+                      <span class="preset-icon">⚡</span>
+                      <span class="preset-name">Fast Training</span>
+                    </div>
+                    <div class="preset-details">
+                      <div class="preset-stat">1K equations</div>
+                      <div class="preset-stat">~5 sec/model</div>
+                      <div class="preset-accuracy preset-accuracy-low">~30% accuracy</div>
+                    </div>
+                  </div>
+                  <div class="preset-card preset-balanced" data-preset="balanced">
+                    <div class="preset-header">
+                      <span class="preset-icon">⚖️</span>
+                      <span class="preset-name">Balanced</span>
+                    </div>
+                    <div class="preset-details">
+                      <div class="preset-stat">10K equations</div>
+                      <div class="preset-stat">~25 sec/model</div>
+                      <div class="preset-accuracy preset-accuracy-medium">~65% accuracy</div>
+                    </div>
+                  </div>
+                  <div class="preset-card preset-high" data-preset="high-accuracy">
+                    <div class="preset-header">
+                      <span class="preset-icon">⭐</span>
+                      <span class="preset-name">High Accuracy</span>
+                    </div>
+                    <div class="preset-details">
+                      <div class="preset-stat">50K equations</div>
+                      <div class="preset-stat">~60 sec/model</div>
+                      <div class="preset-accuracy preset-accuracy-high">~85% accuracy</div>
+                    </div>
+                  </div>
+                  <div class="preset-card" data-preset="elite">
+                    <div class="preset-header">
+                      <span class="preset-icon">👑</span>
+                      <span class="preset-name">Elite Accuracy</span>
+                    </div>
+                    <div class="preset-details">
+                      <div class="preset-stat">100K equations</div>
+                      <div class="preset-stat">~160 sec/model</div>
+                      <div class="preset-accuracy preset-accuracy-elite">~96% accuracy</div>
+                    </div>
+                    <div class="preset-badge">Best</div>
+                  </div>
+                </div>
+              </div>
+            </section>
+            <!-- Compact Accuracy Meter -->
+            <section class="card accuracy-meter-card compact">
+              <div class="card-header">
+                <h2 class="card-title">
+                  <span class="card-icon">🎯</span>
+                  Expected Accuracy
+                </h2>
+              </div>
+              <div class="accuracy-meter-container compact">
+                <div class="accuracy-meter-wrapper compact">
+                  <div class="accuracy-circle compact" id="accuracy-circle">
+                    <svg class="accuracy-svg" viewBox="0 0 200 200">
+                      <circle class="accuracy-bg" cx="100" cy="100" r="90" />
+                      <circle class="accuracy-progress" id="accuracy-progress" cx="100" cy="100" r="90" />
+                    </svg>
+                    <div class="accuracy-content compact">
+                      <div class="accuracy-value" id="accuracy-value">85%</div>
+                      <div class="accuracy-level" id="accuracy-level">Good</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="accuracy-breakdown compact">
+                  <div class="breakdown-item">
+                    <span class="breakdown-label">R²:</span>
+                    <span class="breakdown-value" id="r2-score">0.82</span>
+                  </div>
+                  <div class="breakdown-item">
+                    <span class="breakdown-label">Time:</span>
+                    <span class="breakdown-value" id="training-time">~2h</span>
+                  </div>
+                </div>
+                <div class="possible-equations" id="possible-equations">
+                  <span class="breakdown-label">Possible Equations:</span>
+                  <span class="breakdown-value" id="equations-count">Calculating...</span>
+                </div>
+              </div>
+            </section>
+          </aside>

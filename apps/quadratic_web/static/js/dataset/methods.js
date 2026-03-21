@@ -1,9 +1,4 @@
-/**
- * Dataset Generator JavaScript
- * Beautiful Apple-like interface for generating quadratic equation datasets
- */
-
-const DatasetGenerator = {
+Object.assign(DatasetGenerator, {
   currentConfig: {
     equation_type: "school_grade",
     num_equations: 1000,
@@ -70,15 +65,14 @@ const DatasetGenerator = {
       });
     });
     
-    // Coefficient range preset buttons (using data-range format)
+    // Coefficient range preset buttons (using data-min/data-max format)
     document.querySelectorAll('.range-preset-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         document.querySelectorAll('.range-preset-btn').forEach(b => b.classList.remove('active'));
         e.target.classList.add('active');
         
-        const range = e.target.dataset.range.split(',');
-        const min = parseInt(range[0]);
-        const max = parseInt(range[1]);
+        const min = parseInt(e.target.dataset.min);
+        const max = parseInt(e.target.dataset.max);
         
         document.getElementById('coeff-min').value = min;
         document.getElementById('coeff-max').value = max;
@@ -99,45 +93,37 @@ const DatasetGenerator = {
   applyPreset(presetName) {
     const presets = {
       'fast': {
+        equation_type: 'school_grade',
         num_equations: 1000,
         coefficient_range: { min: -5, max: 5 },
         epochs: 1000,
         ensemble_size: 1,
-        use_augmentation: true,
-        // Hard-coded accuracy for preset display
-        hardcoded_accuracy: 0.30, // 30% - RED
-        hardcoded_training_time: 5 // 5 seconds per model
+        use_augmentation: true
       },
       'balanced': {
+        equation_type: 'integer_solutions',
         num_equations: 10000,
         coefficient_range: { min: -10, max: 10 },
         epochs: 1500,
         ensemble_size: 1,
-        use_augmentation: true,
-        // Hard-coded accuracy for preset display
-        hardcoded_accuracy: 0.65, // 65% - YELLOW/ORANGE
-        hardcoded_training_time: 25 // 25 seconds per model
+        use_augmentation: true
       },
       'high-accuracy': {
+        equation_type: 'fractional_solutions',
         num_equations: 50000,
         coefficient_range: { min: -15, max: 15 },
         epochs: 2000,
         ensemble_size: 3,
-        use_augmentation: true,
-        // Hard-coded accuracy for preset display
-        hardcoded_accuracy: 0.85, // 85% - GREEN
-        hardcoded_training_time: 60 // 60 seconds per model
+        use_augmentation: true
       },
       'elite': {
+        equation_type: 'random',
         num_equations: 100000,
         coefficient_range: { min: -15, max: 15 },
         epochs: 2500,
         ensemble_size: 5,
         use_augmentation: true,
-        use_multi_phase: true,
-        // Hard-coded accuracy for preset display
-        hardcoded_accuracy: 0.96, // 96% - WHITE/ELITE
-        hardcoded_training_time: 160 // 160 seconds per model
+        use_multi_phase: true
       }
     };
     
@@ -193,12 +179,21 @@ const DatasetGenerator = {
     // Update displays
     this.updateRangeDisplay();
     this.updateRangePresets();
-    this.updatePossibleEquationsCount();
     
-    // Update accuracy meter with hard-coded preset value
-    setTimeout(() => {
-      this.updateAccuracyMeterWithPreset(preset.hardcoded_accuracy, preset.hardcoded_training_time);
-    }, 50);
+    // Update equation type selector
+    if (preset.equation_type) {
+      const selector = document.querySelector(`.type-selector[data-type="${preset.equation_type}"]`);
+      if (selector) {
+        // This will internally call this.updateAccuracyPrediction()
+        this.selectEquationType(selector);
+      } else {
+        this.updatePossibleEquationsCount();
+        this.updateAccuracyPrediction();
+      }
+    } else {
+      this.updatePossibleEquationsCount();
+      this.updateAccuracyPrediction();
+    }
     
     this.showNotification(`Applied "${presetName}" preset! 🎯`, 'success');
   },
@@ -452,10 +447,9 @@ const DatasetGenerator = {
   updateRangePresets() {
     const min = this.currentConfig.coefficient_range.min;
     const max = this.currentConfig.coefficient_range.max;
-    const rangeStr = `${min},${max}`;
     
     document.querySelectorAll(".range-preset-btn").forEach((btn) => {
-      if (btn.dataset.range === rangeStr) {
+      if (parseInt(btn.dataset.min) === min && parseInt(btn.dataset.max) === max) {
         btn.classList.add("active");
       } else {
         btn.classList.remove("active");
@@ -471,53 +465,7 @@ const DatasetGenerator = {
       return;
     }
 
-    // Check if current config matches a preset exactly
-    const presetMatches = {
-      'fast': {
-        num_equations: 1000,
-        coefficient_range: { min: -5, max: 5 },
-        hardcoded_accuracy: 0.30,
-        hardcoded_training_time: 5
-      },
-      'balanced': {
-        num_equations: 10000,
-        coefficient_range: { min: -10, max: 10 },
-        hardcoded_accuracy: 0.65,
-        hardcoded_training_time: 25
-      },
-      'high-accuracy': {
-        num_equations: 50000,
-        coefficient_range: { min: -15, max: 15 },
-        hardcoded_accuracy: 0.85,
-        hardcoded_training_time: 60
-      },
-      'elite': {
-        num_equations: 100000,
-        coefficient_range: { min: -15, max: 15 },
-        hardcoded_accuracy: 0.96,
-        hardcoded_training_time: 160
-      }
-    };
-    
-    // Check if config matches a preset
-    let matchedPreset = null;
-    for (const [presetName, preset] of Object.entries(presetMatches)) {
-      if (this.currentConfig.num_equations === preset.num_equations &&
-          this.currentConfig.coefficient_range.min === preset.coefficient_range.min &&
-          this.currentConfig.coefficient_range.max === preset.coefficient_range.max) {
-        matchedPreset = preset;
-        break;
-      }
-    }
-    
-    // If matched a preset, use hardcoded values
-    if (matchedPreset) {
-      console.log('Config matches preset, using hardcoded accuracy:', matchedPreset.hardcoded_accuracy);
-      this.updateAccuracyMeterWithPreset(matchedPreset.hardcoded_accuracy, matchedPreset.hardcoded_training_time);
-      return;
-    }
-
-    // Otherwise, calculate accuracy
+    // Calculate accuracy using real predictor
     // Get current training config if available
     const config = {
       ...this.currentConfig,
@@ -1333,9 +1281,5 @@ const DatasetGenerator = {
         }
       });
   },
-};
-
-// Initialize when DOM is ready
-document.addEventListener("DOMContentLoaded", () => {
-  DatasetGenerator.init();
 });
+
