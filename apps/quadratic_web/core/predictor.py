@@ -50,6 +50,26 @@ class QuadraticPredictor:
 
     def _is_two_root_target(self) -> bool:
         return set(self.scenario.target_features) == {'x1', 'x2'}
+
+    def _solve_quadratic_roots(self, a: float, b: float, c: float) -> Optional[Tuple[float, float]]:
+        """Return sorted real roots for a quadratic, or None when not applicable."""
+        if abs(a) < 1e-10:
+            return None
+
+        discriminant = b**2 - 4 * a * c
+        if discriminant < 0:
+            return None
+
+        sqrt_discriminant = float(np.sqrt(discriminant))
+        denominator = 2 * a
+        if abs(denominator) < 1e-10:
+            return None
+
+        roots = sorted((
+            float((-b - sqrt_discriminant) / denominator),
+            float((-b + sqrt_discriminant) / denominator),
+        ))
+        return roots[0], roots[1]
         
     def create_network(self, learning_rate: float = 0.001):
         """Create neural network for this scenario"""
@@ -605,6 +625,37 @@ class QuadraticPredictor:
                         # Final ordering
                         if refined[i, 0] > refined[i, 1]:
                             refined[i, 0], refined[i, 1] = refined[i, 1], refined[i, 0]
+
+                        # Guard against both outputs collapsing onto the same basin.
+                        # When the equation has two distinct real roots, use Vieta's
+                        # relation to recover the companion root from the better one.
+                        if discriminant > 1e-6 and abs(refined[i, 1] - refined[i, 0]) < 1e-3:
+                            current_errors = np.array([
+                                abs(a * refined[i, 0]**2 + b * refined[i, 0] + c),
+                                abs(a * refined[i, 1]**2 + b * refined[i, 1] + c),
+                            ], dtype=np.float64)
+                            anchor_index = int(np.argmin(current_errors))
+                            anchor_root = float(refined[i, anchor_index])
+                            companion_root = float((-b / a) - anchor_root)
+
+                            candidate_pair = np.array(
+                                sorted([anchor_root, companion_root]),
+                                dtype=refined.dtype,
+                            )
+
+                            exact_pair = self._solve_quadratic_roots(a, b, c)
+                            if exact_pair is not None:
+                                exact_pair_arr = np.array(exact_pair, dtype=np.float64)
+                                candidate_distance = float(
+                                    np.linalg.norm(candidate_pair.astype(np.float64) - exact_pair_arr)
+                                )
+                                current_distance = float(
+                                    np.linalg.norm(refined[i].astype(np.float64) - exact_pair_arr)
+                                )
+                                if candidate_distance <= current_distance:
+                                    refined[i, :] = candidate_pair
+                            else:
+                                refined[i, :] = candidate_pair
         
         return refined
     

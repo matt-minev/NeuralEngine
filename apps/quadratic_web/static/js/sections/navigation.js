@@ -18,15 +18,12 @@ const Navigation = {
       });
     });
 
-    // Check for URL hash first, then localStorage, then default to dashboard
+    // Check for an explicit URL hash first, then default to dashboard.
+    // Do not restore the last tab from localStorage on a fresh open, because
+    // launch-page opens should always land on the dashboard.
     const hashSection = window.location.hash.substring(1); // Remove #
-    const savedSection = localStorage.getItem("quadratic_web_active_tab");
-
-    // If hash is dashboard, ignore it and use saved section or default
     const initialSection =
-      hashSection && hashSection !== "dashboard"
-        ? hashSection
-        : savedSection || "dashboard";
+      hashSection && hashSection !== "dashboard" ? hashSection : "dashboard";
 
     // Validate section exists
     const validSections = [

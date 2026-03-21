@@ -447,6 +447,20 @@ class TestPredictor(unittest.TestCase):
         self.assertIsNotNone(confidences)
         self.assertEqual(predictions.shape[1], 2)  # Two roots
         self.assertEqual(confidences.shape[1], 2)  # Two confidences
+
+    def test_refinement_recovers_distinct_second_root_when_predictions_collapse(self):
+        """Refinement should not leave both outputs on the same root for distinct-root equations."""
+        predictor = QuadraticPredictor(self.scenario, self.data_processor)
+
+        collapsed_prediction = np.array([[-0.703886, -0.703886]], dtype=np.float32)
+        inputs = np.array([[-1.0, 5.0, 4.0]], dtype=np.float32)
+
+        refined = predictor._refine_predictions(inputs, collapsed_prediction, None)
+
+        self.assertLess(refined[0, 0], 0.0)
+        self.assertGreater(refined[0, 1], 5.0)
+        self.assertGreater(abs(refined[0, 1] - refined[0, 0]), 1.0)
+        self.assertAlmostEqual(refined[0, 0] + refined[0, 1], 5.0, places=3)
     
     def test_prediction_without_training(self):
         """Test prediction without training"""

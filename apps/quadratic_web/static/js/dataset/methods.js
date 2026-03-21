@@ -23,20 +23,20 @@ Object.assign(DatasetGenerator, {
     this.setupPresets();
     this.updateRangeDisplay();
     this.updateRangePresets();
-    
+
     // Sync currentConfig with actual form values on page load
     const numEqInput = document.getElementById('num-equations');
     if (numEqInput) {
       this.currentConfig.num_equations = parseInt(numEqInput.value) || 1000;
     }
-    
+
     const coeffMinInput = document.getElementById('coeff-min');
     const coeffMaxInput = document.getElementById('coeff-max');
     if (coeffMinInput && coeffMaxInput) {
       this.currentConfig.coefficient_range.min = parseInt(coeffMinInput.value) || -5;
       this.currentConfig.coefficient_range.max = parseInt(coeffMaxInput.value) || 5;
     }
-    
+
     // Initialize accuracy meter after a short delay to ensure AccuracyPredictor is loaded
     setTimeout(() => {
       console.log('Initializing accuracy meter with config:', this.currentConfig);
@@ -50,7 +50,7 @@ Object.assign(DatasetGenerator, {
     this.updateAccuracyMeter();
     this.updateRecommendedEpochs();
   },
-  
+
   setupPresets() {
     // Dataset size preset buttons
     document.querySelectorAll('.preset-btn').forEach(btn => {
@@ -64,16 +64,16 @@ Object.assign(DatasetGenerator, {
         this.updateAccuracyPrediction();
       });
     });
-    
+
     // Coefficient range preset buttons (using data-min/data-max format)
     document.querySelectorAll('.range-preset-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         document.querySelectorAll('.range-preset-btn').forEach(b => b.classList.remove('active'));
         e.target.classList.add('active');
-        
+
         const min = parseInt(e.target.dataset.min);
         const max = parseInt(e.target.dataset.max);
-        
+
         document.getElementById('coeff-min').value = min;
         document.getElementById('coeff-max').value = max;
         this.currentConfig.coefficient_range = { min, max };
@@ -81,7 +81,7 @@ Object.assign(DatasetGenerator, {
         this.updateAccuracyPrediction();
       });
     });
-    
+
     // Quick preset cards
     document.querySelectorAll('.preset-card').forEach(card => {
       card.addEventListener('click', (e) => {
@@ -89,7 +89,7 @@ Object.assign(DatasetGenerator, {
       });
     });
   },
-  
+
   applyPreset(presetName) {
     const presets = {
       'fast': {
@@ -126,15 +126,15 @@ Object.assign(DatasetGenerator, {
         use_multi_phase: true
       }
     };
-    
+
     const preset = presets[presetName];
     if (!preset) return;
-    
+
     console.log('Applying preset:', presetName, preset);
-    
+
     // Apply preset values to config
     Object.assign(this.currentConfig, preset);
-    
+
     // Update all UI elements
     const numEqInput = document.getElementById('num-equations');
     const coeffMinInput = document.getElementById('coeff-min');
@@ -142,23 +142,23 @@ Object.assign(DatasetGenerator, {
     const epochsInput = document.getElementById('recommended-epochs');
     const ensembleInput = document.getElementById('ensemble-size');
     const augmentationInput = document.getElementById('use-augmentation');
-    
+
     if (numEqInput) numEqInput.value = preset.num_equations;
     if (coeffMinInput) coeffMinInput.value = preset.coefficient_range.min;
     if (coeffMaxInput) coeffMaxInput.value = preset.coefficient_range.max;
     if (epochsInput) epochsInput.value = preset.epochs;
     if (ensembleInput) ensembleInput.value = preset.ensemble_size;
     if (augmentationInput) augmentationInput.checked = preset.use_augmentation;
-    
+
     // Update range preset button
     document.querySelectorAll('.range-preset-btn').forEach(btn => {
       btn.classList.remove('active');
       if (parseInt(btn.dataset.min) === preset.coefficient_range.min &&
-          parseInt(btn.dataset.max) === preset.coefficient_range.max) {
+        parseInt(btn.dataset.max) === preset.coefficient_range.max) {
         btn.classList.add('active');
       }
     });
-    
+
     // Update preset card highlighting
     document.querySelectorAll('.preset-card').forEach(card => {
       card.classList.remove('active');
@@ -167,7 +167,7 @@ Object.assign(DatasetGenerator, {
     if (clickedCard) {
       clickedCard.classList.add('active');
     }
-    
+
     // Update equation amount preset buttons
     document.querySelectorAll('.preset-btn').forEach(btn => {
       btn.classList.remove('active');
@@ -175,11 +175,11 @@ Object.assign(DatasetGenerator, {
         btn.classList.add('active');
       }
     });
-    
+
     // Update displays
     this.updateRangeDisplay();
     this.updateRangePresets();
-    
+
     // Update equation type selector
     if (preset.equation_type) {
       const selector = document.querySelector(`.type-selector[data-type="${preset.equation_type}"]`);
@@ -194,14 +194,14 @@ Object.assign(DatasetGenerator, {
       this.updatePossibleEquationsCount();
       this.updateAccuracyPrediction();
     }
-    
+
     this.showNotification(`Applied "${presetName}" preset! 🎯`, 'success');
   },
-  
+
   updateAccuracyMeterWithPreset(hardcodedAccuracy, trainingTimeSeconds) {
     // Use hard-coded accuracy instead of calculating
     const accuracyPercent = Math.round(hardcodedAccuracy * 100);
-    
+
     // Get accuracy level based on hard-coded value
     let level;
     if (hardcodedAccuracy >= 0.96) {
@@ -215,7 +215,7 @@ Object.assign(DatasetGenerator, {
     } else {
       level = { name: 'Insufficient', color: '#EF4444', icon: '❌' };
     }
-    
+
     // Update progress circle
     const progressCircle = document.getElementById("accuracy-progress");
     const accuracyValue = document.getElementById("accuracy-value");
@@ -226,45 +226,45 @@ Object.assign(DatasetGenerator, {
       }, 100);
       return;
     }
-    
+
     const radius = 90; // Compact version radius (180px circle)
     const circumference = 2 * Math.PI * radius;
     const offset = circumference - (accuracyPercent / 100) * circumference;
-    
+
     // Update progress circle
     progressCircle.style.strokeDasharray = `${circumference} ${circumference}`;
     progressCircle.style.strokeDashoffset = offset;
     progressCircle.style.stroke = level.color;
     progressCircle.style.transition = 'stroke-dashoffset 0.8s ease-in-out, stroke 0.3s ease';
-    
+
     // Update accuracy value
     accuracyValue.textContent = `${accuracyPercent}%`;
-    
+
     // Update accuracy level
     const accuracyLevel = document.getElementById("accuracy-level");
     if (accuracyLevel) {
       accuracyLevel.textContent = `${level.icon} ${level.name}`;
       accuracyLevel.style.color = level.color;
     }
-    
+
     // Update confidence
     const accuracyConfidence = document.getElementById("accuracy-confidence");
     if (accuracyConfidence) {
       accuracyConfidence.textContent = `±3%`;
     }
-    
+
     // Update breakdown (estimate based on accuracy)
     const r2Score = document.getElementById("r2-score");
     if (r2Score) {
       r2Score.textContent = (hardcodedAccuracy + 0.02).toFixed(3);
     }
-    
+
     const maeValue = document.getElementById("mae-value");
     if (maeValue) {
       const mae = Math.max(0.001, 0.1 - (hardcodedAccuracy - 0.7) * 0.3);
       maeValue.textContent = mae.toFixed(2);
     }
-    
+
     // Update training time
     const trainingTime = document.getElementById("training-time");
     if (trainingTime) {
@@ -319,7 +319,7 @@ Object.assign(DatasetGenerator, {
     document.getElementById("allow-complex").addEventListener("change", (e) => {
       this.currentConfig.allow_complex = e.target.checked;
     });
-    
+
     // New advanced options
     const validationSplit = document.getElementById("validation-split");
     if (validationSplit) {
@@ -327,14 +327,14 @@ Object.assign(DatasetGenerator, {
         this.currentConfig.validation_split = parseFloat(e.target.value);
       });
     }
-    
+
     const testSplit = document.getElementById("test-split");
     if (testSplit) {
       testSplit.addEventListener("input", (e) => {
         this.currentConfig.test_split = parseFloat(e.target.value);
       });
     }
-    
+
     const balancedDist = document.getElementById("balanced-distribution");
     if (balancedDist) {
       balancedDist.addEventListener("change", (e) => {
@@ -342,14 +342,14 @@ Object.assign(DatasetGenerator, {
         this.updateAccuracyPrediction();
       });
     }
-    
+
     const removeDupes = document.getElementById("remove-duplicates");
     if (removeDupes) {
       removeDupes.addEventListener("change", (e) => {
         this.currentConfig.remove_duplicates = e.target.checked;
       });
     }
-    
+
     const useAug = document.getElementById("use-augmentation");
     if (useAug) {
       useAug.addEventListener("change", (e) => {
@@ -357,7 +357,7 @@ Object.assign(DatasetGenerator, {
         this.updateAccuracyPrediction();
       });
     }
-    
+
     const ensembleSize = document.getElementById("ensemble-size");
     if (ensembleSize) {
       ensembleSize.addEventListener("input", (e) => {
@@ -365,7 +365,7 @@ Object.assign(DatasetGenerator, {
         this.updateAccuracyPrediction();
       });
     }
-    
+
     const recommendedEpochs = document.getElementById("recommended-epochs");
     if (recommendedEpochs) {
       recommendedEpochs.addEventListener("input", (e) => {
@@ -432,7 +432,7 @@ Object.assign(DatasetGenerator, {
     } else {
       rootTypeGroup.style.display = "none";
     }
-    
+
     // Update accuracy prediction
     this.updateAccuracyPrediction();
     this.updatePossibleEquationsCount();
@@ -447,7 +447,7 @@ Object.assign(DatasetGenerator, {
   updateRangePresets() {
     const min = this.currentConfig.coefficient_range.min;
     const max = this.currentConfig.coefficient_range.max;
-    
+
     document.querySelectorAll(".range-preset-btn").forEach((btn) => {
       if (parseInt(btn.dataset.min) === min && parseInt(btn.dataset.max) === max) {
         btn.classList.add("active");
@@ -500,7 +500,7 @@ Object.assign(DatasetGenerator, {
     const radius = 90; // Compact version radius (180px circle)
     const circumference = 2 * Math.PI * radius;
     const offset = circumference - (accuracyPercent / 100) * circumference;
-    
+
     // Update progress circle
     progressCircle.style.strokeDasharray = `${circumference} ${circumference}`;
     progressCircle.style.strokeDashoffset = offset;
@@ -572,42 +572,42 @@ Object.assign(DatasetGenerator, {
     // For school-grade equations with integer roots and perfect square discriminants
     const min = this.currentConfig.coefficient_range.min;
     const max = this.currentConfig.coefficient_range.max;
-    
+
     // Realistic calculation:
     // - Range size: number of possible integer values
     // - For each root pair (r1, r2), we can generate equations with different a values
     // - With pattern-based generation (standard factoring, diff squares, perfect squares, etc.),
     //   we can generate many unique equations
     // - Account for: a values (1-5 typically), root combinations, pattern variations
-    
+
     const rangeSize = max - min + 1;
-    
+
     // More realistic estimate:
     // - Base: rangeSize^2 possible root pairs
     // - Multiply by a values (typically 1-5, but can be more)
     // - Multiply by pattern variations (standard, diff squares, perfect squares, etc.)
     // - Factor in that not all combinations are valid (perfect square discriminant constraint)
     // - But with our pattern-based approach, we can generate many valid equations
-    
+
     // For school grade equations, we use patterns that ensure validity
     // So we can generate roughly: rootPairs * aValues * patterns * validityFactor
     const rootPairs = rangeSize * rangeSize; // All possible root pairs
     const aValues = 5; // Typically 1-5
     const patterns = 4; // Standard, diff squares, perfect squares, larger coeffs
     const validityFactor = 0.6; // ~60% of combinations are valid with patterns
-    
+
     let estimate = Math.floor(rootPairs * aValues * patterns * validityFactor);
-    
+
     // Ensure minimum reasonable estimate
     if (estimate < 1000) {
       estimate = Math.floor(rootPairs * 10); // At least 10 equations per root pair
     }
-    
+
     // Cap at reasonable maximum (we can generate more with infinite mode)
     if (estimate > 1000000) {
       estimate = 1000000;
     }
-    
+
     // Format with commas
     const formatted = estimate.toLocaleString();
     countEl.textContent = formatted;
@@ -615,7 +615,7 @@ Object.assign(DatasetGenerator, {
 
   calculateRecommendedEpochs() {
     const datasetSize = this.currentConfig.num_equations || 1000;
-    
+
     // Logarithmic scaling: more data = more epochs needed
     if (datasetSize >= 100000) {
       return 2500;
@@ -633,11 +633,11 @@ Object.assign(DatasetGenerator, {
   updateRecommendedEpochs() {
     const epochs = this.calculateRecommendedEpochs();
     this.currentConfig.epochs = epochs;
-    
+
     const epochsInput = document.getElementById("recommended-epochs");
     if (epochsInput) {
       epochsInput.value = epochs;
-      
+
       const hint = document.getElementById("epochs-hint");
       if (hint) {
         if (epochs >= 2000) {
@@ -701,7 +701,7 @@ Object.assign(DatasetGenerator, {
   applyConfigUpdates(updates) {
     Object.keys(updates).forEach(key => {
       this.currentConfig[key] = updates[key];
-      
+
       // Update UI elements
       if (key === 'num_equations') {
         document.getElementById("num-equations").value = updates[key];
@@ -1096,9 +1096,9 @@ Object.assign(DatasetGenerator, {
                 <div class="stat-icon">📏</div>
                 <div class="stat-content">
                     <div class="stat-value">${this.formatNumber(
-                      stats.coefficients.a.mean,
-                      2
-                    )}</div>
+      stats.coefficients.a.mean,
+      2
+    )}</div>
                     <div class="stat-label">Avg Coefficient 'a'</div>
                 </div>
             </div>
@@ -1107,9 +1107,9 @@ Object.assign(DatasetGenerator, {
                 <div class="stat-icon">📐</div>
                 <div class="stat-content">
                     <div class="stat-value">${this.formatNumber(
-                      stats.roots.x1.mean,
-                      2
-                    )}</div>
+      stats.roots.x1.mean,
+      2
+    )}</div>
                     <div class="stat-label">Avg Root x₁</div>
                 </div>
             </div>
@@ -1117,11 +1117,10 @@ Object.assign(DatasetGenerator, {
             <div class="stat-item">
                 <div class="stat-icon">✨</div>
                 <div class="stat-content">
-                    <div class="stat-value">${
-                      this.currentConfig.equation_type === "school_grade"
-                        ? "Perfect"
-                        : "Good"
-                    }</div>
+                    <div class="stat-value">${this.currentConfig.equation_type === "school_grade"
+        ? "Perfect"
+        : "Good"
+      }</div>
                     <div class="stat-label">Quality Rating</div>
                 </div>
             </div>
